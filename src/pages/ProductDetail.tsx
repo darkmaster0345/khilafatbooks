@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { products } from '@/data/products';
 import { useCart } from '@/context/CartContext';
+import { formatPKR } from '@/lib/currency';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -66,9 +67,9 @@ const ProductDetail = () => {
           </div>
 
           <div className="mt-4 flex items-baseline gap-3">
-            <span className="font-display text-3xl font-bold text-foreground">${product.price}</span>
+            <span className="font-display text-3xl font-bold text-foreground">{formatPKR(product.price)}</span>
             {product.originalPrice && (
-              <span className="text-lg text-muted-foreground line-through">${product.originalPrice}</span>
+              <span className="text-lg text-muted-foreground line-through">{formatPKR(product.originalPrice)}</span>
             )}
           </div>
 
@@ -90,9 +91,9 @@ const ProductDetail = () => {
             )}
             <div className="flex items-center gap-2 rounded-md border border-border bg-muted px-3 py-2">
               {product.type === 'physical' ? (
-                <><Truck className="h-4 w-4 text-muted-foreground" /><span className="text-sm text-muted-foreground">Free shipping on orders over $75</span></>
+                <><Truck className="h-4 w-4 text-muted-foreground" /><span className="text-sm text-muted-foreground">Free shipping on orders over Rs. 5,000</span></>
               ) : (
-                <><Download className="h-4 w-4 text-muted-foreground" /><span className="text-sm text-muted-foreground">Instant digital delivery after purchase</span></>
+                <><Download className="h-4 w-4 text-muted-foreground" /><span className="text-sm text-muted-foreground">Instant digital delivery after payment approval</span></>
               )}
             </div>
           </div>
@@ -103,7 +104,7 @@ const ProductDetail = () => {
             className="mt-8 gap-2"
           >
             <ShoppingCart className="h-4 w-4" />
-            Add to Cart — ${product.price}
+            Add to Cart — {formatPKR(product.price)}
           </Button>
         </motion.div>
       </div>

@@ -5,6 +5,7 @@ import { Product } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { formatPKR } from '@/lib/currency';
 
 const ProductCard = ({ product, index = 0 }: { product: Product; index?: number }) => {
   const { addItem } = useCart();
@@ -63,9 +64,9 @@ const ProductCard = ({ product, index = 0 }: { product: Product; index?: number 
         </div>
         <div className="mt-auto flex items-center justify-between pt-3">
           <div className="flex items-baseline gap-2">
-            <span className="font-display text-lg font-bold text-foreground">${product.price}</span>
+            <span className="font-display text-lg font-bold text-foreground">{formatPKR(product.price)}</span>
             {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through">${product.originalPrice}</span>
+              <span className="text-xs text-muted-foreground line-through">{formatPKR(product.originalPrice)}</span>
             )}
           </div>
           <Button

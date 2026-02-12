@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCart } from '@/context/CartContext';
+import { formatPKR } from '@/lib/currency';
 
 const Cart = () => {
   const {
@@ -71,7 +72,7 @@ const Cart = () => {
                         <Plus className="h-3 w-3" />
                       </button>
                     </div>
-                    <span className="font-display font-bold text-foreground">${(product.price * quantity).toFixed(2)}</span>
+                    <span className="font-display font-bold text-foreground">{formatPKR(product.price * quantity)}</span>
                   </div>
                 </div>
               </motion.div>
@@ -85,11 +86,11 @@ const Cart = () => {
           <div className="space-y-3 text-sm">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
+              <span>{formatPKR(subtotal)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Shipping</span>
-              <span>{subtotal >= 75 ? 'Free' : '$9.99'}</span>
+              <span>{subtotal >= 5000 ? 'Free' : formatPKR(500)}</span>
             </div>
 
             {/* Zakat */}
@@ -106,22 +107,22 @@ const Cart = () => {
               </div>
               {zakatEnabled && (
                 <p className="mt-2 text-xs text-muted-foreground">
-                  ${zakatAmount.toFixed(2)} will be donated to verified charitable causes
+                  {formatPKR(zakatAmount)} will be donated to verified charitable causes
                 </p>
               )}
             </div>
 
             <div className="border-t border-border pt-3 flex justify-between font-display font-bold text-foreground text-base">
               <span>Total</span>
-              <span>${(total + (subtotal < 75 ? 9.99 : 0)).toFixed(2)}</span>
+              <span>{formatPKR(total + (subtotal < 5000 ? 500 : 0))}</span>
             </div>
           </div>
 
-          <Button size="lg" className="mt-6 w-full gold-gradient border-0 text-foreground font-semibold">
-            Proceed to Checkout
+          <Button asChild size="lg" className="mt-6 w-full gold-gradient border-0 text-foreground font-semibold">
+            <Link to="/checkout">Proceed to Checkout</Link>
           </Button>
           <p className="mt-3 text-center text-[10px] text-muted-foreground">
-            Secure checkout powered by Stripe
+            Pay via EasyPaisa • Secure & verified
           </p>
         </div>
       </div>
