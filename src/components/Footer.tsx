@@ -7,12 +7,12 @@ const Footer = () => (
         <div>
           <div className="flex items-center gap-2 mb-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-full emerald-gradient">
-              <span className="font-arabic text-sm text-primary-foreground">بِ</span>
+              <span className="font-arabic text-sm text-primary-foreground">ك</span>
             </div>
-            <span className="font-display text-lg font-bold text-foreground">Barakah</span>
+            <span className="font-display text-lg font-bold text-foreground">Khilafat Books</span>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Ethically sourced, halal-certified products for the modern Muslim lifestyle.
+            Ethically sourced, halal-certified Islamic books and products for the modern Muslim lifestyle.
           </p>
         </div>
         <div>
@@ -35,13 +35,14 @@ const Footer = () => (
         <div>
           <h4 className="font-display text-sm font-semibold text-foreground mb-3">Contact</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>support@barakah.store</li>
-            <li>+1 (555) 123-4567</li>
+            <li>support@khilafatbooks.com</li>
+            <li>+92 345 2867726</li>
           </ul>
         </div>
       </div>
-      <div className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground">
-        <p>© 2026 Barakah — Ethical Commerce. All rights reserved.</p>
+      <div className="mt-8 border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
+        <p>© 2026 Khilafat Books — Islamic Knowledge. All rights reserved.</p>
+        <Link to="/auth" className="hover:text-primary transition-colors">Admin Login</Link>
       </div>
     </div>
   </footer>

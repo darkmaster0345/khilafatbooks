@@ -1,8 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, X } from 'lucide-react';
+import { ShoppingCart, Menu, X, LogIn, LogOut, User } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -12,6 +14,7 @@ const navLinks = [
 
 const Header = () => {
   const { totalItems } = useCart();
+  const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -21,11 +24,11 @@ const Header = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-full emerald-gradient">
-            <span className="font-arabic text-lg text-primary-foreground">بِ</span>
+            <span className="font-arabic text-lg text-primary-foreground">ك</span>
           </div>
           <div>
-            <h1 className="font-display text-xl font-bold leading-tight text-foreground">Barakah</h1>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Ethical Commerce</p>
+            <h1 className="font-display text-xl font-bold leading-tight text-foreground">Khilafat Books</h1>
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Islamic Bookstore</p>
           </div>
         </Link>
 
@@ -42,10 +45,27 @@ const Header = () => {
               {link.label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link to="/admin" className="text-sm font-medium text-accent hover:text-accent/80 transition-colors">
+              Admin
+            </Link>
+          )}
         </nav>
 
         {/* Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {user ? (
+            <div className="hidden md:flex items-center gap-2">
+              <span className="text-xs text-muted-foreground truncate max-w-[120px]">{user.email}</span>
+              <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1 text-xs">
+                <LogOut className="h-3 w-3" /> Sign out
+              </Button>
+            </div>
+          ) : (
+            <Link to="/auth" className="hidden md:flex items-center gap-1 text-sm text-muted-foreground hover:text-primary transition-colors">
+              <LogIn className="h-4 w-4" /> Sign in
+            </Link>
+          )}
           <Link to="/cart" className="relative">
             <ShoppingCart className="h-5 w-5 text-foreground" />
             {totalItems > 0 && (
@@ -91,6 +111,20 @@ const Header = () => {
                   {link.label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-4 py-2 text-sm font-medium text-accent hover:bg-muted">
+                  Admin Panel
+                </Link>
+              )}
+              {user ? (
+                <button onClick={() => { signOut(); setMobileMenuOpen(false); }} className="rounded-md px-4 py-2 text-sm font-medium text-left text-foreground hover:bg-muted">
+                  Sign out
+                </button>
+              ) : (
+                <Link to="/auth" onClick={() => setMobileMenuOpen(false)} className="rounded-md px-4 py-2 text-sm font-medium text-primary hover:bg-muted">
+                  Sign in
+                </Link>
+              )}
             </nav>
           </motion.div>
         )}
