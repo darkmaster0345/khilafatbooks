@@ -1,35 +1,41 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, CheckCircle2, Copy, Phone } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const EASYPAISA_ACCOUNT = '03452867726';
 
 const Checkout = () => {
   const { items, subtotal, zakatEnabled, zakatAmount, total, clearCart } = useCart();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [step, setStep] = useState<'details' | 'payment' | 'done'>('details');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(user?.email || '');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const shipping = subtotal < 5000 ? 500 : 0;
   const grandTotal = total + shipping;
-
   const hasPhysical = items.some(i => i.product.type === 'physical');
 
   const handleScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setScreenshotFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setScreenshotPreview(reader.result as string);
       reader.readAsDataURL(file);
@@ -41,14 +47,64 @@ const Checkout = () => {
     toast({ title: 'Copied!', description: 'EasyPaisa account number copied to clipboard.' });
   };
 
-  const handleSubmitOrder = () => {
-    if (!screenshotPreview && !transactionId) {
+  const handleSubmitOrder = async () => {
+    if (!user) {
+      toast({ title: 'Please sign in', description: 'You need to be logged in to place an order.', variant: 'destructive' });
+      navigate('/auth');
+      return;
+    }
+    if (!screenshotFile && !transactionId) {
       toast({ title: 'Payment proof required', description: 'Please upload a screenshot or enter a transaction ID.', variant: 'destructive' });
       return;
     }
-    // In a real app this would save to a database
+    setSubmitting(true);
+
+    let screenshotPath: string | null = null;
+
+    // Upload screenshot to storage
+    if (screenshotFile) {
+      const ext = screenshotFile.name.split('.').pop();
+      const filePath = `${user.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('payment-proofs')
+        .upload(filePath, screenshotFile);
+      if (uploadError) {
+        toast({ title: 'Upload failed', description: uploadError.message, variant: 'destructive' });
+        setSubmitting(false);
+        return;
+      }
+      screenshotPath = filePath;
+    }
+
+    // Create order
+    const orderItems = items.map(i => ({ name: i.product.name, id: i.product.id, quantity: i.quantity, price: i.product.price, type: i.product.type }));
+
+    const { error } = await supabase.from('orders').insert({
+      user_id: user.id,
+      items: orderItems,
+      subtotal,
+      shipping,
+      zakat_amount: zakatAmount,
+      total: grandTotal,
+      status: 'pending',
+      payment_screenshot_url: screenshotPath,
+      transaction_id: transactionId || null,
+      customer_name: name,
+      customer_phone: phone,
+      customer_email: email || null,
+      delivery_address: address || null,
+      delivery_city: city || null,
+    } as any);
+
+    if (error) {
+      toast({ title: 'Order failed', description: error.message, variant: 'destructive' });
+      setSubmitting(false);
+      return;
+    }
+
     setStep('done');
     clearCart();
+    setSubmitting(false);
   };
 
   if (items.length === 0 && step !== 'done') {
@@ -155,7 +211,6 @@ const Checkout = () => {
 
           {step === 'payment' && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-              {/* EasyPaisa instructions */}
               <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-6">
                 <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
                   <Phone className="h-5 w-5 text-primary" /> EasyPaisa Payment
@@ -169,17 +224,16 @@ const Checkout = () => {
                     <Copy className="h-4 w-4" />
                   </button>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">Account Title: Barakah Store</p>
+                <p className="mt-2 text-xs text-muted-foreground">Account Title: Khilafat Books</p>
               </div>
 
-              {/* Upload screenshot */}
               <div>
                 <label className="text-sm font-medium text-foreground">Upload Payment Screenshot *</label>
                 <div className="mt-2 rounded-lg border-2 border-dashed border-border p-6 text-center">
                   {screenshotPreview ? (
                     <div className="space-y-2">
                       <img src={screenshotPreview} alt="Payment screenshot" className="mx-auto max-h-48 rounded-md" />
-                      <button onClick={() => setScreenshotPreview(null)} className="text-xs text-destructive hover:underline">Remove</button>
+                      <button onClick={() => { setScreenshotPreview(null); setScreenshotFile(null); }} className="text-xs text-destructive hover:underline">Remove</button>
                     </div>
                   ) : (
                     <label className="cursor-pointer flex flex-col items-center gap-2">
@@ -191,7 +245,6 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* Transaction ID */}
               <div>
                 <label className="text-sm font-medium text-foreground">Transaction ID (optional)</label>
                 <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1" />
@@ -199,8 +252,8 @@ const Checkout = () => {
 
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep('details')}>Back</Button>
-                <Button onClick={handleSubmitOrder} size="lg" className="gold-gradient border-0 text-foreground font-semibold">
-                  Submit Order
+                <Button onClick={handleSubmitOrder} size="lg" disabled={submitting} className="gold-gradient border-0 text-foreground font-semibold">
+                  {submitting ? 'Submitting...' : 'Submit Order'}
                 </Button>
               </div>
             </motion.div>

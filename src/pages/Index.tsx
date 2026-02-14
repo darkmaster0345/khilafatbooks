@@ -3,13 +3,13 @@ import { ArrowRight, ShieldCheck, Truck, Download, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
-import { products, categories } from '@/data/products';
+import { products } from '@/data/products';
 import heroBg from '@/assets/hero-bg.jpg';
 
 const features = [
   { icon: ShieldCheck, title: 'Halal Certified', desc: 'Every product is verified and certified halal' },
-  { icon: Truck, title: 'Global Shipping', desc: 'Delivering blessings worldwide with care' },
-  { icon: Download, title: 'Instant Downloads', desc: 'Digital products delivered immediately' },
+  { icon: Truck, title: 'Pakistan-wide Delivery', desc: 'Delivering across Pakistan with care' },
+  { icon: Download, title: 'Instant Downloads', desc: 'Digital products delivered after approval' },
   { icon: Heart, title: 'Zakat Donations', desc: 'Option to add Zakat at checkout' },
 ];
 
@@ -33,11 +33,11 @@ const Index = () => {
           >
             <p className="font-arabic text-lg text-gold-light mb-2">بسم الله الرحمن الرحيم</p>
             <h1 className="font-display text-4xl md:text-6xl font-bold text-primary-foreground leading-tight">
-              Ethically Sourced,{' '}
-              <span className="text-gold-gradient">Spiritually Inspired</span>
+              Knowledge with{' '}
+              <span className="text-gold-gradient">Barakah</span>
             </h1>
             <p className="mt-4 text-lg text-primary-foreground/80 max-w-lg">
-              Discover premium halal-certified products — from handcrafted prayer essentials to digital courses — all rooted in Islamic values.
+              Discover premium Islamic books, courses, and ethically sourced products — all rooted in authentic Islamic values.
             </p>
             <div className="mt-8 flex flex-wrap gap-4">
               <Button asChild size="lg" className="gold-gradient border-0 text-foreground font-semibold">
@@ -97,10 +97,10 @@ const Index = () => {
       <section className="emerald-gradient geometric-pattern-dense">
         <div className="container mx-auto px-4 py-16 text-center">
           <h2 className="font-display text-3xl font-bold text-primary-foreground">
-            Shop with <span className="text-gold-gradient">Purpose</span>
+            Read with <span className="text-gold-gradient">Purpose</span>
           </h2>
           <p className="mt-3 text-primary-foreground/80 max-w-md mx-auto">
-            Every purchase supports ethical sourcing and fair trade. Add Zakat at checkout to amplify your impact.
+            Every purchase supports ethical sourcing and Islamic knowledge. Add Zakat at checkout to amplify your impact.
           </p>
           <Button asChild size="lg" className="mt-6 gold-gradient border-0 text-foreground font-semibold">
             <Link to="/shop">Explore Collection</Link>
