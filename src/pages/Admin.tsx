@@ -1,214 +1,163 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { CheckCircle2, Clock, Eye, Package, XCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import {
+  LayoutDashboard, ShoppingBag, Truck, Package, BarChart3,
+  CreditCard, Tag, Users, Palette, Puzzle, Settings,
+  ChevronLeft, ChevronRight, LogOut, Store,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { formatPKR } from '@/lib/currency';
-import { useToast } from '@/hooks/use-toast';
+import AdminDashboard from '@/components/admin/AdminDashboard';
+import AdminOrders from '@/components/admin/AdminOrders';
+import AdminShipping from '@/components/admin/AdminShipping';
+import AdminProducts from '@/components/admin/AdminProducts';
+import AdminAnalytics from '@/components/admin/AdminAnalytics';
+import AdminPayments from '@/components/admin/AdminPayments';
+import AdminDiscounts from '@/components/admin/AdminDiscounts';
+import AdminAudience from '@/components/admin/AdminAudience';
+import AdminAppearance from '@/components/admin/AdminAppearance';
+import AdminPlugins from '@/components/admin/AdminPlugins';
+import AdminSettings from '@/components/admin/AdminSettings';
 
-interface Order {
-  id: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_email: string | null;
-  items: any;
-  total: number;
-  status: string;
-  payment_screenshot_url: string | null;
-  transaction_id: string | null;
-  delivery_address: string | null;
-  delivery_city: string | null;
-  created_at: string;
-}
+type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'appearance' | 'plugins' | 'settings';
 
-const statusColors: Record<string, string> = {
-  pending: 'bg-accent/20 text-accent-foreground',
-  approved: 'bg-primary/20 text-primary',
-  rejected: 'bg-destructive/20 text-destructive',
+const navItems: { id: Section; label: string; icon: any }[] = [
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'orders', label: 'Orders', icon: ShoppingBag },
+  { id: 'shipping', label: 'Shipping', icon: Truck },
+  { id: 'products', label: 'Products', icon: Package },
+  { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'payments', label: 'Payments', icon: CreditCard },
+  { id: 'discounts', label: 'Discounts', icon: Tag },
+  { id: 'audience', label: 'Audience', icon: Users },
+  { id: 'appearance', label: 'Appearance', icon: Palette },
+  { id: 'plugins', label: 'Plugins', icon: Puzzle },
+  { id: 'settings', label: 'Settings', icon: Settings },
+];
+
+const sectionComponents: Record<Section, React.FC> = {
+  dashboard: AdminDashboard,
+  orders: AdminOrders,
+  shipping: AdminShipping,
+  products: AdminProducts,
+  analytics: AdminAnalytics,
+  payments: AdminPayments,
+  discounts: AdminDiscounts,
+  audience: AdminAudience,
+  appearance: AdminAppearance,
+  plugins: AdminPlugins,
+  settings: AdminSettings,
 };
 
 const Admin = () => {
-  const { user, loading, isAdmin } = useAuth();
-  const { toast } = useToast();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loadingOrders, setLoadingOrders] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
+  const { user, loading, isAdmin, signOut } = useAuth();
+  const [activeSection, setActiveSection] = useState<Section>('dashboard');
+  const [collapsed, setCollapsed] = useState(false);
 
-  useEffect(() => {
-    if (isAdmin) fetchOrders();
-  }, [isAdmin]);
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full emerald-gradient mx-auto mb-3">
+            <span className="font-arabic text-lg text-primary-foreground">ك</span>
+          </div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const fetchOrders = async () => {
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*')
-      .order('created_at', { ascending: false });
-    if (!error && data) setOrders(data as unknown as Order[]);
-    setLoadingOrders(false);
-  };
-
-  const viewScreenshot = async (order: Order) => {
-    setSelectedOrder(order);
-    if (order.payment_screenshot_url) {
-      const { data } = await supabase.storage
-        .from('payment-proofs')
-        .createSignedUrl(order.payment_screenshot_url, 300);
-      setScreenshotUrl(data?.signedUrl ?? null);
-    } else {
-      setScreenshotUrl(null);
-    }
-  };
-
-  const updateStatus = async (orderId: string, status: string) => {
-    const { error } = await supabase
-      .from('orders')
-      .update({ status } as any)
-      .eq('id', orderId);
-    if (error) {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Updated', description: `Order marked as ${status}` });
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
-      setSelectedOrder(null);
-    }
-  };
-
-  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isAdmin) return (
-    <main className="container mx-auto px-4 py-16 text-center">
-      <h1 className="font-display text-2xl font-bold text-foreground">Access Denied</h1>
-      <p className="mt-2 text-muted-foreground">You do not have admin privileges.</p>
-    </main>
-  );
+
+  if (!isAdmin) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="text-center">
+          <h1 className="font-display text-2xl font-bold text-foreground">Access Denied</h1>
+          <p className="mt-2 text-muted-foreground">You do not have admin privileges.</p>
+          <Button variant="outline" onClick={() => window.history.back()} className="mt-4">Go Back</Button>
+        </div>
+      </div>
+    );
+  }
+
+  const ActiveComponent = sectionComponents[activeSection];
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <p className="text-xs uppercase tracking-wider text-accent">Admin Panel</p>
-        <h1 className="font-display text-3xl font-bold text-foreground">Order Management</h1>
-      </div>
-
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-3 mb-8">
-        {[
-          { label: 'Pending', count: orders.filter(o => o.status === 'pending').length, icon: Clock, color: 'text-accent' },
-          { label: 'Approved', count: orders.filter(o => o.status === 'approved').length, icon: CheckCircle2, color: 'text-primary' },
-          { label: 'Total Orders', count: orders.length, icon: Package, color: 'text-foreground' },
-        ].map(s => (
-          <div key={s.label} className="rounded-lg border border-border bg-card p-4 flex items-center gap-3">
-            <s.icon className={`h-8 w-8 ${s.color}`} />
-            <div>
-              <p className="text-2xl font-bold font-display text-foreground">{s.count}</p>
-              <p className="text-xs text-muted-foreground">{s.label}</p>
+    <div className="flex min-h-screen bg-background">
+      {/* Sidebar */}
+      <aside className={`${collapsed ? 'w-16' : 'w-64'} border-r border-border bg-card flex flex-col transition-all duration-300 shrink-0 sticky top-0 h-screen`}>
+        {/* Logo */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full emerald-gradient shrink-0">
+              <span className="font-arabic text-sm text-primary-foreground">ك</span>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Orders Table */}
-      {loadingOrders ? (
-        <p className="text-muted-foreground">Loading orders...</p>
-      ) : orders.length === 0 ? (
-        <p className="text-muted-foreground text-center py-16">No orders yet.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead className="bg-muted">
-              <tr>
-                <th className="text-left px-4 py-3 font-medium text-foreground">Customer</th>
-                <th className="text-left px-4 py-3 font-medium text-foreground">Total</th>
-                <th className="text-left px-4 py-3 font-medium text-foreground">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-foreground">TRX ID</th>
-                <th className="text-left px-4 py-3 font-medium text-foreground">Date</th>
-                <th className="text-left px-4 py-3 font-medium text-foreground">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map(order => (
-                <tr key={order.id} className="border-t border-border hover:bg-muted/50">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{order.customer_name}</p>
-                    <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
-                  </td>
-                  <td className="px-4 py-3 font-medium text-foreground">{formatPKR(order.total)}</td>
-                  <td className="px-4 py-3">
-                    <Badge className={statusColors[order.status] || 'bg-muted'}>{order.status}</Badge>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{order.transaction_id || '—'}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</td>
-                  <td className="px-4 py-3">
-                    <Button size="sm" variant="outline" onClick={() => viewScreenshot(order)} className="gap-1">
-                      <Eye className="h-3 w-3" /> View
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {/* Order Detail Modal */}
-      {selectedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4" onClick={() => setSelectedOrder(null)}>
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            onClick={e => e.stopPropagation()}
-            className="w-full max-w-lg rounded-lg bg-card border border-border p-6 max-h-[80vh] overflow-y-auto"
-          >
-            <h2 className="font-display text-xl font-bold text-foreground mb-4">Order Details</h2>
-            <div className="space-y-3 text-sm">
-              <div><span className="text-muted-foreground">Customer:</span> <span className="text-foreground font-medium">{selectedOrder.customer_name}</span></div>
-              <div><span className="text-muted-foreground">Phone:</span> <span className="text-foreground">{selectedOrder.customer_phone}</span></div>
-              {selectedOrder.customer_email && <div><span className="text-muted-foreground">Email:</span> <span className="text-foreground">{selectedOrder.customer_email}</span></div>}
-              {selectedOrder.delivery_address && <div><span className="text-muted-foreground">Address:</span> <span className="text-foreground">{selectedOrder.delivery_address}, {selectedOrder.delivery_city}</span></div>}
-              <div><span className="text-muted-foreground">Total:</span> <span className="text-foreground font-bold">{formatPKR(selectedOrder.total)}</span></div>
-              <div><span className="text-muted-foreground">TRX ID:</span> <span className="text-foreground">{selectedOrder.transaction_id || 'Not provided'}</span></div>
-              <div><span className="text-muted-foreground">Status:</span> <Badge className={statusColors[selectedOrder.status] || 'bg-muted'}>{selectedOrder.status}</Badge></div>
-
-              {/* Items */}
-              <div>
-                <p className="text-muted-foreground mb-1">Items:</p>
-                <ul className="space-y-1">
-                  {(Array.isArray(selectedOrder.items) ? selectedOrder.items : []).map((item: any, i: number) => (
-                    <li key={i} className="text-foreground">{item.name} × {item.quantity} — {formatPKR(item.price * item.quantity)}</li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Screenshot */}
-              <div>
-                <p className="text-muted-foreground mb-1">Payment Proof:</p>
-                {screenshotUrl ? (
-                  <img src={screenshotUrl} alt="Payment proof" className="max-h-64 rounded-md border border-border" />
-                ) : (
-                  <p className="text-muted-foreground italic">No screenshot uploaded</p>
-                )}
-              </div>
-            </div>
-
-            {selectedOrder.status === 'pending' && (
-              <div className="mt-6 flex gap-3">
-                <Button onClick={() => updateStatus(selectedOrder.id, 'approved')} className="gap-1">
-                  <CheckCircle2 className="h-4 w-4" /> Release Product
-                </Button>
-                <Button variant="destructive" onClick={() => updateStatus(selectedOrder.id, 'rejected')} className="gap-1">
-                  <XCircle className="h-4 w-4" /> Reject
-                </Button>
+            {!collapsed && (
+              <div className="overflow-hidden">
+                <h1 className="font-display text-sm font-bold text-foreground leading-tight truncate">Khilafat Books</h1>
+                <p className="text-[9px] uppercase tracking-wider text-muted-foreground">Admin Portal</p>
               </div>
             )}
-
-            <Button variant="outline" onClick={() => setSelectedOrder(null)} className="mt-4 w-full">Close</Button>
-          </motion.div>
+          </div>
         </div>
-      )}
-    </main>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
+          {navItems.map(item => {
+            const isActive = activeSection === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`w-full flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+                title={collapsed ? item.label : undefined}
+              >
+                <item.icon className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Bottom section */}
+        <div className="border-t border-border p-2 space-y-1">
+          <a
+            href="/"
+            className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title={collapsed ? 'View Store' : undefined}
+          >
+            <Store className="h-4 w-4 shrink-0" />
+            {!collapsed && <span>View Store</span>}
+          </a>
+          <button
+            onClick={() => signOut()}
+            className="w-full flex items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title={collapsed ? 'Sign Out' : undefined}
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            {!collapsed && <span>Sign Out</span>}
+          </button>
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className="w-full flex items-center justify-center rounded-md py-2 text-muted-foreground hover:bg-muted transition-colors"
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-auto">
+        <div className="p-6 lg:p-8 max-w-7xl">
+          <ActiveComponent />
+        </div>
+      </main>
+    </div>
   );
 };
 

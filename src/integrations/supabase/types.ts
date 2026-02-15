@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      discounts: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          max_uses: number | null
+          min_order_amount: number | null
+          starts_at: string | null
+          type: string
+          updated_at: string
+          used_count: number | null
+          value: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order_amount?: number | null
+          starts_at?: string | null
+          type?: string
+          updated_at?: string
+          used_count?: number | null
+          value?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_uses?: number | null
+          min_order_amount?: number | null
+          starts_at?: string | null
+          type?: string
+          updated_at?: string
+          used_count?: number | null
+          value?: number
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           created_at: string
@@ -25,10 +73,13 @@ export type Database = {
           id: string
           items: Json
           payment_screenshot_url: string | null
+          shipped_at: string | null
           shipping: number
+          shipping_status: string | null
           status: string
           subtotal: number
           total: number
+          tracking_number: string | null
           transaction_id: string | null
           updated_at: string
           user_id: string
@@ -44,10 +95,13 @@ export type Database = {
           id?: string
           items: Json
           payment_screenshot_url?: string | null
+          shipped_at?: string | null
           shipping?: number
+          shipping_status?: string | null
           status?: string
           subtotal: number
           total: number
+          tracking_number?: string | null
           transaction_id?: string | null
           updated_at?: string
           user_id: string
@@ -63,10 +117,13 @@ export type Database = {
           id?: string
           items?: Json
           payment_screenshot_url?: string | null
+          shipped_at?: string | null
           shipping?: number
+          shipping_status?: string | null
           status?: string
           subtotal?: number
           total?: number
+          tracking_number?: string | null
           transaction_id?: string | null
           updated_at?: string
           user_id?: string
@@ -101,6 +158,27 @@ export type Database = {
           phone?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      store_settings: {
+        Row: {
+          id: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          id?: string
+          key: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          id?: string
+          key?: string
+          updated_at?: string
+          value?: Json
         }
         Relationships: []
       }
