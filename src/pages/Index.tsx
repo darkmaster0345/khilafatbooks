@@ -3,7 +3,7 @@ import { ArrowRight, ShieldCheck, Truck, Download, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
-import { products } from '@/data/products';
+import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 import heroBg from '@/assets/hero-bg.jpg';
 
 const features = [
@@ -14,7 +14,8 @@ const features = [
 ];
 
 const Index = () => {
-  const featured = products.slice(0, 6);
+  const { products, loading } = useProducts();
+  const featured = products.slice(0, 6).map(toLegacyProduct);
 
   return (
     <main>
@@ -86,11 +87,15 @@ const Index = () => {
             View All <ArrowRight className="h-3 w-3" />
           </Link>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {featured.map((product, i) => (
-            <ProductCard key={product.id} product={product} index={i} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="py-16 text-center text-muted-foreground">Loading...</div>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featured.map((product, i) => (
+              <ProductCard key={product.id} product={product} index={i} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* CTA */}

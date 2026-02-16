@@ -1,15 +1,66 @@
-import { useState } from 'react';
-import { Package, Star, Edit, Eye, Search, Filter } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Package, Plus, Edit, Trash2, Search, Save, X, Upload, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { products, categories, type Product } from '@/data/products';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useProducts, Product, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 
+type ProductForm = {
+  name: string;
+  name_ar: string;
+  description: string;
+  price: string;
+  original_price: string;
+  category: string;
+  type: string;
+  is_new: boolean;
+  is_halal: boolean;
+  ethical_source: string;
+  in_stock: boolean;
+  rating: string;
+  reviews: string;
+};
+
+const emptyForm: ProductForm = {
+  name: '', name_ar: '', description: '', price: '', original_price: '',
+  category: 'Uncategorized', type: 'physical', is_new: false, is_halal: false,
+  ethical_source: '', in_stock: true, rating: '0', reviews: '0',
+};
+
+const formFromProduct = (p: Product): ProductForm => ({
+  name: p.name,
+  name_ar: p.name_ar || '',
+  description: p.description,
+  price: String(p.price),
+  original_price: p.original_price ? String(p.original_price) : '',
+  category: p.category,
+  type: p.type,
+  is_new: p.is_new,
+  is_halal: p.is_halal,
+  ethical_source: p.ethical_source || '',
+  in_stock: p.in_stock,
+  rating: String(p.rating),
+  reviews: String(p.reviews),
+});
+
 const AdminProducts = () => {
+  const { toast } = useToast();
+  const { products, loading, refetch } = useProducts();
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [mode, setMode] = useState<'list' | 'add' | 'edit'>('list');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<ProductForm>(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [digitalFile, setDigitalFile] = useState<File | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const digitalInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -17,8 +68,276 @@ const AdminProducts = () => {
     return matchSearch && matchCategory;
   });
 
-  const totalValue = products.reduce((sum, p) => sum + p.price, 0);
-  const inStock = products.filter(p => p.inStock).length;
+  const allCategories = ['All', ...PRODUCT_CATEGORIES];
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDigitalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) setDigitalFile(file);
+  };
+
+  const openAdd = () => {
+    setForm(emptyForm);
+    setImageFile(null);
+    setImagePreview(null);
+    setDigitalFile(null);
+    setEditingId(null);
+    setMode('add');
+  };
+
+  const openEdit = (p: Product) => {
+    setForm(formFromProduct(p));
+    setEditingId(p.id);
+    setImageFile(null);
+    setImagePreview(p.image_url || null);
+    setDigitalFile(null);
+    setMode('edit');
+  };
+
+  const handleSave = async () => {
+    if (!form.name || !form.price) {
+      toast({ title: 'Required', description: 'Name and price are required.', variant: 'destructive' });
+      return;
+    }
+    setSaving(true);
+
+    let image_url: string | undefined;
+    let digital_file_url: string | undefined;
+
+    // Upload product image
+    if (imageFile) {
+      const ext = imageFile.name.split('.').pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('product-images').upload(path, imageFile);
+      if (upErr) {
+        toast({ title: 'Image upload failed', description: upErr.message, variant: 'destructive' });
+        setSaving(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(path);
+      image_url = urlData.publicUrl;
+    }
+
+    // Upload digital file
+    if (digitalFile) {
+      const ext = digitalFile.name.split('.').pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('digital-products').upload(path, digitalFile);
+      if (upErr) {
+        toast({ title: 'Digital file upload failed', description: upErr.message, variant: 'destructive' });
+        setSaving(false);
+        return;
+      }
+      digital_file_url = path;
+    }
+
+    const payload: any = {
+      name: form.name,
+      name_ar: form.name_ar || null,
+      description: form.description,
+      price: parseInt(form.price) || 0,
+      original_price: form.original_price ? parseInt(form.original_price) : null,
+      category: form.category,
+      type: form.type,
+      is_new: form.is_new,
+      is_halal: form.is_halal,
+      ethical_source: form.ethical_source || null,
+      in_stock: form.in_stock,
+      rating: parseFloat(form.rating) || 0,
+      reviews: parseInt(form.reviews) || 0,
+    };
+
+    if (image_url) payload.image_url = image_url;
+    if (digital_file_url) payload.digital_file_url = digital_file_url;
+
+    if (mode === 'edit' && editingId) {
+      const { error } = await supabase.from('products').update(payload).eq('id', editingId);
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Updated', description: 'Product updated successfully.' });
+        setMode('list');
+      }
+    } else {
+      if (!image_url) payload.image_url = '/placeholder.svg';
+      const { error } = await supabase.from('products').insert(payload);
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Added', description: 'Product added successfully.' });
+        setMode('list');
+      }
+    }
+
+    setSaving(false);
+    refetch();
+  };
+
+  const handleDelete = async (id: string) => {
+    setDeleting(id);
+    const { error } = await supabase.from('products').delete().eq('id', id);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Deleted', description: 'Product removed successfully.' });
+      refetch();
+    }
+    setDeleting(null);
+  };
+
+  const updateField = (key: keyof ProductForm, value: any) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+  };
+
+  // Product form view
+  if (mode !== 'list') {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-2xl font-bold text-foreground">
+            {mode === 'add' ? 'Add Product' : 'Edit Product'}
+          </h2>
+          <Button variant="ghost" onClick={() => setMode('list')}><X className="h-4 w-4 mr-1" /> Cancel</Button>
+        </div>
+
+        <div className="rounded-lg border border-border bg-card p-5 space-y-5">
+          {/* Basic info */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="text-sm font-medium text-foreground">Product Name *</label>
+              <Input value={form.name} onChange={e => updateField('name', e.target.value)} className="mt-1" placeholder="e.g. Premium Tasbih" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Arabic Name</label>
+              <Input value={form.name_ar} onChange={e => updateField('name_ar', e.target.value)} className="mt-1 font-arabic" placeholder="الاسم بالعربية" dir="rtl" />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground">Description</label>
+            <textarea
+              value={form.description}
+              onChange={e => updateField('description', e.target.value)}
+              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground min-h-[100px]"
+              placeholder="Product description..."
+            />
+          </div>
+
+          {/* Price & Category */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="text-sm font-medium text-foreground">Price (PKR) *</label>
+              <Input value={form.price} onChange={e => updateField('price', e.target.value)} type="number" className="mt-1" placeholder="4999" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Original Price (for discount)</label>
+              <Input value={form.original_price} onChange={e => updateField('original_price', e.target.value)} type="number" className="mt-1" placeholder="6500" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Category</label>
+              <select
+                value={form.category}
+                onChange={e => updateField('category', e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+              >
+                {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Type */}
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div>
+              <label className="text-sm font-medium text-foreground">Product Type</label>
+              <select
+                value={form.type}
+                onChange={e => updateField('type', e.target.value)}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+              >
+                <option value="physical">📦 Physical</option>
+                <option value="digital">💾 Digital</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Rating</label>
+              <Input value={form.rating} onChange={e => updateField('rating', e.target.value)} type="number" step="0.1" min="0" max="5" className="mt-1" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Reviews Count</label>
+              <Input value={form.reviews} onChange={e => updateField('reviews', e.target.value)} type="number" className="mt-1" />
+            </div>
+          </div>
+
+          {/* Toggles */}
+          <div className="flex flex-wrap gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.in_stock} onChange={e => updateField('in_stock', e.target.checked)} className="rounded border-input" />
+              <span className="text-sm text-foreground">In Stock</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.is_new} onChange={e => updateField('is_new', e.target.checked)} className="rounded border-input" />
+              <span className="text-sm text-foreground">New Arrival</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" checked={form.is_halal} onChange={e => updateField('is_halal', e.target.checked)} className="rounded border-input" />
+              <span className="text-sm text-foreground">Halal Certified</span>
+            </label>
+          </div>
+
+          <div>
+            <label className="text-sm font-medium text-foreground">Ethical Sourcing Note</label>
+            <Input value={form.ethical_source} onChange={e => updateField('ethical_source', e.target.value)} className="mt-1" placeholder="e.g. Fair-trade certified" />
+          </div>
+
+          {/* Image upload */}
+          <div>
+            <label className="text-sm font-medium text-foreground">Product Image</label>
+            <div className="mt-2 flex items-start gap-4">
+              {imagePreview && (
+                <img src={imagePreview} alt="Preview" className="h-24 w-24 rounded-md object-cover border border-border" />
+              )}
+              <div>
+                <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                <Button type="button" variant="outline" size="sm" onClick={() => imageInputRef.current?.click()} className="gap-1">
+                  <Upload className="h-3 w-3" /> {imagePreview ? 'Change Image' : 'Upload Image'}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Digital file upload (only for digital products) */}
+          {form.type === 'digital' && (
+            <div>
+              <label className="text-sm font-medium text-foreground">Digital File (PDF, ZIP, etc.)</label>
+              <div className="mt-2">
+                <input ref={digitalInputRef} type="file" onChange={handleDigitalFileChange} className="hidden" />
+                <Button type="button" variant="outline" size="sm" onClick={() => digitalInputRef.current?.click()} className="gap-1">
+                  <Download className="h-3 w-3" /> {digitalFile ? digitalFile.name : 'Upload Digital File'}
+                </Button>
+                {digitalFile && <span className="ml-2 text-xs text-muted-foreground">{digitalFile.name}</span>}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Button onClick={handleSave} disabled={saving} className="gap-1">
+          <Save className="h-4 w-4" /> {saving ? 'Saving...' : mode === 'add' ? 'Add Product' : 'Save Changes'}
+        </Button>
+      </div>
+    );
+  }
+
+  // List view
+  const inStock = products.filter(p => p.in_stock).length;
   const digitalCount = products.filter(p => p.type === 'digital').length;
 
   return (
@@ -28,6 +347,7 @@ const AdminProducts = () => {
           <h2 className="font-display text-2xl font-bold text-foreground">Products</h2>
           <p className="text-sm text-muted-foreground">Manage your product catalog.</p>
         </div>
+        <Button onClick={openAdd} className="gap-1"><Plus className="h-4 w-4" /> Add Product</Button>
       </div>
 
       {/* Stats */}
@@ -57,7 +377,7 @@ const AdminProducts = () => {
           <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
         </div>
         <div className="flex gap-2 flex-wrap">
-          {categories.map(c => (
+          {allCategories.map(c => (
             <Button key={c} variant={categoryFilter === c ? 'default' : 'outline'} size="sm" onClick={() => setCategoryFilter(c)}>
               {c}
             </Button>
@@ -65,63 +385,54 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      {/* Products Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filtered.map(product => (
-          <div key={product.id} className="rounded-lg border border-border bg-card overflow-hidden hover:shadow-md transition-shadow">
-            <div className="aspect-square relative">
-              <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
-              <div className="absolute top-2 right-2 flex gap-1">
-                {product.isNew && <Badge className="bg-accent text-accent-foreground text-xs">New</Badge>}
-                <Badge variant="outline" className="text-xs bg-card/80 backdrop-blur-sm">{product.type}</Badge>
-              </div>
-            </div>
-            <div className="p-4">
-              <h3 className="font-display font-semibold text-foreground text-sm">{product.name}</h3>
-              <p className="text-xs text-muted-foreground mt-1">{product.category}</p>
-              <div className="mt-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-foreground">{formatPKR(product.price)}</span>
-                  {product.originalPrice && (
-                    <span className="text-xs text-muted-foreground line-through">{formatPKR(product.originalPrice)}</span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Star className="h-3 w-3 fill-accent text-accent" />
-                  {product.rating}
+      {loading ? (
+        <div className="py-16 text-center text-muted-foreground">Loading products...</div>
+      ) : filtered.length === 0 ? (
+        <div className="py-16 text-center text-muted-foreground">No products found.</div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map(product => (
+            <div key={product.id} className="rounded-lg border border-border bg-card overflow-hidden hover:shadow-md transition-shadow">
+              <div className="aspect-square relative">
+                <img src={product.image_url || '/placeholder.svg'} alt={product.name} className="w-full h-full object-cover" />
+                <div className="absolute top-2 right-2 flex gap-1">
+                  {product.is_new && <Badge className="bg-accent text-accent-foreground text-xs">New</Badge>}
+                  <Badge variant="outline" className="text-xs bg-card/80 backdrop-blur-sm">{product.type}</Badge>
                 </div>
               </div>
-              <div className="mt-3 flex items-center justify-between">
-                <Badge className={product.inStock ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'}>
-                  {product.inStock ? 'In Stock' : 'Out of Stock'}
-                </Badge>
-                <Button size="sm" variant="ghost" onClick={() => setSelectedProduct(product)} className="gap-1 text-xs">
-                  <Eye className="h-3 w-3" /> Details
-                </Button>
+              <div className="p-4">
+                <h3 className="font-display font-semibold text-foreground text-sm">{product.name}</h3>
+                <p className="text-xs text-muted-foreground mt-1">{product.category}</p>
+                <div className="mt-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-foreground">{formatPKR(product.price)}</span>
+                    {product.original_price && (
+                      <span className="text-xs text-muted-foreground line-through">{formatPKR(product.original_price)}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <Badge className={product.in_stock ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'}>
+                    {product.in_stock ? 'In Stock' : 'Out of Stock'}
+                  </Badge>
+                  <div className="flex gap-1">
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(product)} className="gap-1 text-xs">
+                      <Edit className="h-3 w-3" /> Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(product.id)}
+                      disabled={deleting === product.id}
+                      className="gap-1 text-xs text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" /> {deleting === product.id ? '...' : 'Delete'}
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Product Detail Modal */}
-      {selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4" onClick={() => setSelectedProduct(null)}>
-          <div onClick={e => e.stopPropagation()} className="w-full max-w-md rounded-lg bg-card border border-border p-6 max-h-[80vh] overflow-y-auto">
-            <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-48 object-cover rounded-md mb-4" />
-            <h2 className="font-display text-xl font-bold text-foreground">{selectedProduct.name}</h2>
-            {selectedProduct.nameAr && <p className="font-arabic text-sm text-muted-foreground">{selectedProduct.nameAr}</p>}
-            <p className="mt-2 text-sm text-muted-foreground">{selectedProduct.description}</p>
-            <div className="mt-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Price:</span><span className="font-bold text-foreground">{formatPKR(selectedProduct.price)}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Category:</span><span className="text-foreground">{selectedProduct.category}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Type:</span><span className="text-foreground capitalize">{selectedProduct.type}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Rating:</span><span className="text-foreground">{selectedProduct.rating} ({selectedProduct.reviews} reviews)</span></div>
-              {selectedProduct.isHalal && <div className="flex justify-between"><span className="text-muted-foreground">Halal:</span><span className="text-primary">✓ Certified</span></div>}
-              {selectedProduct.ethicalSource && <div className="flex justify-between"><span className="text-muted-foreground">Sourcing:</span><span className="text-foreground text-xs">{selectedProduct.ethicalSource}</span></div>}
-            </div>
-            <Button variant="outline" onClick={() => setSelectedProduct(null)} className="mt-4 w-full">Close</Button>
-          </div>
+          ))}
         </div>
       )}
     </div>

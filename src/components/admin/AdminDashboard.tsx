@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { DollarSign, ShoppingBag, Users, Package, TrendingUp, ArrowUpRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPKR } from '@/lib/currency';
-import { products } from '@/data/products';
+import { useProducts } from '@/hooks/useProducts';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Order {
@@ -16,6 +16,7 @@ interface Order {
 const AdminDashboard = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const { products } = useProducts();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -50,7 +51,7 @@ const AdminDashboard = () => {
     { label: 'Total Revenue', value: formatPKR(totalRevenue), icon: DollarSign, change: '+12%', color: 'text-primary' },
     { label: 'Total Orders', value: orders.length, icon: ShoppingBag, change: `${pendingOrders} pending`, color: 'text-accent' },
     { label: 'Customers', value: uniqueCustomers, icon: Users, change: '+3 new', color: 'text-emerald-light' },
-    { label: 'Products', value: products.length, icon: Package, change: `${products.filter(p => p.inStock).length} in stock`, color: 'text-gold' },
+    { label: 'Products', value: products.length, icon: Package, change: `${products.filter(p => p.in_stock).length} in stock`, color: 'text-gold' },
   ];
 
   return (

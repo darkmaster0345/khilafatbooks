@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Download, Star, BadgeCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Product } from '@/data/products';
+import { LegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPKR } from '@/lib/currency';
 
-const ProductCard = ({ product, index = 0 }: { product: Product; index?: number }) => {
+const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: number }) => {
   const { addItem } = useCart();
 
   return (

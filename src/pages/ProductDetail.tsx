@@ -3,14 +3,24 @@ import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield } fr
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { products } from '@/data/products';
+import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
 import { formatPKR } from '@/lib/currency';
 
 const ProductDetail = () => {
   const { id } = useParams();
-  const product = products.find(p => p.id === id);
+  const { products, loading } = useProducts();
+  const found = products.find(p => p.id === id);
+  const product = found ? toLegacyProduct(found) : null;
   const { addItem } = useCart();
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -30,7 +40,6 @@ const ProductDetail = () => {
       </Link>
 
       <div className="grid gap-8 md:grid-cols-2">
-        {/* Image */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -45,7 +54,6 @@ const ProductDetail = () => {
           </div>
         </motion.div>
 
-        {/* Info */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -75,7 +83,6 @@ const ProductDetail = () => {
 
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">{product.description}</p>
 
-          {/* Badges */}
           <div className="mt-6 space-y-3">
             {product.isHalal && (
               <div className="flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
