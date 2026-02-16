@@ -1,14 +1,16 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Product } from '@/data/products';
+import { LegacyProduct } from '@/hooks/useProducts';
+
+export type { LegacyProduct as Product } from '@/hooks/useProducts';
 
 export interface CartItem {
-  product: Product;
+  product: LegacyProduct;
   quantity: number;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product) => void;
+  addItem: (product: LegacyProduct) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;
@@ -26,7 +28,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [items, setItems] = useState<CartItem[]>([]);
   const [zakatEnabled, setZakatEnabled] = useState(false);
 
-  const addItem = useCallback((product: Product) => {
+  const addItem = useCallback((product: LegacyProduct) => {
     setItems(prev => {
       const existing = prev.find(i => i.product.id === product.id);
       if (existing) {

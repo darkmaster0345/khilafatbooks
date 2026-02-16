@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import {
   LayoutDashboard, ShoppingBag, Truck, Package, BarChart3,
-  CreditCard, Tag, Users, Palette, Puzzle, Settings,
+  CreditCard, Tag, Users, Puzzle, Settings,
   ChevronLeft, ChevronRight, LogOut, Store,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,11 +15,10 @@ import AdminAnalytics from '@/components/admin/AdminAnalytics';
 import AdminPayments from '@/components/admin/AdminPayments';
 import AdminDiscounts from '@/components/admin/AdminDiscounts';
 import AdminAudience from '@/components/admin/AdminAudience';
-import AdminAppearance from '@/components/admin/AdminAppearance';
 import AdminPlugins from '@/components/admin/AdminPlugins';
 import AdminSettings from '@/components/admin/AdminSettings';
 
-type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'appearance' | 'plugins' | 'settings';
+type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings';
 
 const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,7 +29,6 @@ const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'payments', label: 'Payments', icon: CreditCard },
   { id: 'discounts', label: 'Discounts', icon: Tag },
   { id: 'audience', label: 'Audience', icon: Users },
-  { id: 'appearance', label: 'Appearance', icon: Palette },
   { id: 'plugins', label: 'Plugins', icon: Puzzle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -44,7 +42,6 @@ const sectionComponents: Record<Section, React.FC> = {
   payments: AdminPayments,
   discounts: AdminDiscounts,
   audience: AdminAudience,
-  appearance: AdminAppearance,
   plugins: AdminPlugins,
   settings: AdminSettings,
 };
