@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Truck, Package, MapPin, CheckCircle2 } from 'lucide-react';
+import { Truck, Package, MapPin, CheckCircle2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -48,6 +48,28 @@ const AdminShipping = () => {
   };
 
   const physicalOrders = orders.filter(o => hasPhysicalItems(o.items));
+
+  const sendWhatsAppUpdate = (order: Order) => {
+    const phone = order.customer_phone.replace(/\D/g, '');
+    const formattedPhone = phone.startsWith('0') ? '92' + phone.slice(1) : phone;
+
+    let message = `Asalam-o-Alaikum ${order.customer_name},\n\n`;
+
+    if (order.shipping_status === 'shipped') {
+      message += `Great news! Your order from Khilafat Books has been shipped. 🚚\n\n`;
+      if (order.tracking_number) {
+        message += `Tracking Number: ${order.tracking_number}\n`;
+      }
+      message += `\nYou can track your order on the courier's website. Thank you for shopping with us!`;
+    } else if (order.shipping_status === 'processing') {
+      message += `Your order from Khilafat Books is now being processed and will be shipped soon. 📦`;
+    } else if (order.shipping_status === 'delivered') {
+      message += `Your order from Khilafat Books has been delivered. We hope you enjoy your purchase! 😊`;
+    }
+
+    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
 
   const updateShipping = async (orderId: string, shippingStatus: string) => {
     const updates: any = { shipping_status: shippingStatus };
@@ -162,11 +184,19 @@ const AdminShipping = () => {
                   )}
                 </div>
               )}
-              {order.shipping_status === 'shipped' && (
-                <Button size="sm" variant="outline" onClick={() => updateShipping(order.id, 'delivered')} className="gap-1">
-                  <CheckCircle2 className="h-3 w-3" /> Mark Delivered
-                </Button>
-              )}
+              <div className="flex flex-wrap gap-2 mt-2">
+                {order.shipping_status && order.shipping_status !== 'pending' && (
+                  <Button size="sm" variant="secondary" onClick={() => sendWhatsAppUpdate(order)} className="gap-1 bg-green-600 hover:bg-green-700 text-white border-0">
+                    <MessageSquare className="h-3.5 w-3.5" /> Notify WhatsApp
+                  </Button>
+                )}
+
+                {order.shipping_status === 'shipped' && (
+                  <Button size="sm" variant="outline" onClick={() => updateShipping(order.id, 'delivered')} className="gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Mark Delivered
+                  </Button>
+                )}
+              </div>
             </div>
           ))}
         </div>

@@ -1,7 +1,7 @@
 import { MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const WHATSAPP_NUMBER = '923452867726';
+const WHATSAPP_NUMBER = '923352706540';
 const MESSAGE = 'Asalam-o-Alaikum Khilafat Books, I need help with my order.';
 
 const WhatsAppWidget = () => {

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Clock, Eye, XCircle, Search, Filter } from 'lucide-react';
+import { CheckCircle2, Clock, Eye, XCircle, Search, Filter, FileDown, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -70,6 +72,96 @@ const AdminOrders = () => {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
       setSelectedOrder(null);
     }
+  };
+
+  const generateInvoice = (order: Order) => {
+    const doc = new jsPDF();
+    const margin = 20;
+
+    // Header
+    doc.setFontSize(22);
+    doc.setTextColor(5, 150, 105); // emerald-600
+    doc.text('Khilafat Books', margin, 25);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text('Knowledge with Barakah', margin, 32);
+
+    doc.setFontSize(14);
+    doc.setTextColor(0);
+    doc.text('INVOICE', 190, 25, { align: 'right' });
+
+    doc.setFontSize(10);
+    doc.text(`Order ID: ${order.id.slice(0, 8).toUpperCase()}`, 190, 32, { align: 'right' });
+    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 190, 37, { align: 'right' });
+
+    // Customer Info
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Bill To:', margin, 55);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text(order.customer_name, margin, 62);
+    doc.text(order.customer_phone, margin, 67);
+    if (order.customer_email) doc.text(order.customer_email, margin, 72);
+    if (order.delivery_address) {
+      const splitAddress = doc.splitTextToSize(`${order.delivery_address}, ${order.delivery_city}`, 80);
+      doc.text(splitAddress, margin, 77);
+    }
+
+    // Items Table
+    const tableData = (Array.isArray(order.items) ? order.items : []).map((item: any) => [
+      item.name,
+      item.quantity.toString(),
+      formatPKR(item.price),
+      formatPKR(item.price * item.quantity)
+    ]);
+
+    autoTable(doc, {
+      startY: 95,
+      head: [['Item', 'Qty', 'Price', 'Total']],
+      body: tableData,
+      theme: 'striped',
+      headStyles: { fillStyle: 'f', fillColor: [5, 150, 105] }, // emerald-600
+      margin: { left: margin, right: margin }
+    });
+
+    // Totals
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(10);
+    doc.text('Subtotal:', 140, finalY);
+    doc.text(formatPKR(order.subtotal), 190, finalY, { align: 'right' });
+
+    doc.text('Shipping:', 140, finalY + 7);
+    doc.text(formatPKR(order.shipping), 190, finalY + 7, { align: 'right' });
+
+    if (order.zakat_amount > 0) {
+      doc.text('Zakat:', 140, finalY + 14);
+      doc.text(formatPKR(order.zakat_amount), 190, finalY + 14, { align: 'right' });
+    }
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    const totalY = finalY + (order.zakat_amount > 0 ? 25 : 18);
+    doc.text('Total:', 140, totalY);
+    doc.text(formatPKR(order.total), 190, totalY, { align: 'right' });
+
+    // Footer
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(150);
+    doc.text('Thank you for shopping with Khilafat Books!', 105, 285, { align: 'center' });
+
+    doc.save(`Invoice-${order.customer_name.replace(/\s+/g, '-')}-${order.id.slice(0, 5)}.pdf`);
+    toast({ title: 'Success', description: 'Invoice generated successfully' });
+  };
+
+  const contactCustomer = (order: Order) => {
+    const phone = order.customer_phone.replace(/\D/g, '');
+    const formattedPhone = phone.startsWith('0') ? '92' + phone.slice(1) : phone;
+    const message = `Asalam-o-Alaikum ${order.customer_name}, I'm contacting you from Khilafat Books regarding your order #${order.id.slice(0, 8).toUpperCase()}.`;
+    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   };
 
   const filtered = orders.filter(o => {
@@ -202,16 +294,27 @@ const AdminOrders = () => {
               </div>
             </div>
 
-            {selectedOrder.status === 'pending' && (
-              <div className="mt-6 flex gap-3">
-                <Button onClick={() => updateStatus(selectedOrder.id, 'approved')} className="gap-1">
-                  <CheckCircle2 className="h-4 w-4" /> Approve
+            <div className="mt-6 flex flex-col gap-3">
+              <div className="grid grid-cols-2 gap-3">
+                <Button onClick={() => generateInvoice(selectedOrder)} variant="secondary" className="gap-2">
+                  <FileDown className="h-4 w-4" /> Invoice
                 </Button>
-                <Button variant="destructive" onClick={() => updateStatus(selectedOrder.id, 'rejected')} className="gap-1">
-                  <XCircle className="h-4 w-4" /> Reject
+                <Button onClick={() => contactCustomer(selectedOrder)} variant="outline" className="gap-2 border-green-600 text-green-600 hover:bg-green-50">
+                  <MessageSquare className="h-4 w-4" /> WhatsApp
                 </Button>
               </div>
-            )}
+
+              {selectedOrder.status === 'pending' && (
+                <div className="flex gap-3">
+                  <Button onClick={() => updateStatus(selectedOrder.id, 'approved')} className="gap-1 flex-1">
+                    <CheckCircle2 className="h-4 w-4" /> Approve
+                  </Button>
+                  <Button variant="destructive" onClick={() => updateStatus(selectedOrder.id, 'rejected')} className="gap-1 flex-1">
+                    <XCircle className="h-4 w-4" /> Reject
+                  </Button>
+                </div>
+              )}
+            </div>
             <Button variant="outline" onClick={() => setSelectedOrder(null)} className="mt-4 w-full">Close</Button>
           </motion.div>
         </div>
