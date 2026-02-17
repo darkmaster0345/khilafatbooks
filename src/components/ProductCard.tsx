@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Download, Star, BadgeCheck } from 'lucide-react';
+import { ShoppingCart, Download, Star, BadgeCheck, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPKR } from '@/lib/currency';
 
 const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: number }) => {
   const { addItem } = useCart();
+  const { isInWishlist, toggleWishlist } = useWishlist();
+  const isWishlisted = isInWishlist(product.id);
 
   return (
     <motion.div
@@ -42,8 +45,23 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             </Badge>
           )}
         </div>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(product);
+          }}
+          className={`absolute right-2.5 top-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md transition-all ${
+            isWishlisted
+              ? 'bg-destructive text-destructive-foreground shadow-lg'
+              : 'bg-background/40 text-foreground hover:bg-background/80'
+          }`}
+        >
+          <Heart className={`h-4 w-4 ${isWishlisted ? 'fill-current' : ''}`} />
+        </button>
+
         {product.originalPrice && (
-          <div className="absolute right-2.5 top-2.5">
+          <div className="absolute right-2.5 top-12">
             <Badge className="gold-gradient text-primary-foreground text-[10px] border-0 font-semibold shadow-sm">
               -{Math.round((1 - product.price / product.originalPrice) * 100)}%
             </Badge>

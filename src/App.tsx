@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
+import { WishlistProvider } from "@/context/WishlistContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -14,6 +15,8 @@ import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import Wishlist from "./pages/Wishlist";
+import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 
@@ -38,6 +41,8 @@ const AppLayout = () => {
           <Route path="/cart" element={<Cart />} />
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/wishlist" element={<Wishlist />} />
+          <Route path="/orders" element={<Orders />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>
@@ -52,7 +57,8 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <CartProvider>
-          <Toaster />
+          <WishlistProvider>
+            <Toaster />
           <Sonner />
           <BrowserRouter>
             <Routes>
@@ -60,6 +66,7 @@ const App = () => (
               <Route path="*" element={<AppLayout />} />
             </Routes>
           </BrowserRouter>
+          </WishlistProvider>
         </CartProvider>
       </AuthProvider>
     </TooltipProvider>

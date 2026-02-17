@@ -12,7 +12,13 @@ const categories = ['All', ...PRODUCT_CATEGORIES];
 const Shop = () => {
   const [searchParams] = useSearchParams();
   const { products, loading } = useProducts();
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+
+  // Update search state if URL parameter changes
+  useMemo(() => {
+    const query = searchParams.get('search');
+    if (query !== null) setSearch(query);
+  }, [searchParams]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [typeFilter, setTypeFilter] = useState<'physical' | 'digital' | 'all'>(
     (searchParams.get('type') as any) || 'all'
