@@ -35,6 +35,16 @@ const Checkout = () => {
   const handleScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({ title: 'Invalid file', description: 'Please upload an image file.', variant: 'destructive' });
+        return;
+      }
+      // Validate file size (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({ title: 'File too large', description: 'Screenshot must be less than 5MB.', variant: 'destructive' });
+        return;
+      }
       setScreenshotFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setScreenshotPreview(reader.result as string);
@@ -62,7 +72,7 @@ const Checkout = () => {
     let screenshotPath: string | null = null;
 
     if (screenshotFile) {
-      const ext = screenshotFile.name.split('.').pop();
+      const ext = (screenshotFile.name.split('.').pop() || 'png').toLowerCase();
       const filePath = `${user.id}/${Date.now()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from('payment-proofs')
@@ -178,16 +188,16 @@ const Checkout = () => {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="text-sm font-medium text-foreground">Full Name *</label>
-                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Muhammad Ali" className="mt-1.5 h-11 rounded-xl" />
+                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Muhammad Ali" className="mt-1.5 h-11 rounded-xl" maxLength={100} />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground">Phone (WhatsApp) *</label>
-                    <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="03XX-XXXXXXX" className="mt-1.5 h-11 rounded-xl" />
+                    <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="03XX-XXXXXXX" className="mt-1.5 h-11 rounded-xl" maxLength={20} />
                   </div>
                 </div>
                 <div className="mt-4">
                   <label className="text-sm font-medium text-foreground">Email</label>
-                  <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="mt-1.5 h-11 rounded-xl" />
+                  <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="mt-1.5 h-11 rounded-xl" maxLength={100} />
                 </div>
               </div>
 
@@ -197,11 +207,11 @@ const Checkout = () => {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="text-sm font-medium text-foreground">Address *</label>
-                      <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="House/Street/Area" className="mt-1.5 h-11 rounded-xl" />
+                      <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="House/Street/Area" className="mt-1.5 h-11 rounded-xl" maxLength={200} />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">City *</label>
-                      <Input value={city} onChange={e => setCity(e.target.value)} placeholder="Karachi" className="mt-1.5 h-11 rounded-xl" />
+                      <Input value={city} onChange={e => setCity(e.target.value)} placeholder="Karachi" className="mt-1.5 h-11 rounded-xl" maxLength={50} />
                     </div>
                   </div>
                 </div>
@@ -268,7 +278,7 @@ const Checkout = () => {
 
               <div className="rounded-xl border border-border bg-card p-6">
                 <label className="text-sm font-medium text-foreground">Transaction ID (optional)</label>
-                <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1.5 h-11 rounded-xl" />
+                <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1.5 h-11 rounded-xl" maxLength={50} />
               </div>
 
               <div className="flex gap-3">
