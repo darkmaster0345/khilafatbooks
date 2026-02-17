@@ -11,11 +11,11 @@ const AdminSettings = () => {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
-    easypaisa_account: '03452867726',
+    easypaisa_account: '03352706540',
     easypaisa_name: 'Khilafat Books',
     free_shipping_threshold: '5000',
     shipping_fee: '500',
-    whatsapp_number: '923452867726',
+    whatsapp_number: '923352706540',
     store_email: 'support@khilafatbooks.com',
     zakat_enabled: true,
     zakat_rate: '2.5',

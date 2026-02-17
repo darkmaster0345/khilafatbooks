@@ -10,7 +10,7 @@ import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
-const EASYPAISA_ACCOUNT = '03452867726';
+const EASYPAISA_ACCOUNT = '03352706540';
 
 const Checkout = () => {
   const { items, subtotal, zakatEnabled, zakatAmount, total, clearCart } = useCart();
