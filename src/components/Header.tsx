@@ -1,6 +1,7 @@
-import { Link, useLocation } from 'react-router-dom';
-import { ShoppingCart, Menu, X, LogIn, LogOut, User, ChevronDown } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ShoppingCart, Menu, X, LogIn, LogOut, User, ChevronDown, Search, Heart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,9 +15,20 @@ const navLinks = [
 
 const Header = () => {
   const { totalItems } = useCart();
+  const { wishlist } = useWishlist();
   const { user, isAdmin, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-lg">
@@ -32,8 +44,20 @@ const Header = () => {
           </div>
         </Link>
 
-        {/* Desktop Nav */}
-        <nav className="hidden items-center gap-1 md:flex">
+        {/* Desktop Nav & Search */}
+        <div className="hidden md:flex flex-1 items-center justify-center px-8 gap-6">
+          <form onSubmit={handleSearch} className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search products..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-9 pr-4 rounded-full bg-muted/50 border-none text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+            />
+          </form>
+
+          <nav className="flex items-center gap-1">
           {navLinks.map(link => {
             const isActive = location.pathname === link.to;
             return (
@@ -56,24 +80,25 @@ const Header = () => {
               </Link>
             );
           })}
-          {isAdmin && (
-            <Link to="/admin" className="px-4 py-2 text-sm font-medium text-accent hover:text-accent/80 rounded-lg hover:bg-accent/8 transition-all">
-              Admin
-            </Link>
-          )}
-        </nav>
+            {isAdmin && (
+              <Link to="/admin" className="px-4 py-2 text-sm font-medium text-accent hover:text-accent/80 rounded-lg hover:bg-accent/8 transition-all">
+                Admin
+              </Link>
+            )}
+          </nav>
+        </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2">
           {user ? (
-            <div className="hidden md:flex items-center gap-1">
-              <div className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5">
+            <div className="hidden md:flex items-center gap-2">
+              <Link to="/orders" className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                   <User className="h-3 w-3 text-primary" />
                 </div>
-                <span className="text-xs text-muted-foreground truncate max-w-[100px]">{user.email?.split('@')[0]}</span>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1 text-xs text-muted-foreground hover:text-destructive h-8">
+                <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">My Orders</span>
+              </Link>
+              <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1 text-xs text-muted-foreground hover:text-destructive h-8" title="Sign Out">
                 <LogOut className="h-3 w-3" />
               </Button>
             </div>
@@ -84,6 +109,19 @@ const Header = () => {
               </Link>
             </Button>
           )}
+
+          <Link to="/wishlist" className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
+            <Heart className="h-5 w-5 text-foreground" />
+            {wishlist.length > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white shadow-sm"
+              >
+                {wishlist.length}
+              </motion.span>
+            )}
+          </Link>
 
           <Link to="/cart" className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
             <ShoppingCart className="h-5 w-5 text-foreground" />
@@ -117,6 +155,18 @@ const Header = () => {
             transition={{ duration: 0.2 }}
             className="overflow-hidden border-t border-border/50 md:hidden bg-background"
           >
+            <div className="px-4 py-4 border-b border-border/30">
+              <form onSubmit={handleSearch} className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-11 pl-10 pr-4 rounded-xl bg-muted/50 border-none text-sm outline-none"
+                />
+              </form>
+            </div>
             <nav className="flex flex-col gap-1 px-4 py-3">
               {navLinks.map(link => (
                 <Link
@@ -132,6 +182,33 @@ const Header = () => {
                   {link.label}
                 </Link>
               ))}
+              <Link
+                to="/wishlist"
+                onClick={() => setMobileMenuOpen(false)}
+                className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between ${
+                  location.pathname === '/wishlist'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-foreground hover:bg-muted'
+                }`}
+              >
+                Wishlist
+                {wishlist.length > 0 && (
+                  <span className="bg-destructive text-white text-[10px] px-1.5 py-0.5 rounded-full">{wishlist.length}</span>
+                )}
+              </Link>
+              {user && (
+                <Link
+                  to="/orders"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                    location.pathname === '/orders'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-foreground hover:bg-muted'
+                  }`}
+                >
+                  My Orders
+                </Link>
+              )}
               {isAdmin && (
                 <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-4 py-2.5 text-sm font-medium text-accent hover:bg-muted">
                   Admin Panel
