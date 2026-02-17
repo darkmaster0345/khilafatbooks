@@ -45,61 +45,64 @@ const Auth = () => {
   };
 
   return (
-    <main className="flex min-h-[70vh] items-center justify-center px-4 py-12">
+    <main className="flex min-h-[75vh] items-center justify-center px-4 py-12">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        {/* Decorative Islamic border card */}
-        <div className="rounded-xl border-2 border-primary/20 bg-card p-8 shadow-lg geometric-pattern">
-          <div className="flex flex-col items-center mb-6">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full emerald-gradient mb-3">
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
+          <div className="flex flex-col items-center mb-8">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl emerald-gradient mb-4 shadow-md">
               <span className="font-arabic text-2xl text-primary-foreground">ك</span>
             </div>
-            <h1 className="font-display text-2xl font-bold text-foreground">Khilafat Books</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground">
+              {mode === 'signin' && 'Welcome back'}
+              {mode === 'signup' && 'Create account'}
+              {mode === 'forgot' && 'Reset password'}
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {mode === 'signin' && 'Welcome back — sign in to continue'}
-              {mode === 'signup' && 'Create your account'}
-              {mode === 'forgot' && 'Reset your password'}
+              {mode === 'signin' && 'Sign in to your Khilafat Books account'}
+              {mode === 'signup' && 'Join the Khilafat Books community'}
+              {mode === 'forgot' && 'Enter your email to receive a reset link'}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === 'signup' && (
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name" className="pl-10" required />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name" className="pl-10 h-11 rounded-xl" required />
               </div>
             )}
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="pl-10" required />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="pl-10 h-11 rounded-xl" required />
             </div>
             {mode !== 'forgot' && (
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="pl-10" required minLength={6} />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="pl-10 h-11 rounded-xl" required minLength={6} />
               </div>
             )}
 
-            <Button type="submit" className="w-full" size="lg" disabled={submitting}>
+            <Button type="submit" className="w-full h-11 text-base rounded-xl" disabled={submitting}>
               {submitting ? 'Please wait...' : mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
             </Button>
           </form>
 
           {mode !== 'forgot' && (
             <>
-              <div className="my-4 flex items-center gap-3">
+              <div className="my-5 flex items-center gap-3">
                 <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">or</span>
+                <span className="text-xs text-muted-foreground">or continue with</span>
                 <div className="h-px flex-1 bg-border" />
               </div>
 
               <Button
                 variant="outline"
-                className="w-full gap-2"
-                size="lg"
+                className="w-full gap-2.5 h-11 rounded-xl"
                 onClick={() => signInWithGoogle()}
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -113,24 +116,24 @@ const Auth = () => {
             </>
           )}
 
-          <div className="mt-6 text-center text-sm space-y-1">
+          <div className="mt-6 text-center text-sm space-y-1.5">
             {mode === 'signin' && (
               <>
-                <button onClick={() => setMode('forgot')} className="text-primary hover:underline block mx-auto">Forgot password?</button>
+                <button onClick={() => setMode('forgot')} className="text-primary hover:underline block mx-auto text-xs">Forgot password?</button>
                 <p className="text-muted-foreground">
                   Don't have an account?{' '}
-                  <button onClick={() => setMode('signup')} className="text-primary hover:underline">Sign up</button>
+                  <button onClick={() => setMode('signup')} className="text-primary font-medium hover:underline">Sign up</button>
                 </p>
               </>
             )}
             {mode === 'signup' && (
               <p className="text-muted-foreground">
                 Already have an account?{' '}
-                <button onClick={() => setMode('signin')} className="text-primary hover:underline">Sign in</button>
+                <button onClick={() => setMode('signin')} className="text-primary font-medium hover:underline">Sign in</button>
               </p>
             )}
             {mode === 'forgot' && (
-              <button onClick={() => setMode('signin')} className="text-primary hover:underline flex items-center gap-1 mx-auto">
+              <button onClick={() => setMode('signin')} className="text-primary hover:underline flex items-center gap-1 mx-auto text-xs">
                 <ArrowLeft className="h-3 w-3" /> Back to sign in
               </button>
             )}

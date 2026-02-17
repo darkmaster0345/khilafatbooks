@@ -1,48 +1,54 @@
 import { Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 
 const Footer = () => (
-  <footer className="geometric-pattern border-t border-border bg-card">
-    <div className="container mx-auto px-4 py-12">
-      <div className="grid gap-8 md:grid-cols-4">
-        <div>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full emerald-gradient">
+  <footer className="border-t border-border bg-card">
+    <div className="container mx-auto px-4">
+      {/* Main footer */}
+      <div className="grid gap-10 py-14 md:grid-cols-4">
+        <div className="md:col-span-1">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl emerald-gradient shadow-sm">
               <span className="font-arabic text-sm text-primary-foreground">ك</span>
             </div>
             <span className="font-display text-lg font-bold text-foreground">Khilafat Books</span>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
             Ethically sourced, halal-certified Islamic books and products for the modern Muslim lifestyle.
           </p>
         </div>
         <div>
-          <h4 className="font-display text-sm font-semibold text-foreground mb-3">Shop</h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/shop" className="hover:text-primary transition-colors">All Products</Link></li>
-            <li><Link to="/shop?type=physical" className="hover:text-primary transition-colors">Physical Products</Link></li>
-            <li><Link to="/shop?type=digital" className="hover:text-primary transition-colors">Digital Products</Link></li>
+          <h4 className="font-display text-sm font-semibold text-foreground mb-4">Shop</h4>
+          <ul className="space-y-2.5 text-sm">
+            <li><Link to="/shop" className="text-muted-foreground hover:text-primary transition-colors">All Products</Link></li>
+            <li><Link to="/shop?type=physical" className="text-muted-foreground hover:text-primary transition-colors">Physical Products</Link></li>
+            <li><Link to="/shop?type=digital" className="text-muted-foreground hover:text-primary transition-colors">Digital Products</Link></li>
           </ul>
         </div>
         <div>
-          <h4 className="font-display text-sm font-semibold text-foreground mb-3">Values</h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>Halal Certified</li>
-            <li>Ethical Sourcing</li>
-            <li>Fair Trade</li>
-            <li>Zakat Contributions</li>
+          <h4 className="font-display text-sm font-semibold text-foreground mb-4">Our Values</h4>
+          <ul className="space-y-2.5 text-sm text-muted-foreground">
+            <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Halal Certified</li>
+            <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Ethical Sourcing</li>
+            <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Fair Trade</li>
+            <li className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-accent" /> Zakat Contributions</li>
           </ul>
         </div>
         <div>
-          <h4 className="font-display text-sm font-semibold text-foreground mb-3">Contact</h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
+          <h4 className="font-display text-sm font-semibold text-foreground mb-4">Contact</h4>
+          <ul className="space-y-2.5 text-sm text-muted-foreground">
             <li>support@khilafatbooks.com</li>
             <li>+92 345 2867726</li>
           </ul>
         </div>
       </div>
-      <div className="mt-8 border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-muted-foreground">
-        <p>© 2026 Khilafat Books — Islamic Knowledge. All rights reserved.</p>
-        <Link to="/auth" className="hover:text-primary transition-colors">Admin Login</Link>
+
+      {/* Bottom bar */}
+      <div className="border-t border-border py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground flex items-center gap-1">
+          © 2026 Khilafat Books — Made with <Heart className="h-3 w-3 text-destructive fill-destructive" /> for the Ummah
+        </p>
+        <Link to="/auth" className="text-xs text-muted-foreground hover:text-primary transition-colors">Admin Login</Link>
       </div>
     </div>
   </footer>
