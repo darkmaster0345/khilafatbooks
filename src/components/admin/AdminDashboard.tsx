@@ -47,10 +47,24 @@ const AdminDashboard = () => {
     };
   });
 
+  // Calculate real week-over-week change
+  const thisWeekRevenue = orders.filter(o => {
+    const d = new Date(o.created_at);
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+    return o.status === 'approved' && d >= weekAgo;
+  }).reduce((s, o) => s + o.total, 0);
+  const lastWeekRevenue = orders.filter(o => {
+    const d = new Date(o.created_at);
+    const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+    const twoWeeksAgo = new Date(); twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+    return o.status === 'approved' && d >= twoWeeksAgo && d < weekAgo;
+  }).reduce((s, o) => s + o.total, 0);
+  const revenueChange = lastWeekRevenue > 0 ? ((thisWeekRevenue - lastWeekRevenue) / lastWeekRevenue * 100).toFixed(0) : '0';
+
   const stats = [
-    { label: 'Total Revenue', value: formatPKR(totalRevenue), icon: DollarSign, change: '+12%', color: 'text-primary' },
+    { label: 'Total Revenue', value: formatPKR(totalRevenue), icon: DollarSign, change: `${Number(revenueChange) >= 0 ? '+' : ''}${revenueChange}% this week`, color: 'text-primary' },
     { label: 'Total Orders', value: orders.length, icon: ShoppingBag, change: `${pendingOrders} pending`, color: 'text-accent' },
-    { label: 'Customers', value: uniqueCustomers, icon: Users, change: '+3 new', color: 'text-emerald-light' },
+    { label: 'Customers', value: uniqueCustomers, icon: Users, change: `from ${orders.length} orders`, color: 'text-emerald-light' },
     { label: 'Products', value: products.length, icon: Package, change: `${products.filter(p => p.in_stock).length} in stock`, color: 'text-gold' },
   ];
 
