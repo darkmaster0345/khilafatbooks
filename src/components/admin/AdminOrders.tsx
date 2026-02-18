@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Clock, Eye, XCircle, Search, Filter, FileDown, MessageSquare } from 'lucide-react';
+import { CheckCircle2, Clock, Eye, XCircle, Search, FileDown, MessageSquare, Trash2, Plus, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useProducts } from '@/hooks/useProducts';
 
 interface Order {
   id: string;
@@ -26,6 +28,7 @@ interface Order {
   delivery_address: string | null;
   delivery_city: string | null;
   created_at: string;
+  user_id: string;
 }
 
 const statusColors: Record<string, string> = {
@@ -34,14 +37,37 @@ const statusColors: Record<string, string> = {
   rejected: 'bg-destructive/20 text-destructive',
 };
 
+interface CustomOrderItem {
+  name: string;
+  quantity: number;
+  price: number;
+  type: string;
+}
+
 const AdminOrders = () => {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { products } = useProducts();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showCreateOrder, setShowCreateOrder] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Custom order form
+  const [newOrder, setNewOrder] = useState({
+    customer_name: '',
+    customer_phone: '',
+    customer_email: '',
+    delivery_address: '',
+    delivery_city: '',
+    shipping: 0,
+    status: 'approved',
+  });
+  const [orderItems, setOrderItems] = useState<CustomOrderItem[]>([{ name: '', quantity: 1, price: 0, type: 'physical' }]);
 
   useEffect(() => {
     fetchOrders();
@@ -74,13 +100,67 @@ const AdminOrders = () => {
     }
   };
 
+  const deleteOrder = async (orderId: string) => {
+    const { error } = await supabase.from('orders').delete().eq('id', orderId);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Deleted', description: 'Order has been removed.' });
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      setSelectedOrder(null);
+      setDeleteConfirm(null);
+    }
+  };
+
+  const createCustomOrder = async () => {
+    if (!newOrder.customer_name || !newOrder.customer_phone || orderItems.every(i => !i.name)) {
+      toast({ title: 'Error', description: 'Fill in customer name, phone, and at least one item.', variant: 'destructive' });
+      return;
+    }
+
+    const validItems = orderItems.filter(i => i.name);
+    const subtotal = validItems.reduce((s, i) => s + i.price * i.quantity, 0);
+    const total = subtotal + newOrder.shipping;
+
+    const { error } = await supabase.from('orders').insert({
+      customer_name: newOrder.customer_name,
+      customer_phone: newOrder.customer_phone,
+      customer_email: newOrder.customer_email || null,
+      delivery_address: newOrder.delivery_address || null,
+      delivery_city: newOrder.delivery_city || null,
+      items: validItems,
+      subtotal,
+      shipping: newOrder.shipping,
+      total,
+      status: newOrder.status,
+      user_id: user!.id,
+      zakat_amount: 0,
+    } as any);
+
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Created', description: 'Custom order created successfully.' });
+      setShowCreateOrder(false);
+      setNewOrder({ customer_name: '', customer_phone: '', customer_email: '', delivery_address: '', delivery_city: '', shipping: 0, status: 'approved' });
+      setOrderItems([{ name: '', quantity: 1, price: 0, type: 'physical' }]);
+      fetchOrders();
+    }
+  };
+
+  const addProductToOrder = (productId: string) => {
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      setOrderItems(prev => [...prev, { name: product.name, quantity: 1, price: product.price, type: product.type }]);
+    }
+  };
+
   const generateInvoice = (order: Order) => {
     const doc = new jsPDF();
     const margin = 20;
 
-    // Header
     doc.setFontSize(22);
-    doc.setTextColor(5, 150, 105); // emerald-600
+    doc.setTextColor(5, 150, 105);
     doc.text('Khilafat Books', margin, 25);
 
     doc.setFontSize(10);
@@ -95,7 +175,6 @@ const AdminOrders = () => {
     doc.text(`Order ID: ${order.id.slice(0, 8).toUpperCase()}`, 190, 32, { align: 'right' });
     doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 190, 37, { align: 'right' });
 
-    // Customer Info
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
     doc.text('Bill To:', margin, 55);
@@ -109,7 +188,6 @@ const AdminOrders = () => {
       doc.text(splitAddress, margin, 77);
     }
 
-    // Items Table
     const tableData = (Array.isArray(order.items) ? order.items : []).map((item: any) => [
       item.name,
       item.quantity.toString(),
@@ -122,11 +200,10 @@ const AdminOrders = () => {
       head: [['Item', 'Qty', 'Price', 'Total']],
       body: tableData,
       theme: 'striped',
-      headStyles: { fillStyle: 'f', fillColor: [5, 150, 105] }, // emerald-600
+      headStyles: { fillColor: [5, 150, 105] },
       margin: { left: margin, right: margin }
     });
 
-    // Totals
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     doc.setFontSize(10);
     doc.text('Subtotal:', 140, finalY);
@@ -146,7 +223,6 @@ const AdminOrders = () => {
     doc.text('Total:', 140, totalY);
     doc.text(formatPKR(order.total), 190, totalY, { align: 'right' });
 
-    // Footer
     doc.setFontSize(8);
     doc.setFont('helvetica', 'italic');
     doc.setTextColor(150);
@@ -174,9 +250,14 @@ const AdminOrders = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="font-display text-2xl font-bold text-foreground">Orders</h2>
-        <p className="text-sm text-muted-foreground">Manage and track all customer orders.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="font-display text-2xl font-bold text-foreground">Orders</h2>
+          <p className="text-sm text-muted-foreground">Manage and track all customer orders.</p>
+        </div>
+        <Button onClick={() => setShowCreateOrder(true)} className="gap-2">
+          <Plus className="h-4 w-4" /> Custom Order
+        </Button>
       </div>
 
       {/* Filters */}
@@ -241,15 +322,148 @@ const AdminOrders = () => {
                   </td>
                   <td className="px-4 py-3 text-muted-foreground font-mono text-xs">{order.transaction_id || '—'}</td>
                   <td className="px-4 py-3 text-muted-foreground">{new Date(order.created_at).toLocaleDateString()}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 flex gap-1">
                     <Button size="sm" variant="outline" onClick={() => viewScreenshot(order)} className="gap-1">
                       <Eye className="h-3 w-3" /> View
                     </Button>
+                    {deleteConfirm === order.id ? (
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="destructive" onClick={() => deleteOrder(order.id)}>Yes</Button>
+                        <Button size="sm" variant="outline" onClick={() => setDeleteConfirm(null)}>No</Button>
+                      </div>
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => setDeleteConfirm(order.id)} className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Create Custom Order Modal */}
+      {showCreateOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50 p-4" onClick={() => setShowCreateOrder(false)}>
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={e => e.stopPropagation()}
+            className="w-full max-w-lg rounded-lg bg-card border border-border p-6 max-h-[85vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-display text-xl font-bold text-foreground">Create Custom Order</h2>
+              <button onClick={() => setShowCreateOrder(false)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Customer Name *</label>
+                  <Input value={newOrder.customer_name} onChange={e => setNewOrder(p => ({ ...p, customer_name: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Phone *</label>
+                  <Input value={newOrder.customer_phone} onChange={e => setNewOrder(p => ({ ...p, customer_phone: e.target.value }))} placeholder="03XX-XXXXXXX" />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Email</label>
+                <Input value={newOrder.customer_email} onChange={e => setNewOrder(p => ({ ...p, customer_email: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Address</label>
+                  <Input value={newOrder.delivery_address} onChange={e => setNewOrder(p => ({ ...p, delivery_address: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">City</label>
+                  <Input value={newOrder.delivery_city} onChange={e => setNewOrder(p => ({ ...p, delivery_city: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Add from catalog */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Add from Catalog</label>
+                <select
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  onChange={e => { if (e.target.value) { addProductToOrder(e.target.value); e.target.value = ''; } }}
+                  defaultValue=""
+                >
+                  <option value="">Select a product...</option>
+                  {products.map(p => (
+                    <option key={p.id} value={p.id}>{p.name} — {formatPKR(p.price)}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Items */}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-2 block">Order Items *</label>
+                <div className="space-y-2">
+                  {orderItems.map((item, i) => (
+                    <div key={i} className="flex gap-2 items-end">
+                      <div className="flex-1">
+                        {i === 0 && <span className="text-[10px] text-muted-foreground">Name</span>}
+                        <Input value={item.name} onChange={e => {
+                          const copy = [...orderItems]; copy[i].name = e.target.value; setOrderItems(copy);
+                        }} placeholder="Item name" />
+                      </div>
+                      <div className="w-16">
+                        {i === 0 && <span className="text-[10px] text-muted-foreground">Qty</span>}
+                        <Input type="number" min="1" value={item.quantity} onChange={e => {
+                          const copy = [...orderItems]; copy[i].quantity = parseInt(e.target.value) || 1; setOrderItems(copy);
+                        }} />
+                      </div>
+                      <div className="w-24">
+                        {i === 0 && <span className="text-[10px] text-muted-foreground">Price</span>}
+                        <Input type="number" min="0" value={item.price} onChange={e => {
+                          const copy = [...orderItems]; copy[i].price = parseInt(e.target.value) || 0; setOrderItems(copy);
+                        }} />
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => setOrderItems(prev => prev.filter((_, j) => j !== i))} className="text-destructive shrink-0">
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setOrderItems(prev => [...prev, { name: '', quantity: 1, price: 0, type: 'physical' }])} className="mt-2 gap-1">
+                  <Plus className="h-3 w-3" /> Add Item
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Shipping (PKR)</label>
+                  <Input type="number" min="0" value={newOrder.shipping} onChange={e => setNewOrder(p => ({ ...p, shipping: parseInt(e.target.value) || 0 }))} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Status</label>
+                  <select
+                    value={newOrder.status}
+                    onChange={e => setNewOrder(p => ({ ...p, status: e.target.value }))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  >
+                    <option value="approved">Approved</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Summary */}
+              <div className="rounded-md bg-muted p-3 text-sm">
+                <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span className="text-foreground">{formatPKR(orderItems.reduce((s, i) => s + i.price * i.quantity, 0))}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Shipping</span><span className="text-foreground">{formatPKR(newOrder.shipping)}</span></div>
+                <div className="flex justify-between font-bold mt-1 pt-1 border-t border-border"><span className="text-foreground">Total</span><span className="text-foreground">{formatPKR(orderItems.reduce((s, i) => s + i.price * i.quantity, 0) + newOrder.shipping)}</span></div>
+              </div>
+
+              <Button onClick={createCustomOrder} className="w-full">Create Order</Button>
+            </div>
+          </motion.div>
         </div>
       )}
 
@@ -299,7 +513,7 @@ const AdminOrders = () => {
                 <Button onClick={() => generateInvoice(selectedOrder)} variant="secondary" className="gap-2">
                   <FileDown className="h-4 w-4" /> Invoice
                 </Button>
-                <Button onClick={() => contactCustomer(selectedOrder)} variant="outline" className="gap-2 border-green-600 text-green-600 hover:bg-green-50">
+                <Button onClick={() => contactCustomer(selectedOrder)} variant="outline" className="gap-2 border-primary text-primary hover:bg-primary/10">
                   <MessageSquare className="h-4 w-4" /> WhatsApp
                 </Button>
               </div>
@@ -314,6 +528,10 @@ const AdminOrders = () => {
                   </Button>
                 </div>
               )}
+
+              <Button variant="destructive" onClick={() => deleteOrder(selectedOrder.id)} className="gap-2">
+                <Trash2 className="h-4 w-4" /> Delete Order
+              </Button>
             </div>
             <Button variant="outline" onClick={() => setSelectedOrder(null)} className="mt-4 w-full">Close</Button>
           </motion.div>
