@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ArrowRight } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ArrowRight, Star } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,6 +41,23 @@ const Orders = () => {
   const { user, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const frequentlyBought = useMemo(() => {
+    const counts: Record<string, { id: string; name: string; count: number; price: number }> = {};
+    orders.forEach(order => {
+      if (Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          if (!counts[item.id]) {
+            counts[item.id] = { id: item.id, name: item.name, count: 0, price: item.price };
+          }
+          counts[item.id].count += item.quantity;
+        });
+      }
+    });
+    return Object.values(counts)
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [orders]);
 
   useEffect(() => {
     if (user) {
@@ -104,9 +121,35 @@ const Orders = () => {
           </Button>
         </motion.div>
       ) : (
-        <div className="space-y-6">
-          {orders.map((order) => {
-            const StatusIcon = statusIcons[order.status] || Clock;
+        <div className="space-y-10">
+          {/* Frequently Bought */}
+          {frequentlyBought.length > 0 && (
+            <section className="rounded-2xl border border-primary/20 bg-primary/5 p-6">
+              <div className="mb-4 flex items-center gap-2">
+                <Star className="h-5 w-5 text-primary fill-primary" />
+                <h2 className="font-display text-lg font-bold text-foreground">Frequently Bought by You</h2>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {frequentlyBought.map((item) => (
+                  <Link
+                    key={item.id}
+                    to={`/product/${item.id}`}
+                    className="flex items-center justify-between rounded-xl bg-background p-3 border border-border/50 hover:border-primary/30 transition-colors group"
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">{item.name}</span>
+                      <span className="text-[10px] text-muted-foreground">Ordered {item.count} times</span>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform group-hover:translate-x-1" />
+                  </Link>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className="space-y-6">
+            {orders.map((order) => {
+              const StatusIcon = statusIcons[order.status] || Clock;
             const ShippingIcon = shippingStatusIcons[order.shipping_status || 'pending'] || Package;
 
             return (
@@ -181,12 +224,13 @@ const Orders = () => {
                 {/* Footer / Actions */}
                 <div className="bg-muted/10 px-6 py-4 border-t border-border/50 flex justify-end">
                    <Button variant="ghost" size="sm" className="gap-2 text-xs font-semibold" asChild>
-                      <Link to={`/checkout?id=${order.id}`}>View Details <ArrowRight className="h-3.5 w-3.5" /></Link>
+                      <Link to={`/checkout`}>Re-order Items <ArrowRight className="h-3.5 w-3.5" /></Link>
                    </Button>
                 </div>
-              </motion.div>
-            );
-          })}
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
       )}
     </main>

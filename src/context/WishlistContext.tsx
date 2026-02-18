@@ -12,18 +12,17 @@ interface WishlistContextType {
 const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [wishlist, setWishlist] = useState<LegacyProduct[]>([]);
-
-  useEffect(() => {
+  const [wishlist, setWishlist] = useState<LegacyProduct[]>(() => {
     const saved = localStorage.getItem('kb_wishlist');
     if (saved) {
       try {
-        setWishlist(JSON.parse(saved));
+        return JSON.parse(saved);
       } catch (e) {
         console.error('Failed to parse wishlist', e);
       }
     }
-  }, []);
+    return [];
+  });
 
   useEffect(() => {
     localStorage.setItem('kb_wishlist', JSON.stringify(wishlist));
