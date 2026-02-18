@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveProductImage } from '@/lib/productImages';
 
 export interface Product {
   id: string;
@@ -49,7 +50,7 @@ export function toLegacyProduct(p: Product): LegacyProduct {
     description: p.description,
     price: p.price,
     originalPrice: p.original_price || undefined,
-    image: p.image_url || '/placeholder.svg',
+    image: resolveProductImage(p.image_url),
     category: p.category,
     type: p.type as 'physical' | 'digital',
     isNew: p.is_new || undefined,
