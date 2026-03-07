@@ -178,6 +178,9 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Verse of the Day */}
+      <VerseOfTheDay />
+
       {/* CTA */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 emerald-gradient" />
