@@ -49,6 +49,7 @@ const AppLayout = () => {
       </div>
       <Footer />
       <WhatsAppWidget />
+      <AIChatWidget />
     </div>
   );
 };

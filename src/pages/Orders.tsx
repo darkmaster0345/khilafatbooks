@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import OrderTrackingTimeline from '@/components/OrderTrackingTimeline';
 
 interface Order {
   id: string;

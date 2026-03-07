@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, Truck, Download, Heart, Star, BookOpen, Sparkles } from 'lucide-react';
+import VerseOfTheDay from '@/components/VerseOfTheDay';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
