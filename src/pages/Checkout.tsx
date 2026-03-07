@@ -28,9 +28,11 @@ const Checkout = () => {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
 
   const shipping = subtotal < 5000 ? 500 : 0;
-  const grandTotal = total + shipping;
+  const discountAmount = discount?.discountAmount ?? 0;
+  const grandTotal = Math.max(0, total + shipping - discountAmount);
   const hasPhysical = items.some(i => i.product.type === 'physical');
 
   const handleScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
