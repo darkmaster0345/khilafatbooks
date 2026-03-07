@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_verses: {
+        Row: {
+          created_at: string
+          id: string
+          reference: string
+          verse_arabic: string
+          verse_english: string
+          verse_urdu: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reference: string
+          verse_arabic: string
+          verse_english: string
+          verse_urdu?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reference?: string
+          verse_arabic?: string
+          verse_english?: string
+          verse_urdu?: string | null
+        }
+        Relationships: []
+      }
       discounts: {
         Row: {
           code: string
@@ -223,6 +250,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          is_approved: boolean
+          product_id: string
+          rating: number
+          reviewer_name: string
+          user_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          product_id: string
+          rating: number
+          reviewer_name: string
+          user_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_approved?: boolean
+          product_id?: string
+          rating?: number
+          reviewer_name?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       store_settings: {
         Row: {

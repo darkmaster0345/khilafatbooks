@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import DiscountCodeInput, { AppliedDiscount } from '@/components/DiscountCodeInput';
 
 const EASYPAISA_ACCOUNT = '03352706540';
 
@@ -27,9 +28,11 @@ const Checkout = () => {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
 
   const shipping = subtotal < 5000 ? 500 : 0;
-  const grandTotal = total + shipping;
+  const discountAmount = discount?.discountAmount ?? 0;
+  const grandTotal = Math.max(0, total + shipping - discountAmount);
   const hasPhysical = items.some(i => i.product.type === 'physical');
 
   const handleScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -314,9 +317,17 @@ const Checkout = () => {
                 <span>Zakat (2.5%)</span><span className="font-medium text-foreground">{formatPKR(zakatAmount)}</span>
               </div>
             )}
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-primary">
+                <span>Discount</span><span className="font-medium">-{formatPKR(discountAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-display font-bold text-foreground text-lg border-t border-border pt-3">
               <span>Total</span><span>{formatPKR(grandTotal)}</span>
             </div>
+          </div>
+          <div className="mt-4">
+            <DiscountCodeInput subtotal={subtotal} onApply={setDiscount} applied={discount} />
           </div>
           <div className="mt-5 flex items-center gap-2 text-[10px] text-muted-foreground justify-center">
             <ShieldCheck className="h-3.5 w-3.5" /> Secure & verified payment

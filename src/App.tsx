@@ -19,6 +19,7 @@ import Wishlist from "./pages/Wishlist";
 import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
+import AIChatWidget from "@/components/AIChatWidget";
 
 const queryClient = new QueryClient();
 
@@ -48,6 +49,7 @@ const AppLayout = () => {
       </div>
       <Footer />
       <WhatsAppWidget />
+      <AIChatWidget />
     </div>
   );
 };

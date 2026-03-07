@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import OrderTrackingTimeline from '@/components/OrderTrackingTimeline';
 
 interface Order {
   id: string;
@@ -138,22 +139,12 @@ const Orders = () => {
 
                 {/* Order Body */}
                 <div className="p-6">
-                  <div className="mb-6 flex items-center justify-between rounded-xl bg-muted/50 p-4 border border-border/30">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-background shadow-sm">
-                        <ShippingIcon className="h-5 w-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Shipping Status</p>
-                        <p className="text-sm font-semibold text-foreground capitalize">{order.shipping_status || 'Pending Verification'}</p>
-                      </div>
-                    </div>
-                    {order.tracking_number && (
-                      <div className="text-right">
-                        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Tracking Number</p>
-                        <p className="font-mono text-sm font-semibold text-foreground">{order.tracking_number}</p>
-                      </div>
-                    )}
+                  <div className="mb-6 rounded-xl bg-muted/50 p-4 border border-border/30">
+                    <OrderTrackingTimeline
+                      status={order.status}
+                      shippingStatus={order.shipping_status}
+                      trackingNumber={order.tracking_number}
+                    />
                   </div>
 
                   <div className="space-y-4">

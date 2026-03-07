@@ -1,1 +1,7 @@
 project_id = "qdsjmhafojbmqcwlkmra"
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.download-digital-product]
+verify_jwt = false

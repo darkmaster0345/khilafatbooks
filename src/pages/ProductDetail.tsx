@@ -1,9 +1,10 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, MessageSquare } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/ProductCard';
+import ProductReviews from '@/components/ProductReviews';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
 import { formatPKR } from '@/lib/currency';
@@ -139,73 +140,7 @@ const ProductDetail = () => {
       </div>
 
       {/* Reviews Section */}
-      <section className="mt-20 border-t border-border pt-16">
-        <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-12">
-          <div>
-            <h2 className="font-display text-3xl font-bold text-foreground">Customer Reviews</h2>
-            <div className="mt-4 flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`h-5 w-5 ${i < Math.floor(product.rating) ? 'fill-accent text-accent' : 'text-border'}`} />
-                ))}
-              </div>
-              <span className="text-lg font-bold text-foreground">{product.rating} out of 5</span>
-              <span className="text-sm text-muted-foreground">Based on {product.reviews} reviews</span>
-            </div>
-          </div>
-          <Button className="gap-2">
-            <MessageSquare className="h-4 w-4" /> Write a Review
-          </Button>
-        </div>
-
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Review Summary Mockup */}
-          <div className="lg:col-span-1 space-y-4">
-            {[5, 4, 3, 2, 1].map((star) => {
-              const percentages = { 5: 85, 4: 10, 3: 3, 2: 1, 1: 1 };
-              const percent = percentages[star as keyof typeof percentages];
-              return (
-                <div key={star} className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-muted-foreground w-3">{star}</span>
-                  <Star className="h-3 w-3 fill-muted-foreground text-muted-foreground" />
-                  <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-accent rounded-full" style={{ width: `${percent}%` }} />
-                  </div>
-                  <span className="text-sm text-muted-foreground w-10 text-right">{percent}%</span>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Individual Reviews Mockup */}
-          <div className="lg:col-span-2 space-y-8">
-            {[
-              { name: 'Ahmed Khan', date: '2 weeks ago', rating: 5, comment: 'MashAllah, the quality of this book is exceptional. The printing is clear and the binding is very durable. Highly recommend for every Muslim household.', avatar: 'A' },
-              { name: 'Sara Malik', date: '1 month ago', rating: 5, comment: 'Very fast delivery across Lahore. The packaging was beautiful and ensured the product arrived safely. JazakAllah!', avatar: 'S' },
-              { name: 'Zaid Ali', date: '2 months ago', rating: 4, comment: 'Great product, though I wish there were more color options available. Still, the content is what matters most.', avatar: 'Z' }
-            ].map((review, i) => (
-              <div key={i} className="flex gap-4 pb-8 border-b border-border/50 last:border-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-bold">
-                  {review.avatar}
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-semibold text-foreground">{review.name}</h4>
-                    <span className="text-xs text-muted-foreground">{review.date}</span>
-                  </div>
-                  <div className="flex items-center gap-0.5 mb-3">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className={`h-3 w-3 ${i < review.rating ? 'fill-accent text-accent' : 'text-border'}`} />
-                    ))}
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>
-                </div>
-              </div>
-            ))}
-            <Button variant="outline" className="w-full">View All Reviews</Button>
-          </div>
-        </div>
-      </section>
+      <ProductReviews productId={product.id} productRating={product.rating} productReviews={product.reviews} />
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
