@@ -7,6 +7,7 @@ import TrustBadges from '@/components/TrustBadges';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import { OrganizationJsonLd } from '@/components/JsonLd';
 import BookDiscoveryQuiz from '@/components/BookDiscoveryQuiz';
+import NewArrivals from '@/components/NewArrivals';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
