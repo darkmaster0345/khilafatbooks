@@ -222,7 +222,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       toast.success(`${product.name} added to cart`, {
         description: `${newTotal} item${newTotal > 1 ? 's' : ''} in cart — Rs. ${newSubtotal.toLocaleString()}`,
-        action: { label: 'View Cart', onClick: () => window.location.href = '/cart' },
+        action: { label: 'View Cart', onClick: () => { window.dispatchEvent(new CustomEvent('navigate', { detail: '/cart' })); } },
         duration: 4000,
       });
       return newItems;
