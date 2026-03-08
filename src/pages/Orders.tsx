@@ -9,6 +9,7 @@ import { formatPKR } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import OrderTrackingTimeline from '@/components/OrderTrackingTimeline';
+import PrivacyModeCard from '@/components/PrivacyModeCard';
 
 interface Order {
   id: string;
