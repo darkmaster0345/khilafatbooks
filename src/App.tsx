@@ -68,6 +68,7 @@ const AppLayout = () => {
       </div>
       <Footer />
       <BackToTop />
+      <ExitIntentDialog />
       {isPluginEnabled('whatsapp_notifications') && <WhatsAppWidget />}
       {isPluginEnabled('ai_chat') && <AIChatWidget />}
     </div>

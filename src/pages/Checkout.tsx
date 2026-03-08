@@ -333,8 +333,19 @@ const Checkout = () => {
           <div className="mt-4">
             <DiscountCodeInput subtotal={subtotal} onApply={setDiscount} applied={discount} />
           </div>
-          <div className="mt-5 flex items-center gap-2 text-[10px] text-muted-foreground justify-center">
-            <ShieldCheck className="h-3.5 w-3.5" /> Secure & verified payment
+          <div className="mt-5 space-y-2.5 border-t border-border pt-4">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>1000+ orders delivered across Pakistan</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>100% Halal Guaranteed</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span>24-hour payment verification</span>
+            </div>
           </div>
         </div>
       </div>

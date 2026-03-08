@@ -30,13 +30,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [zakatEnabled, setZakatEnabled] = useState(false);
 
   const addItem = useCallback((product: LegacyProduct) => {
-    setItems(prev => {
-      const existing = prev.find(i => i.product.id === product.id);
-      if (existing) {
-        return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      }
-      return [...prev, { product, quantity: 1 }];
-    });
+    // Toast is handled inside the setItems callback below
     // We need to compute new totals for the toast
     setItems(prev => {
       const newItems = prev.find(i => i.product.id === product.id)

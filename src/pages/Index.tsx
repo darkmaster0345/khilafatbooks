@@ -236,6 +236,7 @@ const Index = () => {
           </motion.div>
         </div>
       </section>
+      <WelcomeBanner />
     </main>
   );
 };
