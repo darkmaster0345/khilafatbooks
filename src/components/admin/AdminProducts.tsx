@@ -113,18 +113,22 @@ const AdminProducts = () => {
     let image_url: string | undefined;
     let digital_file_url: string | undefined;
 
-    // Upload product image
+    // Upload product image to Cloudinary
     if (imageFile) {
-      const ext = imageFile.name.split('.').pop();
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('product-images').upload(path, imageFile);
-      if (upErr) {
-        toast({ title: 'Image upload failed', description: upErr.message, variant: 'destructive' });
+      const formData = new FormData();
+      formData.append('file', imageFile);
+      formData.append('folder', 'products');
+
+      const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-image', {
+        body: formData,
+      });
+
+      if (uploadError || !uploadData?.success) {
+        toast({ title: 'Image upload failed', description: uploadError?.message || uploadData?.error || 'Upload failed', variant: 'destructive' });
         setSaving(false);
         return;
       }
-      const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(path);
-      image_url = urlData.publicUrl;
+      image_url = uploadData.url;
     }
 
     // Upload digital file
