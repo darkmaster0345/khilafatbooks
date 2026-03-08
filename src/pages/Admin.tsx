@@ -21,9 +21,10 @@ import AdminPlugins from '@/components/admin/AdminPlugins';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminBookRequests from '@/components/admin/AdminBookRequests';
 import AdminSecurity from '@/components/admin/AdminSecurity';
+import AdminNewsletter from '@/components/admin/AdminNewsletter';
 import logo from '@/assets/logo.png';
 
-type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests' | 'security';
+type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests' | 'security' | 'newsletter';
 
 const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
