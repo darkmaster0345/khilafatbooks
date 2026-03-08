@@ -186,3 +186,9 @@
     100% { transform: translateX(100%); }
   }
 }
+
+@layer utilities {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
