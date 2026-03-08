@@ -151,6 +151,10 @@ const Checkout = () => {
       p_discount_code: discount?.code || null,
       p_referral_discount: referralDiscount,
       p_recovery_discount: 0,
+      p_is_gift: isGift,
+      p_gift_recipient_name: isGift ? giftRecipientName || null : null,
+      p_gift_message: isGift ? giftMessage || null : null,
+      p_gift_wrap: isGift && giftWrap,
     } as any);
 
     const orderId = orderData as unknown as string;
