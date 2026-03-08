@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCart } from '@/context/CartContext';
 import { formatPKR } from '@/lib/currency';
+import { usePluginSettings } from '@/hooks/usePluginSettings';
 
 const Cart = () => {
   const {
