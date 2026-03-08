@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import OrderTrackingTimeline from '@/components/OrderTrackingTimeline';
 import PrivacyModeCard from '@/components/PrivacyModeCard';
+import LoyaltyBadge from '@/components/LoyaltyBadge';
 
 interface Order {
   id: string;
@@ -82,15 +83,22 @@ const Orders = () => {
   return (
     <main className="container mx-auto px-4 py-10 max-w-4xl">
       <Helmet><title>My Orders | Khilafat Books</title></Helmet>
-      <div className="mb-10">
+      <div className="mb-8">
         <p className="section-heading">Your History</p>
         <h1 className="section-title">My Orders</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Track your current orders and view your purchase history.
         </p>
-        <div className="mt-6">
-          <PrivacyModeCard />
-        </div>
+      </div>
+
+      {/* Loyalty Badge */}
+      <div className="mb-8">
+        <LoyaltyBadge />
+      </div>
+
+      {/* Privacy Mode */}
+      <div className="mb-8">
+        <PrivacyModeCard />
       </div>
 
       {orders.length === 0 ? (

@@ -5,9 +5,20 @@ import { supabase } from '@/integrations/supabase/client';
 
 export type { LegacyProduct as Product } from '@/hooks/useProducts';
 
+export type LoyaltyTier = 'talib' | 'muallim' | 'alim';
+
 export interface CartItem {
   product: LegacyProduct;
   quantity: number;
+}
+
+export interface LoyaltyInfo {
+  tier: LoyaltyTier;
+  totalSpent: number;
+  discountPercent: number;
+  nextTier: LoyaltyTier | null;
+  nextTierThreshold: number;
+  progress: number; // 0-100
 }
 
 interface CartContextType {
@@ -25,9 +36,45 @@ interface CartContextType {
   recoveryDiscount: number;
   recoveryCode: string | null;
   applyRecoveryCode: (code: string) => Promise<boolean>;
+  loyaltyInfo: LoyaltyInfo | null;
+  loyaltyDiscount: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+// Loyalty tier thresholds and discounts
+const TIER_CONFIG = {
+  talib: { minSpent: 0, discount: 0, label: 'Talib' },
+  muallim: { minSpent: 10000, discount: 2, label: 'Muallim' },
+  alim: { minSpent: 50000, discount: 5, label: 'Alim' },
+};
+
+const calculateLoyaltyInfo = (tier: LoyaltyTier, totalSpent: number): LoyaltyInfo => {
+  const currentConfig = TIER_CONFIG[tier];
+  let nextTier: LoyaltyTier | null = null;
+  let nextTierThreshold = 0;
+  let progress = 100;
+
+  if (tier === 'talib') {
+    nextTier = 'muallim';
+    nextTierThreshold = TIER_CONFIG.muallim.minSpent;
+    progress = Math.min(100, (totalSpent / nextTierThreshold) * 100);
+  } else if (tier === 'muallim') {
+    nextTier = 'alim';
+    nextTierThreshold = TIER_CONFIG.alim.minSpent;
+    const rangeStart = TIER_CONFIG.muallim.minSpent;
+    progress = Math.min(100, ((totalSpent - rangeStart) / (nextTierThreshold - rangeStart)) * 100);
+  }
+
+  return {
+    tier,
+    totalSpent,
+    discountPercent: currentConfig.discount,
+    nextTier,
+    nextTierThreshold,
+    progress,
+  };
+};
 
 // Sync cart to abandoned_carts table (debounced)
 const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
@@ -58,7 +105,6 @@ const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
       updated_at: new Date().toISOString(),
     };
 
-    // Upsert: find existing active cart for user, or create new
     const { data: existing } = await supabase
       .from('abandoned_carts')
       .select('id')
@@ -69,21 +115,15 @@ const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
       .single();
 
     if (existing) {
-      await supabase
-        .from('abandoned_carts')
-        .update(cartPayload)
-        .eq('id', existing.id);
+      await supabase.from('abandoned_carts').update(cartPayload).eq('id', existing.id);
     } else {
-      await supabase
-        .from('abandoned_carts')
-        .insert(cartPayload as any);
+      await supabase.from('abandoned_carts').insert(cartPayload as any);
     }
   } catch (e) {
-    // Silent fail - non-critical
+    // Silent fail
   }
 };
 
-// Mark abandoned cart as recovered when order is placed
 const markCartRecovered = async (orderId?: string) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -109,18 +149,54 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [zakatEnabled, setZakatEnabled] = useState(false);
   const [recoveryDiscount, setRecoveryDiscount] = useState(0);
   const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
+  const [loyaltyInfo, setLoyaltyInfo] = useState<LoyaltyInfo | null>(null);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  // Debounced sync to abandoned_carts
+  // Fetch loyalty info on mount and auth change
+  useEffect(() => {
+    const fetchLoyaltyInfo = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoyaltyInfo(null);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('loyalty_tier, total_spent')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profile) {
+        const tier = ((profile as any).loyalty_tier || 'talib') as LoyaltyTier;
+        const totalSpent = (profile as any).total_spent || 0;
+        setLoyaltyInfo(calculateLoyaltyInfo(tier, totalSpent));
+      }
+    };
+
+    fetchLoyaltyInfo();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      fetchLoyaltyInfo();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   const subtotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   
+  // Calculate loyalty discount
+  const loyaltyDiscount = loyaltyInfo && loyaltyInfo.discountPercent > 0
+    ? Math.round(subtotal * (loyaltyInfo.discountPercent / 100))
+    : 0;
+
   useEffect(() => {
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     syncTimeoutRef.current = setTimeout(() => {
       if (items.length > 0) {
         syncAbandonedCart(items, subtotal);
       }
-    }, 5000); // 5 second debounce
+    }, 5000);
     return () => { if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current); };
   }, [items, subtotal]);
 
@@ -134,16 +210,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       toast.success(`${product.name} added to cart`, {
         description: `${newTotal} item${newTotal > 1 ? 's' : ''} in cart — Rs. ${newSubtotal.toLocaleString()}`,
-        action: {
-          label: 'View Cart',
-          onClick: () => window.location.href = '/cart',
-        },
+        action: { label: 'View Cart', onClick: () => window.location.href = '/cart' },
         duration: 4000,
       });
       return newItems;
     });
 
-    // Track cart activity (fire-and-forget) — respect privacy mode
     supabase.auth.getUser().then(({ data }) => {
       if (data.user) {
         supabase.from('profiles').select('privacy_mode').eq('user_id', data.user.id).single().then(({ data: profile }) => {
@@ -197,13 +269,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error || !data) return false;
 
-      // Check if expired
       if (data.recovery_code_expires_at && new Date(data.recovery_code_expires_at) < new Date()) {
         toast.error('This recovery code has expired');
         return false;
       }
 
-      setRecoveryDiscount(50); // Rs. 50 discount
+      setRecoveryDiscount(50);
       setRecoveryCode(code);
       toast.success('Recovery discount applied!', { description: 'Rs. 50 off your order' });
       return true;
@@ -214,13 +285,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const zakatAmount = zakatEnabled ? subtotal * 0.025 : 0;
-  const total = subtotal + zakatAmount - recoveryDiscount;
+  const total = subtotal + zakatAmount - recoveryDiscount - loyaltyDiscount;
 
   return (
     <CartContext.Provider value={{
       items, addItem, removeItem, updateQuantity, clearCart,
       totalItems, subtotal, zakatEnabled, setZakatEnabled, zakatAmount, total,
       recoveryDiscount, recoveryCode, applyRecoveryCode,
+      loyaltyInfo, loyaltyDiscount,
     }}>
       {children}
     </CartContext.Provider>

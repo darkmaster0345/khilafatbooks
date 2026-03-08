@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ArrowRight, Gift } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ArrowRight, Gift, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,12 +10,14 @@ import { formatPKR } from '@/lib/currency';
 import { usePluginSettings } from '@/hooks/usePluginSettings';
 import FreeShippingBar from '@/components/FreeShippingBar';
 import CartSuggestions from '@/components/CartSuggestions';
+import LoyaltyBadge from '@/components/LoyaltyBadge';
 
 const Cart = () => {
   const {
     items, removeItem, updateQuantity, totalItems,
     subtotal, zakatEnabled, setZakatEnabled, zakatAmount, total,
     recoveryDiscount, recoveryCode, applyRecoveryCode,
+    loyaltyInfo, loyaltyDiscount,
   } = useCart();
   const { isPluginEnabled } = usePluginSettings();
   const [searchParams] = useSearchParams();
@@ -152,11 +154,34 @@ const Cart = () => {
               </div>
             )}
 
+            {/* Loyalty Discount */}
+            {loyaltyInfo && loyaltyDiscount > 0 && (
+              <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mt-2">
+                <div className="flex items-center gap-2.5">
+                  <Award className="h-4 w-4 text-accent" />
+                  <div>
+                    <p className="text-sm font-medium text-accent">
+                      {loyaltyInfo.tier.charAt(0).toUpperCase() + loyaltyInfo.tier.slice(1)} Loyalty Discount
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {loyaltyInfo.discountPercent}% off (-{formatPKR(loyaltyDiscount)})
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="border-t border-border pt-4 space-y-2">
               {recoveryDiscount > 0 && (
                 <div className="flex justify-between text-sm text-primary">
                   <span>Recovery Discount</span>
                   <span>-{formatPKR(recoveryDiscount)}</span>
+                </div>
+              )}
+              {loyaltyDiscount > 0 && (
+                <div className="flex justify-between text-sm text-accent">
+                  <span>Loyalty Discount ({loyaltyInfo?.discountPercent}%)</span>
+                  <span>-{formatPKR(loyaltyDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between font-display font-bold text-foreground text-lg">
