@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { LegacyProduct } from '@/hooks/useProducts';
+import { toast } from 'sonner';
 
 export type { LegacyProduct as Product } from '@/hooks/useProducts';
 
