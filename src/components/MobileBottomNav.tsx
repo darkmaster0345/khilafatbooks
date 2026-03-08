@@ -14,7 +14,7 @@ const MobileBottomNav = () => {
     { to: '/shop', icon: Search, label: 'Shop' },
     { to: '/cart', icon: ShoppingCart, label: 'Cart', badge: totalItems },
     { to: '/wishlist', icon: Heart, label: 'Wishlist' },
-    { to: user ? '/orders' : '/auth', icon: User, label: user ? 'Orders' : 'Sign in' },
+    { to: user ? '/library' : '/auth', icon: BookOpen, label: user ? 'Library' : 'Sign in' },
   ];
 
   return (
