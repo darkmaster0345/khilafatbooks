@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, CheckCircle2, Copy, Phone, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Upload, CheckCircle2, Copy, Phone, ShieldCheck, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import DiscountCodeInput, { AppliedDiscount } from '@/components/DiscountCodeInput';
 import { usePluginSettings } from '@/hooks/usePluginSettings';
+import ReferralRewardModal from '@/components/ReferralRewardModal';
 
 const EASYPAISA_ACCOUNT = '03352706540';
 
@@ -32,20 +33,54 @@ const Checkout = () => {
   const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
   const { isPluginEnabled } = usePluginSettings();
 
+  // Referral state
+  const [referralCode, setReferralCode] = useState('');
+  const [referralValidation, setReferralValidation] = useState<any>(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralRewardType, setReferralRewardType] = useState<'discount' | 'digital_pack' | null>(null);
+  const [showRewardModal, setShowRewardModal] = useState(false);
+
   const shipping = subtotal < 5000 ? 500 : 0;
   const discountAmount = discount?.discountAmount ?? 0;
-  const grandTotal = Math.max(0, total + shipping - discountAmount);
+  const referralDiscount = referralRewardType === 'discount' && referralValidation?.valid
+    ? referralValidation.discount_amount
+    : 0;
+  const grandTotal = Math.max(0, total + shipping - discountAmount - referralDiscount);
   const hasPhysical = items.some(i => i.product.type === 'physical');
+
+  const validateReferralCode = async () => {
+    if (!referralCode.trim() || !user) return;
+    setReferralLoading(true);
+
+    const { data, error } = await supabase.rpc('validate_referral_code', {
+      p_code: referralCode.trim().toUpperCase(),
+      p_user_id: user.id,
+      p_order_total: subtotal,
+    });
+
+    if (error || !data) {
+      toast({ title: 'Error', description: 'Could not validate referral code.', variant: 'destructive' });
+    } else if (!(data as any).valid) {
+      toast({ title: 'Invalid Code', description: (data as any).error, variant: 'destructive' });
+      setReferralValidation(null);
+    } else {
+      setReferralValidation(data);
+      setShowRewardModal(true);
+    }
+    setReferralLoading(false);
+  };
+
+  const handleRewardSelection = (rewardType: 'discount' | 'digital_pack') => {
+    setReferralRewardType(rewardType);
+  };
 
   const handleScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         toast({ title: 'Invalid file', description: 'Please upload an image file.', variant: 'destructive' });
         return;
       }
-      // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast({ title: 'File too large', description: 'Screenshot must be less than 5MB.', variant: 'destructive' });
         return;
@@ -92,7 +127,7 @@ const Checkout = () => {
 
     const orderItems = items.map(i => ({ name: i.product.name, id: i.product.id, quantity: i.quantity, price: i.product.price, type: i.product.type }));
 
-    const { error } = await supabase.from('orders').insert({
+    const { data: orderData, error } = await supabase.from('orders').insert({
       user_id: user.id,
       items: orderItems,
       subtotal,
@@ -107,12 +142,34 @@ const Checkout = () => {
       customer_email: email || null,
       delivery_address: address || null,
       delivery_city: city || null,
-    } as any);
+    } as any).select('id').single();
 
     if (error) {
       toast({ title: 'Order failed', description: error.message, variant: 'destructive' });
       setSubmitting(false);
       return;
+    }
+
+    // Create referral record if referral code was used
+    if (referralValidation?.valid && orderData) {
+      await supabase.from('referrals').insert({
+        referrer_id: referralValidation.referrer_id,
+        referred_user_id: user.id,
+        referral_code_id: referralValidation.code_id,
+        order_id: orderData.id,
+        referred_reward_type: referralRewardType || 'digital_pack',
+        referred_reward_claimed: true,
+        status: 'pending',
+      } as any);
+
+      // Log the successful referral
+      await supabase.from('referral_audit_log').insert({
+        event_type: 'referral_created',
+        referral_code: referralCode.trim().toUpperCase(),
+        user_id: user.id,
+        success: true,
+        metadata: { order_id: orderData.id, reward_type: referralRewardType },
+      } as any);
     }
 
     setStep('done');
@@ -141,6 +198,12 @@ const Checkout = () => {
         <p className="mt-3 text-muted-foreground max-w-md mx-auto leading-relaxed">
           JazakAllah Khair! Your order is under review. We will verify your payment and notify you via WhatsApp/Email within 24 hours.
         </p>
+        {referralRewardType === 'digital_pack' && (
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+            <Gift className="h-4 w-4" />
+            Digital Scholar Pack will be available in your Library
+          </div>
+        )}
         <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent/10 px-4 py-2 text-sm font-medium text-accent">
           <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
           Payment Pending
@@ -221,6 +284,41 @@ const Checkout = () => {
                   </div>
                 </div>
               )}
+
+              {/* Referral Code Section */}
+              <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6">
+                <h2 className="font-display text-base font-semibold text-foreground mb-1 flex items-center gap-2">
+                  <Gift className="h-4 w-4 text-primary" />
+                  Have a Referral Code?
+                </h2>
+                <p className="text-xs text-muted-foreground mb-4">First-time customers get a special welcome reward!</p>
+                <div className="flex gap-2">
+                  <Input
+                    value={referralCode}
+                    onChange={e => setReferralCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. KB-AHMAD"
+                    className="h-11 rounded-xl font-mono uppercase"
+                    maxLength={30}
+                    disabled={!!referralValidation?.valid}
+                  />
+                  <Button
+                    onClick={validateReferralCode}
+                    disabled={!referralCode.trim() || referralLoading || !!referralValidation?.valid}
+                    variant={referralValidation?.valid ? "default" : "outline"}
+                    className="h-11 shrink-0"
+                  >
+                    {referralLoading ? 'Checking...' : referralValidation?.valid ? '✓ Applied' : 'Apply'}
+                  </Button>
+                </div>
+                {referralValidation?.valid && referralRewardType && (
+                  <div className="mt-3 flex items-center gap-2 text-xs text-primary font-medium">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    {referralRewardType === 'discount'
+                      ? `5% discount (${formatPKR(referralDiscount)}) applied!`
+                      : 'Digital Scholar Pack selected! It will be unlocked after delivery.'}
+                  </div>
+                )}
+              </div>
 
               <Button
                 onClick={() => {
@@ -326,6 +424,11 @@ const Checkout = () => {
                 <span>Discount</span><span className="font-medium">-{formatPKR(discountAmount)}</span>
               </div>
             )}
+            {referralDiscount > 0 && (
+              <div className="flex justify-between text-primary">
+                <span>Referral (5%)</span><span className="font-medium">-{formatPKR(referralDiscount)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-display font-bold text-foreground text-lg border-t border-border pt-3">
               <span>Total</span><span>{formatPKR(grandTotal)}</span>
             </div>
@@ -349,6 +452,14 @@ const Checkout = () => {
           </div>
         </div>
       </div>
+
+      {/* Referral Reward Modal */}
+      <ReferralRewardModal
+        open={showRewardModal}
+        onClose={() => setShowRewardModal(false)}
+        discountAmount={referralValidation?.discount_amount || 0}
+        onSelect={handleRewardSelection}
+      />
     </main>
   );
 };
