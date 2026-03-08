@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import AIChatWidget from "@/components/AIChatWidget";
 import BackToTop from "@/components/BackToTop";
+import ExitIntentDialog from "@/components/ExitIntentDialog";
 import { usePluginSettings } from "@/hooks/usePluginSettings";
 
 // Lazy-loaded routes
