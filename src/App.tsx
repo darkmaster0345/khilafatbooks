@@ -26,6 +26,7 @@ const Admin = lazy(() => import("./pages/Admin"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
 const Orders = lazy(() => import("./pages/Orders"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const BookRequests = lazy(() => import("./pages/BookRequests"));
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const AppLayout = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/book-requests" element={<BookRequests />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>

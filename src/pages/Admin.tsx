@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import {
   LayoutDashboard, ShoppingBag, Truck, Package, BarChart3,
-  CreditCard, Tag, Users, Puzzle, Settings,
+  CreditCard, Tag, Users, Puzzle, Settings, BookOpen,
   ChevronLeft, ChevronRight, LogOut, Store, Menu,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,8 +18,9 @@ import AdminDiscounts from '@/components/admin/AdminDiscounts';
 import AdminAudience from '@/components/admin/AdminAudience';
 import AdminPlugins from '@/components/admin/AdminPlugins';
 import AdminSettings from '@/components/admin/AdminSettings';
+import AdminBookRequests from '@/components/admin/AdminBookRequests';
 
-type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings';
+type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests';
 
 const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -30,6 +31,7 @@ const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'payments', label: 'Payments', icon: CreditCard },
   { id: 'discounts', label: 'Discounts', icon: Tag },
   { id: 'audience', label: 'Audience', icon: Users },
+  { id: 'book-requests', label: 'Book Requests', icon: BookOpen },
   { id: 'plugins', label: 'Plugins', icon: Puzzle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
@@ -43,6 +45,7 @@ const sectionComponents: Record<Section, React.FC> = {
   payments: AdminPayments,
   discounts: AdminDiscounts,
   audience: AdminAudience,
+  'book-requests': AdminBookRequests,
   plugins: AdminPlugins,
   settings: AdminSettings,
 };
