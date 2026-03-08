@@ -1,12 +1,46 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
+import "https://esm.sh/@supabase/supabase-js@2.95.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+// Cache product catalog in memory across warm invocations
+let cachedProducts: string | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function getProductCatalog(): Promise<string> {
+  const now = Date.now();
+  if (cachedProducts && now - cacheTimestamp < CACHE_TTL) {
+    return cachedProducts;
+  }
+
+  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.95.3");
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  const { data: products } = await supabase
+    .from("products")
+    .select("name, price, category, type, is_halal, in_stock, rating")
+    .eq("in_stock", true)
+    .limit(50);
+
+  cachedProducts = products
+    ? products.map((p: any) => `- ${p.name} (${p.category}, Rs. ${p.price}, ${p.type}, ${p.rating}★${p.is_halal ? ', Halal' : ''})`).join("\n")
+    : "No products available.";
+  cacheTimestamp = now;
+  return cachedProducts;
+}
+
+const SYSTEM_PREFIX = `You are a friendly assistant for Khilafat Books, an Islamic bookstore in Pakistan. Help customers find products.
+Rules: Only recommend from catalog. Prices in PKR. Keep responses to 2-3 sentences. Use Islamic greetings naturally.
+
+Catalog:\n`;
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
@@ -14,34 +48,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    // Fetch products for context
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    const { data: products } = await supabase
-      .from("products")
-      .select("name, price, category, description, type, is_halal, in_stock, rating")
-      .eq("in_stock", true)
-      .limit(50);
-
-    const productCatalog = products
-      ? products.map((p: any) => `- ${p.name} (${p.category}, Rs. ${p.price}, ${p.type}, Rating: ${p.rating}${p.is_halal ? ', Halal' : ''}): ${p.description}`).join("\n")
-      : "No products available.";
-
-    const systemPrompt = `You are a friendly and knowledgeable assistant for Khilafat Books, an Islamic bookstore based in Pakistan. You help customers find the right products from our catalog.
-
-Your personality: Warm, respectful, knowledgeable about Islam. Use Islamic greetings naturally. Keep responses concise (2-3 sentences max).
-
-Our Product Catalog:
-${productCatalog}
-
-Rules:
-- Only recommend products from the catalog above
-- Mention prices in PKR
-- If asked about something we don't have, politely say so and suggest similar items
-- For order issues, suggest contacting via WhatsApp
-- Never make up products or prices`;
+    const catalog = await getProductCatalog();
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -50,28 +57,23 @@ Rules:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash-lite",
         messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
+          { role: "system", content: SYSTEM_PREFIX + catalog },
+          ...messages.slice(-6), // Only send last 6 messages to reduce tokens
         ],
         stream: true,
       }),
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
+      const status = response.status;
+      if (status === 429) {
         return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again shortly." }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Service temporarily unavailable." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("AI gateway error:", status);
       return new Response(JSON.stringify({ error: "AI service error" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
