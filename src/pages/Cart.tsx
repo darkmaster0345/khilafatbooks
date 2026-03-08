@@ -139,9 +139,30 @@ const Cart = () => {
               </div>
             )}
 
-            <div className="border-t border-border pt-4 flex justify-between font-display font-bold text-foreground text-lg">
-              <span>Total</span>
-              <span>{formatPKR(total + (subtotal < 5000 ? 500 : 0))}</span>
+            {/* Recovery Discount */}
+            {recoveryDiscount > 0 && (
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mt-2">
+                <div className="flex items-center gap-2.5">
+                  <Gift className="h-4 w-4 text-primary" />
+                  <div>
+                    <p className="text-sm font-medium text-primary">Recovery Discount Applied!</p>
+                    <p className="text-xs text-muted-foreground">-{formatPKR(recoveryDiscount)} off your order</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="border-t border-border pt-4 space-y-2">
+              {recoveryDiscount > 0 && (
+                <div className="flex justify-between text-sm text-primary">
+                  <span>Recovery Discount</span>
+                  <span>-{formatPKR(recoveryDiscount)}</span>
+                </div>
+              )}
+              <div className="flex justify-between font-display font-bold text-foreground text-lg">
+                <span>Total</span>
+                <span>{formatPKR(total + (subtotal < 5000 ? 500 : 0))}</span>
+              </div>
             </div>
           </div>
 
