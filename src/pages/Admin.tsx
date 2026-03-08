@@ -45,6 +45,7 @@ const sectionComponents: Record<Section, React.FC> = {
   payments: AdminPayments,
   discounts: AdminDiscounts,
   audience: AdminAudience,
+  'book-requests': AdminBookRequests,
   plugins: AdminPlugins,
   settings: AdminSettings,
 };

@@ -63,6 +63,7 @@ const AppLayout = () => {
             <Route path="/auth" element={<Auth />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/book-requests" element={<BookRequests />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
