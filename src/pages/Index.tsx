@@ -85,7 +85,7 @@ const Index = () => {
             style={{ opacity: heroOverlayOpacity }}
           />
         </motion.div>
-        <motion.div className="relative container mx-auto px-4 py-24" style={{ y: heroContentY }}>
+        <motion.div className="relative container mx-auto px-4 py-16 md:py-24" style={{ y: heroContentY }}>
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
