@@ -153,8 +153,17 @@ const ProductDetail = () => {
 
           {/* Stock urgency */}
           {!product.inStock && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-destructive font-medium">
-              <AlertTriangle className="h-4 w-4" /> Out of stock
+            <div className="mt-3 space-y-4">
+              <div className="flex items-center gap-2 text-sm text-destructive font-medium">
+                <AlertTriangle className="h-4 w-4" /> Out of stock
+              </div>
+              <SmartSuggest 
+                reason="out_of_stock"
+                category={found?.category}
+                series={(found as any)?.series || undefined}
+                excludeId={product.id}
+                limit={3}
+              />
             </div>
           )}
 
