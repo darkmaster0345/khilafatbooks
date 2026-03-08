@@ -7,6 +7,7 @@ import TrustBadges from '@/components/TrustBadges';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import { OrganizationJsonLd } from '@/components/JsonLd';
 import BookDiscoveryQuiz from '@/components/BookDiscoveryQuiz';
+import NewArrivals from '@/components/NewArrivals';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
@@ -79,7 +80,7 @@ const Index = () => {
         <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
           <img
             src={heroBg}
-            alt=""
+            alt="Islamic books and products collection"
             className="h-[120%] w-full object-cover"
             fetchPriority="high"
           />
@@ -226,6 +227,9 @@ const Index = () => {
           )}
         </div>
       </section>
+
+      {/* New Arrivals */}
+      <NewArrivals />
 
       {/* Book Discovery Quiz */}
       <BookDiscoveryQuiz />

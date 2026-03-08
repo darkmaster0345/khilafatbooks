@@ -93,9 +93,29 @@ const Orders = () => {
         </p>
       </div>
 
-      {/* Loyalty Badge */}
-      <div className="mb-8">
+      {/* Loyalty Dashboard */}
+      <div className="mb-8 space-y-4">
         <LoyaltyBadge />
+        <div className="rounded-xl border border-border bg-card p-5">
+          <h3 className="font-display text-sm font-semibold text-foreground mb-3">Tier Benefits</h3>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg bg-muted/50 p-3 text-center">
+              <p className="font-display text-sm font-bold text-muted-foreground">Talib</p>
+              <p className="text-xs text-muted-foreground mt-1">Base access</p>
+              <p className="text-xs text-muted-foreground">1 pt per Rs. 100</p>
+            </div>
+            <div className="rounded-lg bg-accent/5 border border-accent/20 p-3 text-center">
+              <p className="font-display text-sm font-bold text-accent">Muallim</p>
+              <p className="text-xs text-muted-foreground mt-1">2% discount</p>
+              <p className="text-xs text-muted-foreground">Referral access</p>
+            </div>
+            <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-center">
+              <p className="font-display text-sm font-bold text-primary">Alim</p>
+              <p className="text-xs text-muted-foreground mt-1">5% discount</p>
+              <p className="text-xs text-muted-foreground">Early access</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Privacy Mode */}

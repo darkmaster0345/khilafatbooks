@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, Users, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, Users, AlertTriangle, Share2, MessageCircle, Copy, Bell } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,9 @@ import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { formatPKR } from '@/lib/currency';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -23,7 +26,10 @@ const ProductDetail = () => {
   const product = found ? toLegacyProduct(found) : null;
   const { addItem } = useCart();
   const { addProduct } = useRecentlyViewed();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const addToCartRef = useRef<HTMLButtonElement>(null);
+  const [notifyRequested, setNotifyRequested] = useState(false);
 
   // Track recently viewed
   useEffect(() => {
@@ -157,6 +163,34 @@ const ProductDetail = () => {
               <div className="flex items-center gap-2 text-sm text-destructive font-medium">
                 <AlertTriangle className="h-4 w-4" /> Out of stock
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={notifyRequested}
+                onClick={async () => {
+                  if (!user) {
+                    toast({ title: 'Sign in required', description: 'Please sign in to get notified.', variant: 'destructive' });
+                    return;
+                  }
+                  const { error } = await supabase.from('stock_notifications').insert({
+                    user_id: user.id,
+                    product_id: product.id,
+                    user_email: user.email,
+                  } as any);
+                  if (error?.code === '23505') {
+                    toast({ title: 'Already subscribed', description: "You'll be notified when this is back in stock." });
+                  } else if (error) {
+                    toast({ title: 'Error', description: error.message, variant: 'destructive' });
+                  } else {
+                    toast({ title: 'Subscribed!', description: "We'll notify you when this product is back in stock." });
+                  }
+                  setNotifyRequested(true);
+                }}
+              >
+                <Bell className="h-4 w-4" />
+                {notifyRequested ? 'Notification Set ✓' : 'Notify Me When Available'}
+              </Button>
               <SmartSuggest 
                 reason="out_of_stock"
                 category={found?.category}
@@ -201,6 +235,33 @@ const ProductDetail = () => {
             <ShoppingCart className="h-5 w-5" />
             {product.inStock ? `Add to Cart — ${formatPKR(product.price)}` : 'Out of Stock'}
           </Button>
+
+          {/* Social Sharing */}
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Share:</span>
+            <button
+              onClick={() => {
+                const url = `https://khilafatbooks.lovable.app/product/${product.id}`;
+                const text = `Check out "${product.name}" on Khilafat Books! ${formatPKR(product.price)}\n${url}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+              aria-label="Share on WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                const url = `https://khilafatbooks.lovable.app/product/${product.id}`;
+                navigator.clipboard.writeText(url);
+                toast({ title: 'Link copied!', description: 'Product link copied to clipboard.' });
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+              aria-label="Copy product link"
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+          </div>
         </motion.div>
       </div>
 

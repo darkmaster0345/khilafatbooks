@@ -172,9 +172,13 @@ const Checkout = () => {
       } as any);
     }
 
-    setStep('done');
     clearCart();
     setSubmitting(false);
+    if (orderData?.id) {
+      navigate(`/order-confirmed/${orderData.id}`);
+      return;
+    }
+    setStep('done');
   };
 
   if (items.length === 0 && step !== 'done') {

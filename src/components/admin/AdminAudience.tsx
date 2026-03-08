@@ -60,6 +60,16 @@ const AdminAudience = () => {
   const totalCustomers = customers.length;
   const totalRevenue = customers.reduce((s, c) => s + c.totalSpent, 0);
   const avgPerCustomer = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
+  const repeatBuyers = customers.filter(c => c.orderCount > 1).length;
+  const oneTimeBuyers = customers.filter(c => c.orderCount === 1).length;
+  
+  // City distribution
+  const cityMap: Record<string, number> = {};
+  customers.forEach(c => {
+    const city = c.city || 'Unknown';
+    cityMap[city] = (cityMap[city] || 0) + 1;
+  });
+  const topCities = Object.entries(cityMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -84,6 +94,43 @@ const AdminAudience = () => {
           <Users className="h-5 w-5 mx-auto text-muted-foreground mb-1" />
           <p className="text-xl font-bold font-display text-foreground">{formatPKR(avgPerCustomer)}</p>
           <p className="text-xs text-muted-foreground">Avg. Per Customer</p>
+        </div>
+      </div>
+
+      {/* Customer Segments */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-border bg-card p-5">
+          <h3 className="font-display text-sm font-semibold text-foreground mb-3">Buyer Segments</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Repeat Buyers</span>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">{repeatBuyers}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">One-time Buyers</span>
+              <Badge variant="outline">{oneTimeBuyers}</Badge>
+            </div>
+            {totalCustomers > 0 && (
+              <div className="pt-2 border-t border-border/50">
+                <p className="text-xs text-muted-foreground">
+                  Repeat rate: <span className="font-semibold text-foreground">{((repeatBuyers / totalCustomers) * 100).toFixed(1)}%</span>
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-5">
+          <h3 className="font-display text-sm font-semibold text-foreground mb-3">Top Cities</h3>
+          <div className="space-y-2">
+            {topCities.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No data yet.</p>
+            ) : topCities.map(([city, count]) => (
+              <div key={city} className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{city}</span>
+                <span className="text-sm font-medium text-foreground">{count}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
