@@ -1,7 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useRef, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, Users, AlertTriangle, Share2, MessageCircle, Copy, Bell } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, Users, AlertTriangle, Share2, Copy, Bell, Gift, Link2 } from 'lucide-react';
+import WhatsAppIcon from '@/components/WhatsAppIcon';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
