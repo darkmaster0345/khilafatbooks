@@ -30,19 +30,24 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [zakatEnabled, setZakatEnabled] = useState(false);
 
   const addItem = useCallback((product: LegacyProduct) => {
+    // Toast is handled inside the setItems callback below
+    // We need to compute new totals for the toast
     setItems(prev => {
-      const existing = prev.find(i => i.product.id === product.id);
-      if (existing) {
-        return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
-      }
-      return [...prev, { product, quantity: 1 }];
-    });
-    toast.success(`${product.name} added to cart`, {
-      description: `${product.category} • ${product.type === 'digital' ? 'Digital' : 'Physical'}`,
-      action: {
-        label: 'View Cart',
-        onClick: () => window.location.href = '/cart',
-      },
+      const newItems = prev.find(i => i.product.id === product.id)
+        ? prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
+        : [...prev, { product, quantity: 1 }];
+      const newTotal = newItems.reduce((s, i) => s + i.quantity, 0);
+      const newSubtotal = newItems.reduce((s, i) => s + i.product.price * i.quantity, 0);
+      
+      toast.success(`${product.name} added to cart`, {
+        description: `${newTotal} item${newTotal > 1 ? 's' : ''} in cart — Rs. ${newSubtotal.toLocaleString()}`,
+        action: {
+          label: 'View Cart',
+          onClick: () => window.location.href = '/cart',
+        },
+        duration: 4000,
+      });
+      return newItems;
     });
   }, []);
 

@@ -31,6 +31,12 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         
         <div className="absolute left-3 top-3 flex flex-col gap-1.5">
+          {product.reviews >= 15 && (
+            <Badge className="bg-accent text-accent-foreground text-[10px] font-semibold shadow-md">🔥 Bestseller</Badge>
+          )}
+          {product.rating >= 4.5 && product.reviews < 15 && (
+            <Badge className="bg-primary text-primary-foreground text-[10px] font-semibold shadow-md">⭐ Top Rated</Badge>
+          )}
           {product.isNew && (
             <Badge className="bg-accent text-accent-foreground text-[10px] font-semibold shadow-md">New</Badge>
           )}

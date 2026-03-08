@@ -7,6 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCart } from '@/context/CartContext';
 import { formatPKR } from '@/lib/currency';
 import { usePluginSettings } from '@/hooks/usePluginSettings';
+import FreeShippingBar from '@/components/FreeShippingBar';
+import CartSuggestions from '@/components/CartSuggestions';
 
 const Cart = () => {
   const {
@@ -86,11 +88,15 @@ const Cart = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+          <CartSuggestions cartItems={items} />
         </div>
 
         {/* Summary */}
         <div className="rounded-xl border border-border bg-card p-6 h-fit lg:sticky lg:top-24 shadow-sm">
-          <h2 className="font-display text-lg font-bold text-foreground mb-5">Order Summary</h2>
+          <h2 className="font-display text-lg font-bold text-foreground mb-4">Order Summary</h2>
+          <div className="mb-4">
+            <FreeShippingBar subtotal={subtotal} />
+          </div>
           <div className="space-y-3 text-sm">
             <div className="flex justify-between text-muted-foreground">
               <span>Subtotal</span>
