@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X, LogIn, LogOut, User, Search, Heart } from 'lucide-react';
+import { ShoppingCart, Menu, X, LogIn, LogOut, User, Search, Heart, BookOpen } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/hooks/useAuth';
