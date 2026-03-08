@@ -102,7 +102,7 @@ const App = () => (
                   </Routes>
                 </Suspense>
               </BrowserRouter>
-              <Analytics />
+              
             </WishlistProvider>
           </CartProvider>
         </AuthProvider>
