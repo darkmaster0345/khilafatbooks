@@ -4,7 +4,7 @@ import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import {
   LayoutDashboard, ShoppingBag, Truck, Package, BarChart3,
   CreditCard, Tag, Users, Puzzle, Settings, BookOpen,
-  ChevronLeft, ChevronRight, LogOut, Store, Menu,
+  ChevronLeft, ChevronRight, LogOut, Store, Menu, Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
