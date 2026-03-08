@@ -154,11 +154,34 @@ const Cart = () => {
               </div>
             )}
 
+            {/* Loyalty Discount */}
+            {loyaltyInfo && loyaltyDiscount > 0 && (
+              <div className="rounded-xl border border-accent/20 bg-accent/5 p-4 mt-2">
+                <div className="flex items-center gap-2.5">
+                  <Award className="h-4 w-4 text-accent" />
+                  <div>
+                    <p className="text-sm font-medium text-accent">
+                      {loyaltyInfo.tier.charAt(0).toUpperCase() + loyaltyInfo.tier.slice(1)} Loyalty Discount
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {loyaltyInfo.discountPercent}% off (-{formatPKR(loyaltyDiscount)})
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="border-t border-border pt-4 space-y-2">
               {recoveryDiscount > 0 && (
                 <div className="flex justify-between text-sm text-primary">
                   <span>Recovery Discount</span>
                   <span>-{formatPKR(recoveryDiscount)}</span>
+                </div>
+              )}
+              {loyaltyDiscount > 0 && (
+                <div className="flex justify-between text-sm text-accent">
+                  <span>Loyalty Discount ({loyaltyInfo?.discountPercent}%)</span>
+                  <span>-{formatPKR(loyaltyDiscount)}</span>
                 </div>
               )}
               <div className="flex justify-between font-display font-bold text-foreground text-lg">
