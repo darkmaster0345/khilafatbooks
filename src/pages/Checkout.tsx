@@ -30,6 +30,7 @@ const Checkout = () => {
   const [transactionId, setTransactionId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
+  const { isPluginEnabled } = usePluginSettings();
 
   const shipping = subtotal < 5000 ? 500 : 0;
   const discountAmount = discount?.discountAmount ?? 0;
