@@ -115,6 +115,12 @@ const Header = () => {
                 </div>
                 <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">My Orders</span>
               </Link>
+              <Link to="/library" className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
+                  <BookOpen className="h-3 w-3 text-primary" />
+                </div>
+                <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">My Library</span>
+              </Link>
               <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1 text-xs text-muted-foreground hover:text-destructive h-8" title="Sign Out">
                 <LogOut className="h-3 w-3" />
               </Button>
