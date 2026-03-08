@@ -135,6 +135,8 @@ const Header = () => {
 
           <ThemeToggle />
 
+          {user && <NotificationBell />}
+
           <Link to="/wishlist" className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
             <Heart className="h-5 w-5 text-foreground" />
             {wishlist.length > 0 && (
