@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useProducts, toLegacyProduct, type Product } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
 import { Link } from 'react-router-dom';
-import { formatPrice } from '@/lib/currency';
+import { formatPKR } from '@/lib/currency';
 import { resolveProductImage } from '@/lib/productImages';
 
 interface QuizOption {
