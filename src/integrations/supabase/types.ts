@@ -442,6 +442,42 @@ export type Database = {
           },
         ]
       }
+      security_events: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          success: boolean | null
+          user_email: string | null
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          success?: boolean | null
+          user_email?: string | null
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          success?: boolean | null
+          user_email?: string | null
+        }
+        Relationships: []
+      }
       store_settings: {
         Row: {
           id: string
