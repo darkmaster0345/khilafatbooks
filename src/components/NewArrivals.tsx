@@ -11,7 +11,7 @@ const NewArrivals = () => {
   fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
   
   const newProducts = products
-    .filter(p => !p.is_hidden && new Date(p.created_at) >= fourteenDaysAgo)
+    .filter(p => new Date(p.created_at) >= fourteenDaysAgo)
     .slice(0, 4)
     .map(toLegacyProduct);
 

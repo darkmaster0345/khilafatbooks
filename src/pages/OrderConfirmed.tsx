@@ -37,7 +37,7 @@ const OrderConfirmed = () => {
   
   // Find upsell: a product NOT in the order, in similar category, preferably digital
   const upsellProduct = products
-    .filter(p => !orderItems.some((i: any) => i.id === p.id) && p.in_stock && !p.is_hidden)
+    .filter(p => !orderItems.some((i: any) => i.id === p.id) && p.in_stock)
     .sort((a, b) => {
       const aMatch = orderCategories.includes(a.category) ? 1 : 0;
       const bMatch = orderCategories.includes(b.category) ? 1 : 0;
