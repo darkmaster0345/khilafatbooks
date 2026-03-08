@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useProducts, Product, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
+import { resolveProductImage } from '@/lib/productImages';
 
 type ProductForm = {
   name: string;
