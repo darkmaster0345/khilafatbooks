@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { CheckCircle2, Clock, Eye, XCircle, Search, FileDown, MessageSquare, Trash2, Plus, X } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { CheckCircle2, Clock, Eye, XCircle, Search, FileDown, MessageSquare, Trash2, Plus, X, CheckSquare, Square } from 'lucide-react';
 import { motion } from 'framer-motion';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
@@ -56,6 +57,10 @@ const AdminOrders = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showCreateOrder, setShowCreateOrder] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  
+  // Bulk selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkProcessing, setBulkProcessing] = useState(false);
 
   // Custom order form
   const [newOrder, setNewOrder] = useState({
@@ -77,6 +82,91 @@ const AdminOrders = () => {
     const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
     if (!error && data) setOrders(data as unknown as Order[]);
     setLoading(false);
+  };
+
+  // Bulk selection handlers
+  const toggleSelectAll = useCallback(() => {
+    const filteredIds = orders
+      .filter(o => {
+        const matchSearch = o.customer_name.toLowerCase().includes(search.toLowerCase()) ||
+          o.customer_phone.includes(search) ||
+          (o.transaction_id || '').toLowerCase().includes(search.toLowerCase());
+        const matchStatus = statusFilter === 'all' || o.status === statusFilter;
+        return matchSearch && matchStatus;
+      })
+      .map(o => o.id);
+    
+    if (selectedIds.size === filteredIds.length && filteredIds.length > 0) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredIds));
+    }
+  }, [orders, search, statusFilter, selectedIds.size]);
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const bulkApprove = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkProcessing(true);
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from('orders').update({ status: 'approved' } as any).in('id', ids);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Success', description: `${ids.length} order(s) approved.` });
+      setOrders(prev => prev.map(o => ids.includes(o.id) ? { ...o, status: 'approved' } : o));
+      setSelectedIds(new Set());
+    }
+    setBulkProcessing(false);
+  };
+
+  const bulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setBulkProcessing(true);
+    const ids = Array.from(selectedIds);
+    const { error } = await supabase.from('orders').delete().in('id', ids);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Deleted', description: `${ids.length} order(s) removed.` });
+      setOrders(prev => prev.filter(o => !ids.includes(o.id)));
+      setSelectedIds(new Set());
+    }
+    setBulkProcessing(false);
+  };
+
+  const exportSelectedCSV = () => {
+    const ids = Array.from(selectedIds);
+    const toExport = orders.filter(o => ids.includes(o.id));
+    if (toExport.length === 0) return;
+
+    const headers = ['ID', 'Customer', 'Phone', 'Email', 'Total', 'Status', 'Date'];
+    const rows = toExport.map(o => [
+      o.id.slice(0, 8),
+      o.customer_name,
+      o.customer_phone,
+      o.customer_email || '',
+      o.total,
+      o.status,
+      new Date(o.created_at).toLocaleDateString()
+    ]);
+
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-export-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'Exported', description: `${toExport.length} order(s) exported to CSV.` });
   };
 
   const viewScreenshot = async (order: Order) => {
@@ -298,6 +388,47 @@ const AdminOrders = () => {
         </div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
+          <div className="flex-1" />
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={bulkApprove} 
+            disabled={bulkProcessing}
+            className="gap-1"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" /> Approve All
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={exportSelectedCSV}
+            className="gap-1"
+          >
+            <FileDown className="h-3.5 w-3.5" /> Export CSV
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={bulkDelete} 
+            disabled={bulkProcessing}
+            className="gap-1 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Delete
+          </Button>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
       {/* Orders Table */}
       {loading ? (
         <p className="text-muted-foreground">Loading orders...</p>
@@ -308,6 +439,12 @@ const AdminOrders = () => {
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
+                <th className="w-12 px-4 py-3">
+                  <Checkbox 
+                    checked={selectedIds.size === filtered.length && filtered.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-foreground">Customer</th>
                 <th className="text-left px-4 py-3 font-medium text-foreground">Total</th>
                 <th className="text-left px-4 py-3 font-medium text-foreground">Status</th>
@@ -318,7 +455,13 @@ const AdminOrders = () => {
             </thead>
             <tbody>
               {filtered.map(order => (
-                <tr key={order.id} className="border-t border-border hover:bg-muted/50">
+                <tr key={order.id} className={`border-t border-border hover:bg-muted/50 ${selectedIds.has(order.id) ? 'bg-primary/5' : ''}`}>
+                  <td className="px-4 py-3">
+                    <Checkbox 
+                      checked={selectedIds.has(order.id)}
+                      onCheckedChange={() => toggleSelect(order.id)}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground">{order.customer_name}</p>
                     <p className="text-xs text-muted-foreground">{order.customer_phone}</p>

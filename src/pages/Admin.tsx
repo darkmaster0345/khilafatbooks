@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import {
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import AdminOrders from '@/components/admin/AdminOrders';
 import AdminShipping from '@/components/admin/AdminShipping';
@@ -36,7 +37,7 @@ const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-const sectionComponents: Record<Section, React.FC> = {
+const sectionComponents: Record<Section, React.FC<{ onNavigate?: (section: Section) => void }>> = {
   dashboard: AdminDashboard,
   orders: AdminOrders,
   shipping: AdminShipping,
@@ -55,7 +56,51 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [badges, setBadges] = useState<Record<string, number>>({});
   useOrderNotifications();
+
+  // Fetch badge counts
+  useEffect(() => {
+    const fetchBadges = async () => {
+      // Pending orders count
+      const { count: pendingOrders } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      // Processing shipping count
+      const { count: processingShipping } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'approved')
+        .or('shipping_status.eq.pending,shipping_status.eq.processing');
+
+      // Out of stock products
+      const { count: outOfStock } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('in_stock', false);
+
+      setBadges({
+        orders: pendingOrders || 0,
+        shipping: processingShipping || 0,
+        products: outOfStock || 0,
+      });
+    };
+
+    fetchBadges();
+
+    // Subscribe to real-time updates
+    const ordersChannel = supabase
+      .channel('admin-badges')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchBadges())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchBadges())
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(ordersChannel);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -124,11 +169,12 @@ const Admin = () => {
         <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-0.5">
           {navItems.map(item => {
             const isActive = activeSection === item.id;
+            const badgeCount = badges[item.id] || 0;
             return (
               <button
                 key={item.id}
                 onClick={() => handleNavClick(item.id)}
-                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all relative ${
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-sm'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'
@@ -136,7 +182,15 @@ const Admin = () => {
                 title={collapsed && !mobileOpen ? item.label : undefined}
               >
                 <item.icon className="h-[18px] w-[18px] shrink-0" />
-                {(!collapsed || mobileOpen) && <span>{item.label}</span>}
+                {(!collapsed || mobileOpen) && <span className="flex-1 text-left">{item.label}</span>}
+                {/* Badge */}
+                {badgeCount > 0 && (
+                  <span className={`absolute ${collapsed && !mobileOpen ? 'top-0 right-0' : 'right-3'} flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold ${
+                    isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-destructive text-destructive-foreground'
+                  }`}>
+                    {badgeCount > 99 ? '99+' : badgeCount}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -180,7 +234,7 @@ const Admin = () => {
         </div>
 
         <div className="p-5 md:p-8 max-w-7xl">
-          <ActiveComponent />
+          <ActiveComponent onNavigate={handleNavClick} />
         </div>
       </main>
     </div>
