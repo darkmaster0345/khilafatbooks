@@ -110,9 +110,7 @@ const Admin = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl emerald-gradient mx-auto mb-4 shadow-md">
-            <span className="font-arabic text-xl text-primary-foreground">ك</span>
-          </div>
+          <img src={logo} alt="Khilafat Books" className="h-14 w-14 rounded-2xl mx-auto mb-4 shadow-md object-contain" />
           <p className="text-muted-foreground text-sm">Loading admin panel...</p>
         </div>
       </div>
