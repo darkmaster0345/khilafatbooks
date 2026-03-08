@@ -10,6 +10,7 @@ import { formatPKR } from '@/lib/currency';
 import { usePluginSettings } from '@/hooks/usePluginSettings';
 import FreeShippingBar from '@/components/FreeShippingBar';
 import CartSuggestions from '@/components/CartSuggestions';
+import CartBundleSuggestion from '@/components/CartBundleSuggestion';
 import LoyaltyBadge from '@/components/LoyaltyBadge';
 
 const Cart = () => {
