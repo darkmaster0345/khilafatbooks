@@ -274,13 +274,7 @@ export default function BookDiscoveryQuiz() {
                         <Button
                           onClick={() => {
                             if (legacyProduct) {
-                              addItem({
-                                id: legacyProduct.id,
-                                name: legacyProduct.name,
-                                price: legacyProduct.price,
-                                image: legacyProduct.image,
-                                type: legacyProduct.type,
-                              });
+                            addItem(legacyProduct);
                             }
                           }}
                           className="gold-gradient border-0 text-foreground font-semibold"
