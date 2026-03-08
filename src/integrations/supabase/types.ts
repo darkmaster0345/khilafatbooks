@@ -14,6 +14,97 @@ export type Database = {
   }
   public: {
     Tables: {
+      book_pledges: {
+        Row: {
+          created_at: string
+          id: string
+          request_id: string
+          user_email: string | null
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_id: string
+          user_email?: string | null
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_id?: string
+          user_email?: string | null
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_pledges_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "book_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      book_requests: {
+        Row: {
+          author: string | null
+          created_at: string
+          description: string | null
+          fulfilled_at: string | null
+          id: string
+          image_url: string | null
+          pledge_fee: number
+          pledge_goal: number
+          product_id: string | null
+          status: string
+          suggested_by: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          author?: string | null
+          created_at?: string
+          description?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          image_url?: string | null
+          pledge_fee?: number
+          pledge_goal?: number
+          product_id?: string | null
+          status?: string
+          suggested_by?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          author?: string | null
+          created_at?: string
+          description?: string | null
+          fulfilled_at?: string | null
+          id?: string
+          image_url?: string | null
+          pledge_fee?: number
+          pledge_goal?: number
+          product_id?: string | null
+          status?: string
+          suggested_by?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cart_activity: {
         Row: {
           created_at: string
