@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Package, Plus, Edit, Trash2, Search, Save, X, Upload, Download, Cloud } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { Package, Plus, Edit, Trash2, Search, Save, X, Upload, Download, Cloud, FileUp, Loader2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -69,7 +69,11 @@ const AdminProducts = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const digitalInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
   const [migrating, setMigrating] = useState(false);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<any[] | null>(null);
+  const [csvErrors, setCsvErrors] = useState<string[]>([]);
 
   const localImageProducts = products.filter(p => p.image_url && p.image_url.startsWith('/product-'));
 
@@ -261,6 +265,75 @@ const AdminProducts = () => {
     setForm(prev => ({ ...prev, [key]: value }));
   };
 
+  // CSV Import logic
+  const parseCSV = useCallback((text: string) => {
+    const lines = text.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return { rows: [], errors: ['CSV must have a header row and at least one data row.'] };
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const required = ['name', 'price'];
+    const missingHeaders = required.filter(r => !headers.includes(r));
+    if (missingHeaders.length) return { rows: [], errors: [`Missing required columns: ${missingHeaders.join(', ')}`] };
+
+    const rows: any[] = [];
+    const errors: string[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      if (values.length !== headers.length) {
+        errors.push(`Row ${i}: column count mismatch (expected ${headers.length}, got ${values.length})`);
+        continue;
+      }
+      const row: any = {};
+      headers.forEach((h, j) => { row[h] = values[j]; });
+      if (!row.name) { errors.push(`Row ${i}: missing name`); continue; }
+      if (!row.price || isNaN(Number(row.price))) { errors.push(`Row ${i}: invalid price`); continue; }
+      rows.push({
+        name: row.name,
+        description: row.description || '',
+        price: parseInt(row.price),
+        original_price: row.original_price ? parseInt(row.original_price) : null,
+        category: PRODUCT_CATEGORIES.includes(row.category || '') ? row.category : 'Uncategorized',
+        type: ['physical', 'digital'].includes(row.type || '') ? row.type : 'physical',
+        is_new: row.is_new === 'true',
+        is_halal: row.is_halal === 'true',
+        in_stock: row.in_stock !== 'false',
+        rating: parseFloat(row.rating) || 0,
+        reviews: parseInt(row.reviews) || 0,
+        series: row.series || null,
+        image_url: row.image_url || '/placeholder.svg',
+      });
+    }
+    return { rows, errors };
+  }, []);
+
+  const handleCSVFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const { rows, errors } = parseCSV(text);
+      setCsvPreview(rows);
+      setCsvErrors(errors);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const importCSV = async () => {
+    if (!csvPreview || csvPreview.length === 0) return;
+    setCsvImporting(true);
+    const { error } = await supabase.from('products').insert(csvPreview);
+    if (error) {
+      toast({ title: 'Import failed', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '✅ Import complete', description: `${csvPreview.length} products imported successfully.` });
+      setCsvPreview(null);
+      setCsvErrors([]);
+      refetch();
+    }
+    setCsvImporting(false);
+  };
+
   // Product form view
   if (mode !== 'list') {
     return (
@@ -435,6 +508,12 @@ const AdminProducts = () => {
             </Button>
           )}
           <Button onClick={openAdd} className="gap-1"><Plus className="h-4 w-4" /> Add Product</Button>
+          <div>
+            <input ref={csvInputRef} type="file" accept=".csv" onChange={handleCSVFile} className="hidden" />
+            <Button variant="outline" onClick={() => csvInputRef.current?.click()} className="gap-1">
+              <FileUp className="h-4 w-4" /> Import CSV
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -457,6 +536,60 @@ const AdminProducts = () => {
           <p className="text-xs text-muted-foreground">Physical</p>
         </div>
       </div>
+
+      {/* CSV Preview */}
+      {csvPreview && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              CSV Preview — {csvPreview.length} products ready to import
+            </h3>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => { setCsvPreview(null); setCsvErrors([]); }}>
+                <X className="h-4 w-4 mr-1" /> Cancel
+              </Button>
+              <Button size="sm" onClick={importCSV} disabled={csvImporting || csvPreview.length === 0} className="gap-1">
+                {csvImporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                Import {csvPreview.length} Products
+              </Button>
+            </div>
+          </div>
+          {csvErrors.length > 0 && (
+            <div className="rounded-md bg-destructive/10 p-3 space-y-1">
+              {csvErrors.map((err, i) => (
+                <p key={i} className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 shrink-0" /> {err}
+                </p>
+              ))}
+            </div>
+          )}
+          <div className="max-h-48 overflow-y-auto rounded border border-border">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="px-2 py-1 text-left text-muted-foreground">Name</th>
+                  <th className="px-2 py-1 text-left text-muted-foreground">Price</th>
+                  <th className="px-2 py-1 text-left text-muted-foreground">Category</th>
+                  <th className="px-2 py-1 text-left text-muted-foreground">Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {csvPreview.slice(0, 10).map((row, i) => (
+                  <tr key={i} className="border-t border-border/50">
+                    <td className="px-2 py-1 text-foreground">{row.name}</td>
+                    <td className="px-2 py-1 text-foreground">{formatPKR(row.price)}</td>
+                    <td className="px-2 py-1 text-muted-foreground">{row.category}</td>
+                    <td className="px-2 py-1 text-muted-foreground">{row.type}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {csvPreview.length > 10 && (
+              <p className="text-center text-[10px] text-muted-foreground py-1">...and {csvPreview.length - 10} more</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">

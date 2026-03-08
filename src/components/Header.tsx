@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
+import NotificationBell from '@/components/NotificationBell';
 import logo from '@/assets/logo.png';
 
 const navLinks = [
@@ -133,6 +134,8 @@ const Header = () => {
           )}
 
           <ThemeToggle />
+
+          {user && <NotificationBell />}
 
           <Link to="/wishlist" className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
             <Heart className="h-5 w-5 text-foreground" />

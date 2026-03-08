@@ -37,6 +37,7 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const uniqueCustomers = new Set(orders.map(o => o.customer_name)).size;
   const outOfStockProducts = products.filter(p => !p.in_stock).length;
+  const lowStockProducts = products.filter(p => p.in_stock && (p as any).stock_quantity !== undefined && (p as any).stock_quantity <= ((p as any).low_stock_threshold || 5));
 
   // Generate chart data from orders (last 7 days)
   const chartData = Array.from({ length: 7 }, (_, i) => {
@@ -115,7 +116,7 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
       </div>
 
       {/* Pending Alerts Banner */}
-      {(pendingOrders > 0 || outOfStockProducts > 0) && (
+      {(pendingOrders > 0 || outOfStockProducts > 0 || lowStockProducts.length > 0) && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
           <div className="flex items-start gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500/20">
@@ -134,6 +135,12 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
                   <p className="text-sm text-amber-600 dark:text-amber-400">
                     <Package className="inline h-3.5 w-3.5 mr-1" />
                     {outOfStockProducts} product{outOfStockProducts > 1 ? 's' : ''} out of stock
+                  </p>
+                )}
+                {lowStockProducts.length > 0 && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="inline h-3.5 w-3.5 mr-1" />
+                    {lowStockProducts.length} product{lowStockProducts.length > 1 ? 's' : ''} running low on stock
                   </p>
                 )}
               </div>

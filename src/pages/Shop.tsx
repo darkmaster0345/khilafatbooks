@@ -1,44 +1,90 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Search, SlidersHorizontal, X, Eye } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Eye, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
 import ProductQuickView from '@/components/ProductQuickView';
-import { useProducts, toLegacyProduct, LegacyProduct, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
+import { supabase } from '@/integrations/supabase/client';
+import { toLegacyProduct, LegacyProduct, Product, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 
+const PAGE_SIZE = 12;
 const categories = ['All', ...PRODUCT_CATEGORIES];
 
 const Shop = () => {
-  const [searchParams] = useSearchParams();
-  const { products, loading } = useProducts();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [quickViewProduct, setQuickViewProduct] = useState<LegacyProduct | null>(null);
-
-  useMemo(() => {
-    const query = searchParams.get('search');
-    if (query !== null) setSearch(query);
-  }, [searchParams]);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [typeFilter, setTypeFilter] = useState<'physical' | 'digital' | 'all'>(
     (searchParams.get('type') as any) || 'all'
   );
   const [sortBy, setSortBy] = useState<'default' | 'price-low' | 'price-high' | 'rating'>('default');
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
 
-  const filtered = useMemo(() => {
-    let result = products.map(toLegacyProduct);
-    if (search) result = result.filter(p => p.name.toLowerCase().includes(search.toLowerCase()));
-    if (selectedCategory !== 'All') result = result.filter(p => p.category === selectedCategory);
-    if (typeFilter !== 'all') result = result.filter(p => p.type === typeFilter);
-    if (sortBy === 'price-low') result = [...result].sort((a, b) => a.price - b.price);
-    if (sortBy === 'price-high') result = [...result].sort((a, b) => b.price - a.price);
-    if (sortBy === 'rating') result = [...result].sort((a, b) => b.rating - a.rating);
-    return result;
-  }, [products, search, selectedCategory, typeFilter, sortBy]);
+  // Sync search param
+  useEffect(() => {
+    const query = searchParams.get('search');
+    if (query !== null) setSearch(query);
+  }, [searchParams]);
 
+  const fetchProducts = useCallback(async (pageNum: number, append = false) => {
+    if (pageNum === 0) setLoading(true);
+    else setLoadingMore(true);
+
+    let query = supabase
+      .from('products')
+      .select('*')
+      .eq('is_hidden', false);
+
+    if (search) query = query.ilike('name', `%${search}%`);
+    if (selectedCategory !== 'All') query = query.eq('category', selectedCategory);
+    if (typeFilter !== 'all') query = query.eq('type', typeFilter);
+
+    if (sortBy === 'price-low') query = query.order('price', { ascending: true });
+    else if (sortBy === 'price-high') query = query.order('price', { ascending: false });
+    else if (sortBy === 'rating') query = query.order('rating', { ascending: false });
+    else query = query.order('created_at', { ascending: false });
+
+    const from = pageNum * PAGE_SIZE;
+    query = query.range(from, from + PAGE_SIZE - 1);
+
+    const { data } = await query;
+    if (data) {
+      setProducts(prev => append ? [...prev, ...data] : data);
+      setHasMore(data.length === PAGE_SIZE);
+    }
+    setLoading(false);
+    setLoadingMore(false);
+  }, [search, selectedCategory, typeFilter, sortBy]);
+
+  // Reset and fetch when filters change
+  useEffect(() => {
+    setPage(0);
+    fetchProducts(0);
+  }, [fetchProducts]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchProducts(nextPage, true);
+  };
+
+  const filtered = useMemo(() => products.map(toLegacyProduct), [products]);
   const hasFilters = search || selectedCategory !== 'All' || typeFilter !== 'all' || sortBy !== 'default';
+
+  const clearFilters = () => {
+    setSearch('');
+    setSelectedCategory('All');
+    setTypeFilter('all');
+    setSortBy('default');
+  };
 
   return (
     <main className="container mx-auto px-4 py-10">
@@ -114,7 +160,7 @@ const Shop = () => {
 
           {hasFilters && (
             <button
-              onClick={() => { setSearch(''); setSelectedCategory('All'); setTypeFilter('all'); setSortBy('default'); }}
+              onClick={clearFilters}
               className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
             >
               <X className="h-3 w-3" /> Clear all
@@ -149,28 +195,41 @@ const Shop = () => {
             >
               <SlidersHorizontal className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
               <p className="font-display text-xl text-muted-foreground">No products match your filters</p>
-              <Button
-                variant="outline"
-                onClick={() => { setSearch(''); setSelectedCategory('All'); setTypeFilter('all'); setSortBy('default'); }}
-                className="mt-4"
-              >
+              <Button variant="outline" onClick={clearFilters} className="mt-4">
                 Clear Filters
               </Button>
             </motion.div>
           ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((product, i) => (
-                <div key={product.id} className="relative group/card">
-                  <ProductCard product={product} index={i} />
-                  <button
-                    onClick={() => setQuickViewProduct(product)}
-                    className="absolute bottom-[72px] left-1/2 -translate-x-1/2 opacity-0 group-hover/card:opacity-100 transition-all duration-300 bg-background/90 backdrop-blur-md text-foreground text-xs font-medium px-4 py-2 rounded-full shadow-lg border border-border hover:bg-background flex items-center gap-1.5 z-10"
+            <>
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {filtered.map((product, i) => (
+                  <div key={product.id} className="relative group/card">
+                    <ProductCard product={product} index={i} />
+                    <button
+                      onClick={() => setQuickViewProduct(product)}
+                      className="absolute bottom-[72px] left-1/2 -translate-x-1/2 opacity-0 group-hover/card:opacity-100 transition-all duration-300 bg-background/90 backdrop-blur-md text-foreground text-xs font-medium px-4 py-2 rounded-full shadow-lg border border-border hover:bg-background flex items-center gap-1.5 z-10"
+                    >
+                      <Eye className="h-3.5 w-3.5" /> Quick View
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Load More */}
+              {hasMore && (
+                <div className="mt-10 text-center">
+                  <Button
+                    variant="outline"
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className="gap-2 px-8"
                   >
-                    <Eye className="h-3.5 w-3.5" /> Quick View
-                  </button>
+                    {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {loadingMore ? 'Loading...' : 'Load More Products'}
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </>
       )}
