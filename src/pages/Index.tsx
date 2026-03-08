@@ -4,9 +4,11 @@ import { ArrowRight, ShieldCheck, Truck, Download, Heart, Star, BookOpen, Sparkl
 import VerseOfTheDay from '@/components/VerseOfTheDay';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import { OrganizationJsonLd } from '@/components/JsonLd';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
+import { ProductSkeletonGrid } from '@/components/ProductSkeleton';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
 import WelcomeBanner from '@/components/WelcomeBanner';
@@ -32,6 +34,14 @@ const Index = () => {
   const { products, loading } = useProducts();
   const featured = products.slice(0, 6).map(toLegacyProduct);
   const { items } = useCart();
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ['start start', 'end start'],
+  });
+  const heroImageY = useTransform(scrollYProgress, [0, 1], ['0%', '25%']);
+  const heroOverlayOpacity = useTransform(scrollYProgress, [0, 1], [0.6, 0.9]);
+  const heroContentY = useTransform(scrollYProgress, [0, 1], [0, 60]);
 
   return (
     <main>
@@ -44,7 +54,11 @@ const Index = () => {
 
       {/* Abandoned Cart Banner */}
       {items.length > 0 && (
-        <div className="bg-accent/10 border-b border-accent/20">
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          className="bg-accent/10 border-b border-accent/20 overflow-hidden"
+        >
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
             <p className="text-sm text-foreground flex items-center gap-2">
               <ShoppingCart className="h-4 w-4 text-accent" />
@@ -54,16 +68,24 @@ const Index = () => {
               <Link to="/cart">View Cart <ArrowRight className="ml-1 h-3 w-3" /></Link>
             </Button>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Hero */}
-      <section className="relative overflow-hidden min-h-[90vh] flex items-center">
-        <div className="absolute inset-0">
-          <img src={heroBg} alt="" className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/20" />
-        </div>
-        <div className="relative container mx-auto px-4 py-24">
+      {/* Hero with Parallax */}
+      <section ref={heroRef} className="relative overflow-hidden min-h-[90vh] flex items-center">
+        <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
+          <img
+            src={heroBg}
+            alt=""
+            className="h-[120%] w-full object-cover"
+            fetchPriority="high"
+          />
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/20"
+            style={{ opacity: heroOverlayOpacity }}
+          />
+        </motion.div>
+        <motion.div className="relative container mx-auto px-4 py-24" style={{ y: heroContentY }}>
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -95,7 +117,12 @@ const Index = () => {
                 </Link>
               </Button>
             </div>
-            <div className="mt-14 flex items-center gap-6 text-primary-foreground/50">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7, duration: 0.6 }}
+              className="mt-14 flex items-center gap-6 text-primary-foreground/50"
+            >
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-1">
                   {[...Array(5)].map((_, i) => (
@@ -104,9 +131,9 @@ const Index = () => {
                 </div>
                 <span className="text-sm text-primary-foreground/70">Trusted by 1000+ customers</span>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
-        </div>
+        </motion.div>
       </section>
 
       {/* Features */}
@@ -183,18 +210,7 @@ const Index = () => {
             </Link>
           </div>
           {loading ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {[...Array(6)].map((_, i) => (
-                <div key={i} className="rounded-xl border border-border bg-card animate-pulse">
-                  <div className="aspect-[4/5] bg-muted rounded-t-xl" />
-                  <div className="p-5 space-y-3">
-                    <div className="h-3 w-1/3 bg-muted rounded" />
-                    <div className="h-4 w-2/3 bg-muted rounded" />
-                    <div className="h-4 w-1/2 bg-muted rounded" />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <ProductSkeletonGrid count={6} />
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featured.map((product, i) => (
