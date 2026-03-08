@@ -18,6 +18,7 @@ import AdminDiscounts from '@/components/admin/AdminDiscounts';
 import AdminAudience from '@/components/admin/AdminAudience';
 import AdminPlugins from '@/components/admin/AdminPlugins';
 import AdminSettings from '@/components/admin/AdminSettings';
+import AdminBookRequests from '@/components/admin/AdminBookRequests';
 
 type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings';
 
