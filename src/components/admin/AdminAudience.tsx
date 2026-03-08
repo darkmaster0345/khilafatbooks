@@ -97,6 +97,43 @@ const AdminAudience = () => {
         </div>
       </div>
 
+      {/* Customer Segments */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-lg border border-border bg-card p-5">
+          <h3 className="font-display text-sm font-semibold text-foreground mb-3">Buyer Segments</h3>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Repeat Buyers</span>
+              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">{repeatBuyers}</Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">One-time Buyers</span>
+              <Badge variant="outline">{oneTimeBuyers}</Badge>
+            </div>
+            {totalCustomers > 0 && (
+              <div className="pt-2 border-t border-border/50">
+                <p className="text-xs text-muted-foreground">
+                  Repeat rate: <span className="font-semibold text-foreground">{((repeatBuyers / totalCustomers) * 100).toFixed(1)}%</span>
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="rounded-lg border border-border bg-card p-5">
+          <h3 className="font-display text-sm font-semibold text-foreground mb-3">Top Cities</h3>
+          <div className="space-y-2">
+            {topCities.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No data yet.</p>
+            ) : topCities.map(([city, count]) => (
+              <div key={city} className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">{city}</span>
+                <span className="text-sm font-medium text-foreground">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Search */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
