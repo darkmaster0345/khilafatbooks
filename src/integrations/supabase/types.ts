@@ -454,6 +454,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_library: {
+        Row: {
+          added_at: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["reading_status"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["reading_status"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["reading_status"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_library_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -492,6 +539,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      reading_status: "want_to_read" | "reading" | "completed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -620,6 +668,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      reading_status: ["want_to_read", "reading", "completed"],
     },
   },
 } as const
