@@ -37,6 +37,7 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const uniqueCustomers = new Set(orders.map(o => o.customer_name)).size;
   const outOfStockProducts = products.filter(p => !p.in_stock).length;
+  const lowStockProducts = products.filter(p => p.in_stock && (p as any).stock_quantity !== undefined && (p as any).stock_quantity <= ((p as any).low_stock_threshold || 5));
 
   // Generate chart data from orders (last 7 days)
   const chartData = Array.from({ length: 7 }, (_, i) => {
