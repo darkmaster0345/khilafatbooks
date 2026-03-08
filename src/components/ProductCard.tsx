@@ -28,6 +28,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product.id);
   const [justAdded, setJustAdded] = useState(false);
+  const { toast } = useToast();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
