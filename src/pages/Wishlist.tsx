@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Heart, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useWishlist } from '@/context/WishlistContext';
