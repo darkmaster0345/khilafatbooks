@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
     // Get the book request
     const { data: request, error: reqErr } = await supabase
       .from("book_requests")
-      .select("title, author")
+      .select("title, author, pledge_fee, estimated_price")
       .eq("id", requestId)
       .single();
 
@@ -40,6 +40,22 @@ Deno.serve(async (req) => {
     }
 
     const emails = pledges.map((p: any) => p.user_email).filter(Boolean);
+    const pledgeFee = request.pledge_fee || 500;
+    const estimatedPrice = request.estimated_price;
+
+    const priceSection = estimatedPrice
+      ? `<p style="margin:0 0 20px;font-size:15px;color:#6b7280;line-height:1.6">
+          The estimated price is <strong style="color:#111827">Rs. ${estimatedPrice.toLocaleString()}</strong>. 
+          Your Rs. ${pledgeFee.toLocaleString()} security deposit will be <strong style="color:#111827">credited towards your purchase</strong>, 
+          so you'll only pay the remaining balance of approximately <strong style="color:#111827">Rs. ${Math.max(0, estimatedPrice - pledgeFee).toLocaleString()}</strong>.
+        </p>
+        <p style="margin:0 0 20px;font-size:13px;color:#9ca3af;line-height:1.5">
+          <em>Note: If the final price differs significantly from the estimate, you have the full right to withdraw and receive a complete refund of your deposit. This is your right under Shariah — no questions asked.</em>
+        </p>`
+      : `<p style="margin:0 0 20px;font-size:15px;color:#6b7280;line-height:1.6">
+          Your Rs. ${pledgeFee.toLocaleString()} security deposit will be <strong style="color:#111827">credited towards your purchase</strong>. 
+          Visit our store to see the final price and complete your order!
+        </p>`;
 
     const html = `
 <!DOCTYPE html>
@@ -56,19 +72,28 @@ Deno.serve(async (req) => {
         <h2 style="margin:0 0 8px;font-size:20px;color:#111827">📚 Great News! Your Book is Here!</h2>
         <p style="margin:0 0 20px;font-size:15px;color:#6b7280;line-height:1.6">
           Asalam-o-Alaikum!<br/><br/>
-          The book you pledged for — <strong style="color:#111827">"${request.title}"${request.author ? ` by ${request.author}` : ''}</strong> — is now available in our store!
+          The book you showed interest in — <strong style="color:#111827">"${request.title}"${request.author ? ` by ${request.author}` : ''}</strong> — is now in our possession and available for purchase!
         </p>
-        <p style="margin:0 0 20px;font-size:15px;color:#6b7280;line-height:1.6">
-          Your Rs. 200 pledge fee will be credited towards your purchase. Visit our store to grab your copy before it sells out!
-        </p>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin:0 0 20px">
+          <p style="margin:0;font-size:13px;color:#166534;font-weight:600">🔒 Shariah-Compliant Transaction</p>
+          <p style="margin:8px 0 0;font-size:13px;color:#166534;line-height:1.5">
+            Your Rs. ${pledgeFee.toLocaleString()} was a security deposit (Hamish Jiddiyyah), not a sale. 
+            The actual sale happens now that the book is in our possession. 
+            You are under no obligation to buy — you may withdraw and receive a full refund.
+          </p>
+        </div>
+        ${priceSection}
         <div style="text-align:center;margin-top:24px">
           <a href="https://khilafatbooks.lovable.app/shop" style="display:inline-block;padding:12px 32px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px">
-            Shop Now →
+            Complete Your Purchase →
           </a>
         </div>
+        <p style="margin:20px 0 0;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5">
+          Don't want to proceed? Reply to this email and we'll refund your full deposit to your EasyPaisa account, or convert it to store credit — your choice.
+        </p>
       </div>
       <div style="padding:20px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:center">
-        <p style="margin:0;font-size:12px;color:#9ca3af">Thank you for being part of our community!</p>
+        <p style="margin:0;font-size:12px;color:#9ca3af">Jazak'Allah Khair for being part of our community!</p>
       </div>
     </div>
   </div>
