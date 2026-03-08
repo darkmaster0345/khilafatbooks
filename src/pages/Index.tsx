@@ -72,7 +72,7 @@ const Index = () => {
       )}
 
       {/* Hero with Parallax */}
-      <section ref={heroRef} className="relative overflow-hidden min-h-[90vh] flex items-center">
+      <section ref={heroRef} className="relative overflow-hidden min-h-[80vh] md:min-h-[90vh] flex items-center">
         <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
           <img
             src={heroBg}
