@@ -36,6 +36,13 @@ const Checkout = () => {
   const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
   const { isPluginEnabled } = usePluginSettings();
 
+  // Gift state
+  const [isGift, setIsGift] = useState(false);
+  const [giftRecipientName, setGiftRecipientName] = useState('');
+  const [giftMessage, setGiftMessage] = useState('');
+  const [giftWrap, setGiftWrap] = useState(false);
+  const GIFT_WRAP_FEE = 100;
+
   // Referral state
   const [referralCode, setReferralCode] = useState('');
   const [referralValidation, setReferralValidation] = useState<any>(null);
