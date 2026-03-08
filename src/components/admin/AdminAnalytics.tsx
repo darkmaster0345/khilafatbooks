@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, TrendingUp, DollarSign, ShoppingBag } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, ShoppingBag, ShoppingCart, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPKR } from '@/lib/currency';
 import {
@@ -13,6 +13,16 @@ interface Order {
   status: string;
   items: any;
   created_at: string;
+  recovered_from_cart?: string;
+  recovery_discount?: number;
+}
+
+interface AbandonedCartStats {
+  total: number;
+  reminded: number;
+  recovered: number;
+  expired: number;
+  recoveredRevenue: number;
 }
 
 const COLORS = [
@@ -22,16 +32,31 @@ const COLORS = [
 
 const AdminAnalytics = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [cartStats, setCartStats] = useState<AbandonedCartStats>({ total: 0, reminded: 0, recovered: 0, expired: 0, recoveredRevenue: 0 });
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'7d' | '30d' | 'all'>('30d');
 
   useEffect(() => {
-    const fetchOrders = async () => {
-      const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: true });
-      if (data) setOrders(data as unknown as Order[]);
+    const fetchData = async () => {
+      // Fetch orders
+      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: true });
+      if (ordersData) setOrders(ordersData as unknown as Order[]);
+
+      // Fetch abandoned cart stats
+      const { data: carts } = await supabase.from('abandoned_carts').select('status, cart_total, recovered_at');
+      if (carts) {
+        const stats: AbandonedCartStats = { total: carts.length, reminded: 0, recovered: 0, expired: 0, recoveredRevenue: 0 };
+        (carts as any[]).forEach(c => {
+          if (c.status === 'reminded') stats.reminded++;
+          else if (c.status === 'recovered') { stats.recovered++; stats.recoveredRevenue += c.cart_total || 0; }
+          else if (c.status === 'expired') stats.expired++;
+        });
+        setCartStats(stats);
+      }
+
       setLoading(false);
     };
-    fetchOrders();
+    fetchData();
   }, []);
 
   const now = new Date();
@@ -80,6 +105,16 @@ const AdminAnalytics = () => {
     { name: 'Rejected', value: filteredOrders.filter(o => o.status === 'rejected').length },
   ].filter(s => s.value > 0);
 
+  // Cart recovery funnel data
+  const recoveryFunnelData = [
+    { name: 'Abandoned', value: cartStats.total, fill: 'hsl(0, 84%, 60%)' },
+    { name: 'Reminded', value: cartStats.reminded, fill: 'hsl(42, 80%, 55%)' },
+    { name: 'Recovered', value: cartStats.recovered, fill: 'hsl(152, 55%, 28%)' },
+    { name: 'Expired', value: cartStats.expired, fill: 'hsl(var(--muted-foreground))' },
+  ].filter(d => d.value > 0);
+
+  const recoveryRate = cartStats.reminded > 0 ? ((cartStats.recovered / cartStats.reminded) * 100).toFixed(1) : '0';
+
   if (loading) return <p className="text-muted-foreground p-8">Loading analytics...</p>;
 
   return (
@@ -122,6 +157,35 @@ const AdminAnalytics = () => {
         ))}
       </div>
 
+      {/* Recovered Revenue Banner */}
+      <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+              <RefreshCw className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h3 className="font-display text-lg font-bold text-foreground">Cart Recovery System</h3>
+              <p className="text-sm text-muted-foreground">Revenue saved from abandoned cart emails</p>
+            </div>
+          </div>
+          <div className="flex gap-6 text-center">
+            <div>
+              <p className="text-2xl font-bold font-display text-primary">{formatPKR(cartStats.recoveredRevenue)}</p>
+              <p className="text-xs text-muted-foreground">Recovered Revenue</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold font-display text-foreground">{cartStats.recovered}</p>
+              <p className="text-xs text-muted-foreground">Carts Recovered</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold font-display text-foreground">{recoveryRate}%</p>
+              <p className="text-xs text-muted-foreground">Recovery Rate</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Revenue Chart */}
       <div className="rounded-lg border border-border bg-card p-5">
         <h3 className="font-display text-lg font-semibold text-foreground mb-4">Revenue Over Time</h3>
@@ -159,17 +223,20 @@ const AdminAnalytics = () => {
           )}
         </div>
 
-        {/* Order Status Distribution */}
+        {/* Cart Recovery Funnel */}
         <div className="rounded-lg border border-border bg-card p-5">
-          <h3 className="font-display text-lg font-semibold text-foreground mb-4">Order Status</h3>
-          {statusData.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No data yet.</p>
+          <h3 className="font-display text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+            <ShoppingCart className="h-5 w-5" />
+            Cart Recovery Funnel
+          </h3>
+          {recoveryFunnelData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No abandoned cart data yet.</p>
           ) : (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={statusData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                    {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                  <Pie data={recoveryFunnelData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                    {recoveryFunnelData.map((entry, i) => <Cell key={i} fill={entry.fill} />)}
                   </Pie>
                   <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
                 </PieChart>
@@ -177,6 +244,25 @@ const AdminAnalytics = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Original Order Status Distribution */}
+      <div className="rounded-lg border border-border bg-card p-5">
+        <h3 className="font-display text-lg font-semibold text-foreground mb-4">Order Status Distribution</h3>
+        {statusData.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No data yet.</p>
+        ) : (
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={statusData} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                  {statusData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', color: 'hsl(var(--foreground))' }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </div>
     </div>
   );
