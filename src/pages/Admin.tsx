@@ -155,9 +155,7 @@ const Admin = () => {
         {/* Logo */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl emerald-gradient shrink-0 shadow-sm">
-              <span className="font-arabic text-sm text-primary-foreground">ك</span>
-            </div>
+            <img src={logo} alt="Khilafat Books" className="h-9 w-9 rounded-xl shrink-0 shadow-sm object-contain" />
             {(!collapsed || mobileOpen) && (
               <div className="overflow-hidden">
                 <h1 className="font-display text-sm font-bold text-foreground leading-tight truncate">Khilafat Books</h1>
