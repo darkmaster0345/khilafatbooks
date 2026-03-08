@@ -72,7 +72,7 @@ const Index = () => {
       )}
 
       {/* Hero with Parallax */}
-      <section ref={heroRef} className="relative overflow-hidden min-h-[90vh] flex items-center">
+      <section ref={heroRef} className="relative overflow-hidden min-h-[80vh] md:min-h-[90vh] flex items-center">
         <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
           <img
             src={heroBg}
@@ -85,7 +85,7 @@ const Index = () => {
             style={{ opacity: heroOverlayOpacity }}
           />
         </motion.div>
-        <motion.div className="relative container mx-auto px-4 py-24" style={{ y: heroContentY }}>
+        <motion.div className="relative container mx-auto px-4 py-16 md:py-24" style={{ y: heroContentY }}>
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
@@ -100,7 +100,7 @@ const Index = () => {
             >
               بسم الله الرحمن الرحيم
             </motion.p>
-            <h1 className="font-display text-5xl md:text-7xl font-bold text-primary-foreground leading-[1.08]">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold text-primary-foreground leading-[1.08]">
               Knowledge with{' '}
               <span className="text-gold-gradient">Barakah</span>
             </h1>
