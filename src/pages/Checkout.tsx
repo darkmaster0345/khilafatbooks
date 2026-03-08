@@ -142,6 +142,8 @@ const Checkout = () => {
       p_recovery_discount: 0,
     } as any);
 
+    const orderId = orderData as unknown as string;
+
     if (error) {
       toast({ title: 'Order failed', description: error.message, variant: 'destructive' });
       setSubmitting(false);
@@ -149,31 +151,30 @@ const Checkout = () => {
     }
 
     // Create referral record if referral code was used
-    if (referralValidation?.valid && orderData) {
+    if (referralValidation?.valid && orderId) {
       await supabase.from('referrals').insert({
         referrer_id: referralValidation.referrer_id,
         referred_user_id: user.id,
         referral_code_id: referralValidation.code_id,
-        order_id: orderData.id,
+        order_id: orderId,
         referred_reward_type: referralRewardType || 'digital_pack',
         referred_reward_claimed: true,
         status: 'pending',
       } as any);
 
-      // Log the successful referral
       await supabase.from('referral_audit_log').insert({
         event_type: 'referral_created',
         referral_code: referralCode.trim().toUpperCase(),
         user_id: user.id,
         success: true,
-        metadata: { order_id: orderData.id, reward_type: referralRewardType },
+        metadata: { order_id: orderId, reward_type: referralRewardType },
       } as any);
     }
 
     clearCart();
     setSubmitting(false);
-    if (orderData?.id) {
-      navigate(`/order-confirmed/${orderData.id}`);
+    if (orderId) {
+      navigate(`/order-confirmed/${orderId}`);
       return;
     }
     setStep('done');
