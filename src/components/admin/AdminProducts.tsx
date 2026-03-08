@@ -23,12 +23,16 @@ type ProductForm = {
   in_stock: boolean;
   rating: string;
   reviews: string;
+  series: string;
+  series_order: string;
+  bundle_discount: string;
 };
 
 const emptyForm: ProductForm = {
   name: '', name_ar: '', description: '', price: '', original_price: '',
   category: 'Uncategorized', type: 'physical', is_new: false, is_halal: false,
   ethical_source: '', in_stock: true, rating: '0', reviews: '0',
+  series: '', series_order: '', bundle_discount: '100',
 };
 
 const formFromProduct = (p: Product): ProductForm => ({
