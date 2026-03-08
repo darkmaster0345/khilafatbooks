@@ -16,6 +16,7 @@ const Cart = () => {
     items, removeItem, updateQuantity, totalItems,
     subtotal, zakatEnabled, setZakatEnabled, zakatAmount, total,
     recoveryDiscount, recoveryCode, applyRecoveryCode,
+    loyaltyInfo, loyaltyDiscount,
   } = useCart();
   const { isPluginEnabled } = usePluginSettings();
   const [searchParams] = useSearchParams();
