@@ -100,7 +100,7 @@ const Index = () => {
             >
               بسم الله الرحمن الرحيم
             </motion.p>
-            <h1 className="font-display text-5xl md:text-7xl font-bold text-primary-foreground leading-[1.08]">
+            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold text-primary-foreground leading-[1.08]">
               Knowledge with{' '}
               <span className="text-gold-gradient">Barakah</span>
             </h1>
