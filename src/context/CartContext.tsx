@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { LegacyProduct } from '@/hooks/useProducts';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export type { LegacyProduct as Product } from '@/hooks/useProducts';
 
@@ -49,6 +50,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       return newItems;
     });
+
+    // Track cart activity (fire-and-forget)
+    supabase.from('cart_activity').insert({
+      event_type: 'add_to_cart',
+      product_name: product.name,
+      product_id: product.id,
+      quantity: 1,
+    } as any).then(() => {});
   }, []);
 
   const removeItem = useCallback((productId: string) => {

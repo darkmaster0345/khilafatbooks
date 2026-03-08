@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      cart_activity: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_activity_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_verses: {
         Row: {
           created_at: string
