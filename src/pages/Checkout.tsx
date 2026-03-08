@@ -303,6 +303,64 @@ const Checkout = () => {
                 </div>
               )}
 
+              {/* Gift Section */}
+              <div className="rounded-xl border border-border bg-card p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-4 w-4 text-primary" />
+                    <h2 className="font-display text-base font-semibold text-foreground">Send as Gift</h2>
+                  </div>
+                  <Switch checked={isGift} onCheckedChange={setIsGift} />
+                </div>
+                <AnimatePresence>
+                  {isGift && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-foreground">Recipient Name</label>
+                          <Input
+                            value={giftRecipientName}
+                            onChange={e => setGiftRecipientName(e.target.value)}
+                            placeholder="Who is this gift for?"
+                            className="mt-1.5 h-11 rounded-xl"
+                            maxLength={100}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground">Gift Message</label>
+                          <Textarea
+                            value={giftMessage}
+                            onChange={e => setGiftMessage(e.target.value)}
+                            placeholder="Write a personal message..."
+                            className="mt-1.5 rounded-xl resize-none"
+                            maxLength={300}
+                            rows={3}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1 text-right">{giftMessage.length}/300</p>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
+                          <Checkbox
+                            id="gift-wrap"
+                            checked={giftWrap}
+                            onCheckedChange={(v) => setGiftWrap(!!v)}
+                          />
+                          <label htmlFor="gift-wrap" className="flex items-center gap-2 text-sm cursor-pointer flex-1">
+                            <Package className="h-4 w-4 text-primary" />
+                            <span className="text-foreground font-medium">Gift Wrapping</span>
+                            <span className="text-muted-foreground ml-auto">+{formatPKR(GIFT_WRAP_FEE)}</span>
+                          </label>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Referral Code Section */}
               <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6">
                 <h2 className="font-display text-base font-semibold text-foreground mb-1 flex items-center gap-2">
