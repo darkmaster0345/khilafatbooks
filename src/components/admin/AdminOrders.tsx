@@ -97,6 +97,13 @@ const AdminOrders = () => {
       toast({ title: 'Updated', description: `Order marked as ${status}` });
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
       setSelectedOrder(null);
+      // Send email notification
+      supabase.functions.invoke('send-order-email', {
+        body: { orderId, newStatus: status },
+      }).then(({ error: emailErr }) => {
+        if (emailErr) console.error('Email notification failed:', emailErr);
+        else toast({ title: '📧 Email Sent', description: `Notification sent to customer.` });
+      });
     }
   };
 

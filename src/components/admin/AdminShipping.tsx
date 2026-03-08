@@ -85,6 +85,15 @@ const AdminShipping = () => {
     } else {
       toast({ title: 'Updated', description: `Shipping status updated to ${shippingStatus}` });
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updates } : o));
+      // Send email notification for shipped/delivered
+      if (shippingStatus === 'shipped' || shippingStatus === 'delivered') {
+        supabase.functions.invoke('send-order-email', {
+          body: { orderId, newStatus: shippingStatus },
+        }).then(({ error: emailErr }) => {
+          if (emailErr) console.error('Email notification failed:', emailErr);
+          else toast({ title: '📧 Email Sent', description: `Notification sent to customer.` });
+        });
+      }
     }
   };
 
