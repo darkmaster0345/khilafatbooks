@@ -259,10 +259,10 @@ export default function BookDiscoveryQuiz() {
                             </h4>
                             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{legacyProduct.description}</p>
                             <div className="flex items-center gap-3 mt-3">
-                              <span className="text-lg font-bold text-foreground">{formatPrice(legacyProduct.price)}</span>
+                              <span className="text-lg font-bold text-foreground">{formatPKR(legacyProduct.price)}</span>
                               {legacyProduct.originalPrice && (
                                 <span className="text-sm text-muted-foreground line-through">
-                                  {formatPrice(legacyProduct.originalPrice)}
+                                  {formatPKR(legacyProduct.originalPrice)}
                                 </span>
                               )}
                             </div>
