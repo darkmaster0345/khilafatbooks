@@ -261,6 +261,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = useCallback(() => {
     markCartRecovered();
     setItems([]);
+    localStorage.removeItem('cart-items');
     setRecoveryDiscount(0);
     setRecoveryCode(null);
   }, []);
