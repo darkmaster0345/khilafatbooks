@@ -63,6 +63,7 @@ const AppLayout = () => {
               <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
               <Route path="/wishlist" element={<PageTransition><Wishlist /></PageTransition>} />
               <Route path="/orders" element={<PageTransition><Orders /></PageTransition>} />
+              <Route path="/library" element={<PageTransition><Library /></PageTransition>} />
               <Route path="/book-requests" element={<PageTransition><BookRequests /></PageTransition>} />
               <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
             </Routes>
