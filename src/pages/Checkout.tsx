@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, CheckCircle2, Copy, Phone, ShieldCheck, Gift } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowLeft, Upload, CheckCircle2, Copy, Phone, ShieldCheck, Gift, Package } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
