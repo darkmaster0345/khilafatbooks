@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Search, Home, ShoppingBag, BookOpen, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import SmartSuggest from '@/components/SmartSuggest';
 
 const suggestedLinks = [
   { to: '/', label: 'Home', icon: Home },
@@ -14,6 +15,12 @@ const NotFound = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Try to extract a category hint from the URL
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const possibleCategory = pathParts.find(p => 
+    ['books', 'quran', 'tasbih', 'hijab', 'oud', 'calligraphy', 'accessories'].includes(p.toLowerCase())
+  );
 
   useEffect(() => {
     console.error('404 Error: User attempted to access non-existent route:', location.pathname);
@@ -32,7 +39,7 @@ const NotFound = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md text-center"
+        className="w-full max-w-lg text-center"
       >
         <div className="flex h-20 w-20 items-center justify-center rounded-2xl emerald-gradient shadow-lg mx-auto mb-6">
           <span className="font-arabic text-4xl text-primary-foreground">٤٠٤</span>
@@ -42,6 +49,15 @@ const NotFound = () => {
         <p className="text-muted-foreground mb-8">
           The page you're looking for doesn't exist or has been moved.
         </p>
+
+        {/* Smart Suggestions */}
+        <div className="mb-8 text-left">
+          <SmartSuggest 
+            reason="404"
+            category={possibleCategory}
+            limit={3}
+          />
+        </div>
 
         <form onSubmit={handleSearch} className="relative mb-8">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

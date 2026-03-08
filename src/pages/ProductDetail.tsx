@@ -57,11 +57,19 @@ const ProductDetail = () => {
 
   if (!product) {
     return (
-      <div className="container mx-auto px-4 py-20 text-center">
-        <h1 className="font-display text-2xl text-foreground">Product not found</h1>
-        <Button asChild variant="outline" className="mt-4">
-          <Link to="/shop"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop</Link>
-        </Button>
+      <div className="container mx-auto px-4 py-20">
+        <div className="max-w-lg mx-auto text-center mb-8">
+          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Product Not Found</h1>
+          <p className="text-muted-foreground text-sm">This product may have been removed or doesn't exist.</p>
+        </div>
+        <div className="max-w-lg mx-auto">
+          <SmartSuggest reason="removed" limit={3} />
+        </div>
+        <div className="text-center mt-6">
+          <Button asChild variant="outline">
+            <Link to="/shop"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop</Link>
+          </Button>
+        </div>
       </div>
     );
   }
