@@ -10,6 +10,7 @@ import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import DiscountCodeInput, { AppliedDiscount } from '@/components/DiscountCodeInput';
+import { usePluginSettings } from '@/hooks/usePluginSettings';
 
 const EASYPAISA_ACCOUNT = '03352706540';
 
