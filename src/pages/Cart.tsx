@@ -7,6 +7,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCart } from '@/context/CartContext';
 import { formatPKR } from '@/lib/currency';
 import { usePluginSettings } from '@/hooks/usePluginSettings';
+import FreeShippingBar from '@/components/FreeShippingBar';
+import CartSuggestions from '@/components/CartSuggestions';
 
 const Cart = () => {
   const {
