@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 function formatPKR(amount: number) {
@@ -17,26 +17,48 @@ const STATUS_CONFIG: Record<string, { title: string; emoji: string; color: strin
   delivered: { title: "Order Delivered 🎊", emoji: "✅", color: "#059669", message: "Your order has been delivered. We hope you enjoy your purchase!" },
 };
 
-// Pre-initialize Supabase client (reused across warm invocations)
-let supabase: ReturnType<typeof createClient> | null = null;
-function getSupabase() {
-  if (!supabase) {
-    supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
-  }
-  return supabase;
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // --- Auth check: require admin role ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const userClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: isAdmin } = await userClient.rpc("is_admin");
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Validated admin, proceed ---
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
 
     const { orderId, newStatus } = await req.json();
     if (!orderId || !newStatus) throw new Error("orderId and newStatus are required");
 
-    const db = getSupabase();
+    // Use service role for DB access
+    const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: order, error: orderError } = await db
       .from("orders")
       .select("customer_name, customer_email, total, items, tracking_number")
