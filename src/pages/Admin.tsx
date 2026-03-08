@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import {
   LayoutDashboard, ShoppingBag, Truck, Package, BarChart3,
   CreditCard, Tag, Users, Puzzle, Settings,
