@@ -138,6 +138,9 @@ const Index = () => {
         </motion.div>
       </section>
 
+      {/* Trust Badges */}
+      <TrustBadges />
+
       {/* Features */}
       <section className="border-b border-border bg-card">
         <div className="container mx-auto px-4 py-16">
