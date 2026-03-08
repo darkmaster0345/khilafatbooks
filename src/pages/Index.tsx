@@ -16,6 +16,7 @@ import { ProductSkeletonGrid } from '@/components/ProductSkeleton';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
 import WelcomeBanner from '@/components/WelcomeBanner';
+import NewsletterSignup from '@/components/NewsletterSignup';
 import heroBg from '@/assets/hero-bg-new.jpg';
 import productQuran from '@/assets/product-quran.jpg';
 import productOud from '@/assets/product-oud.jpg';
