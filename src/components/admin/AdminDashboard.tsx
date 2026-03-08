@@ -115,6 +115,9 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+      {/* Live Activity Feed */}
+      <LiveActivityFeed />
+
       {/* Recent Orders */}
       <div className="rounded-lg border border-border bg-card p-5">
         <div className="flex items-center justify-between mb-4">
