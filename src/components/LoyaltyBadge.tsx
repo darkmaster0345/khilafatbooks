@@ -43,8 +43,8 @@ const TIER_CONFIG: Record<LoyaltyTier, {
 };
 
 const TIER_THRESHOLDS = {
-  muallim: 10000,
-  alim: 50000,
+  muallim: 2000,
+  alim: 10000,
 };
 
 interface LoyaltyBadgeProps {
