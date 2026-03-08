@@ -376,6 +376,7 @@ export type Database = {
           image_url: string | null
           in_stock: boolean
           is_halal: boolean
+          is_hidden: boolean
           is_new: boolean
           name: string
           name_ar: string | null
@@ -399,6 +400,7 @@ export type Database = {
           image_url?: string | null
           in_stock?: boolean
           is_halal?: boolean
+          is_hidden?: boolean
           is_new?: boolean
           name: string
           name_ar?: string | null
@@ -422,6 +424,7 @@ export type Database = {
           image_url?: string | null
           in_stock?: boolean
           is_halal?: boolean
+          is_hidden?: boolean
           is_new?: boolean
           name?: string
           name_ar?: string | null
@@ -477,6 +480,153 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      referral_audit_log: {
+        Row: {
+          created_at: string
+          event_type: string
+          failure_reason: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          referral_code: string | null
+          success: boolean
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          referral_code?: string | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          referral_code?: string | null
+          success?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      referral_codes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          month_reset_at: string
+          updated_at: string
+          user_id: string
+          uses_count: number
+          uses_this_month: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          month_reset_at?: string
+          updated_at?: string
+          user_id: string
+          uses_count?: number
+          uses_this_month?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          month_reset_at?: string
+          updated_at?: string
+          user_id?: string
+          uses_count?: number
+          uses_this_month?: number
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          ip_match_flagged: boolean
+          order_id: string | null
+          referral_code_id: string
+          referred_ip: string | null
+          referred_reward_claimed: boolean
+          referred_reward_type: string | null
+          referred_user_id: string
+          referrer_discount_code: string | null
+          referrer_discount_expires_at: string | null
+          referrer_id: string
+          referrer_ip: string | null
+          referrer_reward_claimed: boolean
+          referrer_reward_type: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_match_flagged?: boolean
+          order_id?: string | null
+          referral_code_id: string
+          referred_ip?: string | null
+          referred_reward_claimed?: boolean
+          referred_reward_type?: string | null
+          referred_user_id: string
+          referrer_discount_code?: string | null
+          referrer_discount_expires_at?: string | null
+          referrer_id: string
+          referrer_ip?: string | null
+          referrer_reward_claimed?: boolean
+          referrer_reward_type?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_match_flagged?: boolean
+          order_id?: string | null
+          referral_code_id?: string
+          referred_ip?: string | null
+          referred_reward_claimed?: boolean
+          referred_reward_type?: string | null
+          referred_user_id?: string
+          referrer_discount_code?: string | null
+          referrer_discount_expires_at?: string | null
+          referrer_id?: string
+          referrer_ip?: string | null
+          referrer_reward_claimed?: boolean
+          referrer_reward_type?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_referral_code_id_fkey"
+            columns: ["referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "referral_codes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -678,6 +828,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_generate_referral_code: {
+        Args: { p_user_id: string }
+        Returns: boolean
+      }
       cleanup_private_orders: { Args: never; Returns: number }
       has_role: {
         Args: {
@@ -687,6 +841,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      validate_referral_code: {
+        Args: { p_code: string; p_order_total: number; p_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user"
