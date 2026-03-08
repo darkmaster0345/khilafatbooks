@@ -214,6 +214,9 @@ const AdminProducts = () => {
       in_stock: form.in_stock,
       rating: parseFloat(form.rating) || 0,
       reviews: parseInt(form.reviews) || 0,
+      series: form.series || null,
+      series_order: form.series_order ? parseInt(form.series_order) : null,
+      bundle_discount: form.bundle_discount ? parseInt(form.bundle_discount) : 100,
     };
 
     if (image_url) payload.image_url = image_url;
