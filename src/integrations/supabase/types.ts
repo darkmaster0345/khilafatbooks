@@ -330,7 +330,12 @@ export type Database = {
           customer_phone: string
           delivery_address: string | null
           delivery_city: string | null
+          gift_message: string | null
+          gift_recipient_name: string | null
+          gift_wrap: boolean
+          gift_wrap_fee: number
           id: string
+          is_gift: boolean
           items: Json
           payment_screenshot_url: string | null
           recovered_from_cart: string | null
@@ -354,7 +359,12 @@ export type Database = {
           customer_phone: string
           delivery_address?: string | null
           delivery_city?: string | null
+          gift_message?: string | null
+          gift_recipient_name?: string | null
+          gift_wrap?: boolean
+          gift_wrap_fee?: number
           id?: string
+          is_gift?: boolean
           items: Json
           payment_screenshot_url?: string | null
           recovered_from_cart?: string | null
@@ -378,7 +388,12 @@ export type Database = {
           customer_phone?: string
           delivery_address?: string | null
           delivery_city?: string | null
+          gift_message?: string | null
+          gift_recipient_name?: string | null
+          gift_wrap?: boolean
+          gift_wrap_fee?: number
           id?: string
+          is_gift?: boolean
           items?: Json
           payment_screenshot_url?: string | null
           recovered_from_cart?: string | null
@@ -950,23 +965,45 @@ export type Database = {
         Returns: boolean
       }
       cleanup_private_orders: { Args: never; Returns: number }
-      create_verified_order: {
-        Args: {
-          p_customer_email?: string
-          p_customer_name: string
-          p_customer_phone: string
-          p_delivery_address?: string
-          p_delivery_city?: string
-          p_discount_code?: string
-          p_items: Json
-          p_payment_screenshot_url?: string
-          p_recovery_discount?: number
-          p_referral_discount?: number
-          p_transaction_id?: string
-          p_zakat_enabled?: boolean
-        }
-        Returns: string
-      }
+      create_verified_order:
+        | {
+            Args: {
+              p_customer_email?: string
+              p_customer_name: string
+              p_customer_phone: string
+              p_delivery_address?: string
+              p_delivery_city?: string
+              p_discount_code?: string
+              p_items: Json
+              p_payment_screenshot_url?: string
+              p_recovery_discount?: number
+              p_referral_discount?: number
+              p_transaction_id?: string
+              p_zakat_enabled?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_customer_email?: string
+              p_customer_name: string
+              p_customer_phone: string
+              p_delivery_address?: string
+              p_delivery_city?: string
+              p_discount_code?: string
+              p_gift_message?: string
+              p_gift_recipient_name?: string
+              p_gift_wrap?: boolean
+              p_is_gift?: boolean
+              p_items: Json
+              p_payment_screenshot_url?: string
+              p_recovery_discount?: number
+              p_referral_discount?: number
+              p_transaction_id?: string
+              p_zakat_enabled?: boolean
+            }
+            Returns: string
+          }
       get_digital_download_url: {
         Args: { p_product_id: string }
         Returns: string
