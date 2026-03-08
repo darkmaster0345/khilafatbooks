@@ -246,7 +246,7 @@ const Index = () => {
         <RecentlyViewed />
       </div>
 
-      {/* CTA */}
+      {/* Newsletter CTA */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 emerald-gradient" />
         <div className="absolute inset-0 geometric-pattern-dense opacity-50" />
@@ -256,16 +256,16 @@ const Index = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <BookOpen className="h-12 w-12 text-gold-light mx-auto mb-5" />
+            <Mail className="h-12 w-12 text-gold-light mx-auto mb-5" />
             <h2 className="font-display text-3xl md:text-5xl font-bold text-primary-foreground">
-              Read with <span className="text-gold-gradient">Purpose</span>
+              Stay <span className="text-gold-gradient">Connected</span>
             </h2>
             <p className="mt-5 text-primary-foreground/70 max-w-md mx-auto leading-relaxed text-lg">
-              Every purchase supports ethical sourcing and Islamic knowledge. Add Zakat at checkout to amplify your impact.
+              Get new arrivals, Islamic wisdom, and exclusive offers delivered to your inbox. No spam, just barakah.
             </p>
-            <Button asChild size="lg" className="mt-10 gold-gradient border-0 text-foreground font-semibold h-13 px-10 text-base shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]">
-              <Link to="/shop">Explore Collection</Link>
-            </Button>
+            <div className="mt-10">
+              <NewsletterSignup variant="cta" />
+            </div>
           </motion.div>
         </div>
       </section>
