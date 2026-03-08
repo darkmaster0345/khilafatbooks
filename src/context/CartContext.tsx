@@ -144,13 +144,25 @@ const markCartRecovered = async (orderId?: string) => {
   }
 };
 
+const loadCartFromStorage = (): CartItem[] => {
+  try {
+    const stored = localStorage.getItem('cart-items');
+    return stored ? JSON.parse(stored) : [];
+  } catch { return []; }
+};
+
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [items, setItems] = useState<CartItem[]>(loadCartFromStorage);
   const [zakatEnabled, setZakatEnabled] = useState(false);
   const [recoveryDiscount, setRecoveryDiscount] = useState(0);
   const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
   const [loyaltyInfo, setLoyaltyInfo] = useState<LoyaltyInfo | null>(null);
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    localStorage.setItem('cart-items', JSON.stringify(items));
+  }, [items]);
 
   // Fetch loyalty info on mount and auth change
   useEffect(() => {
@@ -249,6 +261,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const clearCart = useCallback(() => {
     markCartRecovered();
     setItems([]);
+    localStorage.removeItem('cart-items');
     setRecoveryDiscount(0);
     setRecoveryCode(null);
   }, []);
