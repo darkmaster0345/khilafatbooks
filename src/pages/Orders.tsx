@@ -80,6 +80,7 @@ const Orders = () => {
 
   return (
     <main className="container mx-auto px-4 py-10 max-w-4xl">
+      <Helmet><title>My Orders | Khilafat Books</title></Helmet>
       <div className="mb-10">
         <p className="section-heading">Your History</p>
         <h1 className="section-title">My Orders</h1>
