@@ -80,7 +80,7 @@ const Index = () => {
         <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
           <img
             src={heroBg}
-            alt=""
+            alt="Islamic books and products collection"
             className="h-[120%] w-full object-cover"
             fetchPriority="high"
           />

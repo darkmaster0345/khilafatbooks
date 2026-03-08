@@ -137,7 +137,7 @@ const Header = () => {
 
           {user && <NotificationBell />}
 
-          <Link to="/wishlist" className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
+          <Link to="/wishlist" aria-label={`Wishlist${wishlist.length > 0 ? ` (${wishlist.length} items)` : ''}`} className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
             <Heart className="h-5 w-5 text-foreground" />
             {wishlist.length > 0 && (
               <motion.span
@@ -150,7 +150,7 @@ const Header = () => {
             )}
           </Link>
 
-          <Link to="/cart" className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
+          <Link to="/cart" aria-label={`Cart${totalItems > 0 ? ` (${totalItems} items)` : ''}`} className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
             <ShoppingCart className="h-5 w-5 text-foreground" />
             {totalItems > 0 && (
               <motion.span
@@ -165,6 +165,7 @@ const Header = () => {
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
             className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors md:hidden"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
