@@ -12,6 +12,7 @@ const Cart = () => {
     items, removeItem, updateQuantity, totalItems,
     subtotal, zakatEnabled, setZakatEnabled, zakatAmount, total,
   } = useCart();
+  const { isPluginEnabled } = usePluginSettings();
 
   if (items.length === 0) {
     return (
