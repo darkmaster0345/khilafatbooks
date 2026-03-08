@@ -118,6 +118,48 @@ const AdminAnalytics = () => {
 
   const recoveryRate = cartStats.reminded > 0 ? ((cartStats.recovered / cartStats.reminded) * 100).toFixed(1) : '0';
 
+  const generatePDF = () => {
+    const doc = new jsPDF();
+    const periodLabel = period === '7d' ? 'Last 7 Days' : period === '30d' ? 'Last 30 Days' : 'All Time';
+    
+    doc.setFontSize(20);
+    doc.text('Khilafat Books — Sales Report', 14, 22);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Period: ${periodLabel} | Generated: ${new Date().toLocaleDateString()}`, 14, 30);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text('Summary', 14, 42);
+    
+    autoTable(doc, {
+      startY: 46,
+      head: [['Metric', 'Value']],
+      body: [
+        ['Total Revenue', formatPKR(totalRevenue)],
+        ['Orders', filteredOrders.length.toString()],
+        ['Avg. Order Value', formatPKR(avgOrderValue)],
+        ['Conversion Rate', `${conversionRate.toFixed(1)}%`],
+        ['Recovered Revenue', formatPKR(cartStats.recoveredRevenue)],
+      ],
+      theme: 'grid',
+      headStyles: { fillColor: [5, 150, 105] },
+    });
+    
+    const afterSummary = (doc as any).lastAutoTable?.finalY || 90;
+    doc.text('Top Products', 14, afterSummary + 10);
+    
+    autoTable(doc, {
+      startY: afterSummary + 14,
+      head: [['Product', 'Units Sold', 'Revenue']],
+      body: topProducts.map(p => [p.name, p.count.toString(), formatPKR(p.revenue)]),
+      theme: 'grid',
+      headStyles: { fillColor: [5, 150, 105] },
+    });
+    
+    doc.save(`khilafat-books-report-${period}.pdf`);
+  };
+
   if (loading) return <p className="text-muted-foreground p-8">Loading analytics...</p>;
 
   return (
@@ -127,7 +169,10 @@ const AdminAnalytics = () => {
           <h2 className="font-display text-2xl font-bold text-foreground">Analytics</h2>
           <p className="text-sm text-muted-foreground">Track your store's performance.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <Button variant="outline" size="sm" className="gap-2" onClick={generatePDF}>
+            <FileDown className="h-4 w-4" /> PDF Report
+          </Button>
           {(['7d', '30d', 'all'] as const).map(p => (
             <button
               key={p}
