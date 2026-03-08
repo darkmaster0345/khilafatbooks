@@ -29,6 +29,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
 const Orders = lazy(() => import("./pages/Orders"));
+const Library = lazy(() => import("./pages/Library"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookRequests = lazy(() => import("./pages/BookRequests"));
 
@@ -62,6 +63,7 @@ const AppLayout = () => {
               <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
               <Route path="/wishlist" element={<PageTransition><Wishlist /></PageTransition>} />
               <Route path="/orders" element={<PageTransition><Orders /></PageTransition>} />
+              <Route path="/library" element={<PageTransition><Library /></PageTransition>} />
               <Route path="/book-requests" element={<PageTransition><BookRequests /></PageTransition>} />
               <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
             </Routes>
