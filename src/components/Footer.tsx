@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 import logo from '@/assets/logo.png';
+import NewsletterSignup from '@/components/NewsletterSignup';
 
 const Footer = () => (
   <footer className="border-t border-border bg-card pb-20 md:pb-0">
