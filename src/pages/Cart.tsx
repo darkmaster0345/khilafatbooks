@@ -1,6 +1,7 @@
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ArrowRight, Gift } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,8 +15,18 @@ const Cart = () => {
   const {
     items, removeItem, updateQuantity, totalItems,
     subtotal, zakatEnabled, setZakatEnabled, zakatAmount, total,
+    recoveryDiscount, recoveryCode, applyRecoveryCode,
   } = useCart();
   const { isPluginEnabled } = usePluginSettings();
+  const [searchParams] = useSearchParams();
+
+  // Auto-apply recovery code from URL
+  useEffect(() => {
+    const code = searchParams.get('recover');
+    if (code && !recoveryCode) {
+      applyRecoveryCode(code);
+    }
+  }, [searchParams, recoveryCode, applyRecoveryCode]);
 
   if (items.length === 0) {
     return (
