@@ -36,8 +36,10 @@ const Footer = () => (
           </ul>
         </div>
         <div>
-          <h4 className="font-display text-sm font-semibold text-foreground mb-4">Contact</h4>
-          <ul className="space-y-2.5 text-sm text-muted-foreground">
+          <h4 className="font-display text-sm font-semibold text-foreground mb-4">Stay Updated</h4>
+          <p className="text-sm text-muted-foreground mb-3">Get new arrivals & Islamic wisdom in your inbox.</p>
+          <NewsletterSignup variant="footer" />
+          <ul className="space-y-2 text-sm text-muted-foreground mt-4">
             <li>support@khilafatbooks.com</li>
             <li>+92 345 2867726</li>
           </ul>

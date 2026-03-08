@@ -52,6 +52,7 @@ const sectionComponents: Record<Section, React.FC<{ onNavigate?: (section: Secti
   discounts: AdminDiscounts,
   audience: AdminAudience,
   'book-requests': AdminBookRequests,
+  newsletter: AdminNewsletter,
   security: AdminSecurity,
   plugins: AdminPlugins,
   settings: AdminSettings,

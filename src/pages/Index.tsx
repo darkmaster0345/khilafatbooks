@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ArrowRight, ShieldCheck, Truck, Download, Heart, Star, BookOpen, Sparkles, ShoppingCart } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Truck, Download, Heart, Star, BookOpen, Sparkles, ShoppingCart, Mail } from 'lucide-react';
 import VerseOfTheDay from '@/components/VerseOfTheDay';
 import Testimonials from '@/components/Testimonials';
 import TrustBadges from '@/components/TrustBadges';
