@@ -33,6 +33,7 @@ const Orders = lazy(() => import("./pages/Orders"));
 const Library = lazy(() => import("./pages/Library"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookRequests = lazy(() => import("./pages/BookRequests"));
+const FAQ = lazy(() => import("./pages/FAQ"));
 
 const queryClient = new QueryClient();
 
