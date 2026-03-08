@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, CheckCircle2, Copy, Phone, ShieldCheck, Gift } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ArrowLeft, Upload, CheckCircle2, Copy, Phone, ShieldCheck, Gift, Package } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
@@ -33,6 +36,13 @@ const Checkout = () => {
   const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
   const { isPluginEnabled } = usePluginSettings();
 
+  // Gift state
+  const [isGift, setIsGift] = useState(false);
+  const [giftRecipientName, setGiftRecipientName] = useState('');
+  const [giftMessage, setGiftMessage] = useState('');
+  const [giftWrap, setGiftWrap] = useState(false);
+  const GIFT_WRAP_FEE = 100;
+
   // Referral state
   const [referralCode, setReferralCode] = useState('');
   const [referralValidation, setReferralValidation] = useState<any>(null);
@@ -45,7 +55,8 @@ const Checkout = () => {
   const referralDiscount = referralRewardType === 'discount' && referralValidation?.valid
     ? referralValidation.discount_amount
     : 0;
-  const grandTotal = Math.max(0, total + shipping - discountAmount - referralDiscount);
+  const giftWrapFee = isGift && giftWrap ? GIFT_WRAP_FEE : 0;
+  const grandTotal = Math.max(0, total + shipping + giftWrapFee - discountAmount - referralDiscount);
   const hasPhysical = items.some(i => i.product.type === 'physical');
 
   const validateReferralCode = async () => {
@@ -140,6 +151,10 @@ const Checkout = () => {
       p_discount_code: discount?.code || null,
       p_referral_discount: referralDiscount,
       p_recovery_discount: 0,
+      p_is_gift: isGift,
+      p_gift_recipient_name: isGift ? giftRecipientName || null : null,
+      p_gift_message: isGift ? giftMessage || null : null,
+      p_gift_wrap: isGift && giftWrap,
     } as any);
 
     const orderId = orderData as unknown as string;
@@ -288,6 +303,64 @@ const Checkout = () => {
                 </div>
               )}
 
+              {/* Gift Section */}
+              <div className="rounded-xl border border-border bg-card p-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-4 w-4 text-primary" />
+                    <h2 className="font-display text-base font-semibold text-foreground">Send as Gift</h2>
+                  </div>
+                  <Switch checked={isGift} onCheckedChange={setIsGift} />
+                </div>
+                <AnimatePresence>
+                  {isGift && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 space-y-4">
+                        <div>
+                          <label className="text-sm font-medium text-foreground">Recipient Name</label>
+                          <Input
+                            value={giftRecipientName}
+                            onChange={e => setGiftRecipientName(e.target.value)}
+                            placeholder="Who is this gift for?"
+                            className="mt-1.5 h-11 rounded-xl"
+                            maxLength={100}
+                          />
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium text-foreground">Gift Message</label>
+                          <Textarea
+                            value={giftMessage}
+                            onChange={e => setGiftMessage(e.target.value)}
+                            placeholder="Write a personal message..."
+                            className="mt-1.5 rounded-xl resize-none"
+                            maxLength={300}
+                            rows={3}
+                          />
+                          <p className="text-xs text-muted-foreground mt-1 text-right">{giftMessage.length}/300</p>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
+                          <Checkbox
+                            id="gift-wrap"
+                            checked={giftWrap}
+                            onCheckedChange={(v) => setGiftWrap(!!v)}
+                          />
+                          <label htmlFor="gift-wrap" className="flex items-center gap-2 text-sm cursor-pointer flex-1">
+                            <Package className="h-4 w-4 text-primary" />
+                            <span className="text-foreground font-medium">Gift Wrapping</span>
+                            <span className="text-muted-foreground ml-auto">+{formatPKR(GIFT_WRAP_FEE)}</span>
+                          </label>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
               {/* Referral Code Section */}
               <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6">
                 <h2 className="font-display text-base font-semibold text-foreground mb-1 flex items-center gap-2">
@@ -420,6 +493,11 @@ const Checkout = () => {
             {zakatEnabled && (
               <div className="flex justify-between text-muted-foreground">
                 <span>Zakat (2.5%)</span><span className="font-medium text-foreground">{formatPKR(zakatAmount)}</span>
+              </div>
+            )}
+            {giftWrapFee > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Gift Wrap</span><span className="font-medium text-foreground">{formatPKR(giftWrapFee)}</span>
               </div>
             )}
             {discountAmount > 0 && (

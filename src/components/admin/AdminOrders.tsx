@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { CheckCircle2, Clock, Eye, XCircle, Search, FileDown, MessageSquare, Trash2, Plus, X, CheckSquare, Square } from 'lucide-react';
+import { CheckCircle2, Clock, Eye, XCircle, Search, FileDown, MessageSquare, Trash2, Plus, X, CheckSquare, Square, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -463,8 +463,13 @@ const AdminOrders = () => {
                     />
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{order.customer_name}</p>
-                    <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                    <div className="flex items-center gap-1.5">
+                      <div>
+                        <p className="font-medium text-foreground">{order.customer_name}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                      </div>
+                      {(order as any).is_gift && <Gift className="h-3.5 w-3.5 text-primary shrink-0" />}
+                    </div>
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">{formatPKR(order.total)}</td>
                   <td className="px-4 py-3">
@@ -638,6 +643,23 @@ const AdminOrders = () => {
               <div><span className="text-muted-foreground">Total:</span> <span className="text-foreground font-bold">{formatPKR(selectedOrder.total)}</span></div>
               <div><span className="text-muted-foreground">TRX ID:</span> <span className="text-foreground">{selectedOrder.transaction_id || 'Not provided'}</span></div>
               <div><span className="text-muted-foreground">Status:</span> <Badge className={statusColors[selectedOrder.status] || 'bg-muted'}>{selectedOrder.status}</Badge></div>
+
+              {(selectedOrder as any).is_gift && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-primary font-medium text-xs">
+                    <Gift className="h-3.5 w-3.5" /> Gift Order
+                  </div>
+                  {(selectedOrder as any).gift_recipient_name && (
+                    <div className="text-xs"><span className="text-muted-foreground">For:</span> <span className="text-foreground">{(selectedOrder as any).gift_recipient_name}</span></div>
+                  )}
+                  {(selectedOrder as any).gift_message && (
+                    <div className="text-xs"><span className="text-muted-foreground">Message:</span> <span className="text-foreground italic">"{(selectedOrder as any).gift_message}"</span></div>
+                  )}
+                  {(selectedOrder as any).gift_wrap && (
+                    <div className="text-xs text-muted-foreground">🎁 Gift wrapped (+{formatPKR((selectedOrder as any).gift_wrap_fee || 100)})</div>
+                  )}
+                </div>
+              )}
 
               <div>
                 <p className="text-muted-foreground mb-1">Items:</p>

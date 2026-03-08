@@ -63,10 +63,31 @@ const OrderConfirmed = () => {
         <p className="mt-3 text-muted-foreground max-w-md mx-auto leading-relaxed">
           JazakAllah Khair! Your order is under review. We'll verify your payment within 24 hours.
         </p>
-        {order && (
+      {order && (
           <p className="mt-2 text-xs text-muted-foreground font-mono">
             Order #{order.id?.slice(0, 8).toUpperCase()} • {formatPKR(order.total)}
           </p>
+        )}
+
+        {/* Gift info */}
+        {order?.is_gift && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-4 inline-flex flex-col items-center gap-1.5 rounded-2xl border border-primary/20 bg-primary/5 px-6 py-3"
+          >
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <Gift className="h-4 w-4" />
+              This is a gift for {order.gift_recipient_name || 'someone special'}
+            </div>
+            {order.gift_message && (
+              <p className="text-xs text-muted-foreground italic max-w-sm">"{order.gift_message}"</p>
+            )}
+            {order.gift_wrap && (
+              <p className="text-[10px] text-muted-foreground">🎁 Gift wrapped</p>
+            )}
+          </motion.div>
         )}
       </motion.div>
 
