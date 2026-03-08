@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { AuthProvider } from "@/hooks/useAuth";
+import { AnimatePresence } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
@@ -14,6 +15,8 @@ import AIChatWidget from "@/components/AIChatWidget";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import BackToTop from "@/components/BackToTop";
 import ExitIntentDialog from "@/components/ExitIntentDialog";
+import BrandedLoader from "@/components/BrandedLoader";
+import PageTransition from "@/components/PageTransition";
 import { usePluginSettings } from "@/hooks/usePluginSettings";
 
 // Lazy-loaded routes
@@ -31,12 +34,6 @@ const BookRequests = lazy(() => import("./pages/BookRequests"));
 
 const queryClient = new QueryClient();
 
-const PageLoader = () => (
-  <div className="flex min-h-[60vh] items-center justify-center">
-    <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-  </div>
-);
-
 const AppLayout = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
@@ -44,7 +41,7 @@ const AppLayout = () => {
 
   if (isAdmin) {
     return (
-      <Suspense fallback={<PageLoader />}>
+      <Suspense fallback={<BrandedLoader />}>
         <Admin />
       </Suspense>
     );
@@ -54,20 +51,22 @@ const AppLayout = () => {
     <div className="flex min-h-screen flex-col">
       <Header />
       <div className="flex-1">
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/wishlist" element={<Wishlist />} />
-            <Route path="/orders" element={<Orders />} />
-            <Route path="/book-requests" element={<BookRequests />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
+        <AnimatePresence mode="wait">
+          <Suspense fallback={<BrandedLoader />} key={location.pathname}>
+            <Routes location={location}>
+              <Route path="/" element={<PageTransition><Index /></PageTransition>} />
+              <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />
+              <Route path="/product/:id" element={<PageTransition><ProductDetail /></PageTransition>} />
+              <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
+              <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
+              <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+              <Route path="/wishlist" element={<PageTransition><Wishlist /></PageTransition>} />
+              <Route path="/orders" element={<PageTransition><Orders /></PageTransition>} />
+              <Route path="/book-requests" element={<PageTransition><BookRequests /></PageTransition>} />
+              <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
+            </Routes>
+          </Suspense>
+        </AnimatePresence>
       </div>
       <Footer />
       <MobileBottomNav />
@@ -88,7 +87,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-              <Suspense fallback={<PageLoader />}>
+              <Suspense fallback={<BrandedLoader />}>
                 <Routes>
                   <Route path="/admin" element={<Admin />} />
                   <Route path="*" element={<AppLayout />} />
