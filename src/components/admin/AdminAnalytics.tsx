@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, TrendingUp, DollarSign, ShoppingBag, ShoppingCart, RefreshCw } from 'lucide-react';
+import { BarChart3, TrendingUp, DollarSign, ShoppingBag, ShoppingCart, RefreshCw, FileDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPKR } from '@/lib/currency';
+import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
