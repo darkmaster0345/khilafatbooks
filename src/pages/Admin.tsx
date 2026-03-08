@@ -52,6 +52,7 @@ const Admin = () => {
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  useOrderNotifications();
 
   if (loading) {
     return (
