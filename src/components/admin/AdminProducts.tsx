@@ -265,6 +265,75 @@ const AdminProducts = () => {
     setForm(prev => ({ ...prev, [key]: value }));
   };
 
+  // CSV Import logic
+  const parseCSV = useCallback((text: string) => {
+    const lines = text.split('\n').filter(l => l.trim());
+    if (lines.length < 2) return { rows: [], errors: ['CSV must have a header row and at least one data row.'] };
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const required = ['name', 'price'];
+    const missingHeaders = required.filter(r => !headers.includes(r));
+    if (missingHeaders.length) return { rows: [], errors: [`Missing required columns: ${missingHeaders.join(', ')}`] };
+
+    const rows: any[] = [];
+    const errors: string[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      if (values.length !== headers.length) {
+        errors.push(`Row ${i}: column count mismatch (expected ${headers.length}, got ${values.length})`);
+        continue;
+      }
+      const row: any = {};
+      headers.forEach((h, j) => { row[h] = values[j]; });
+      if (!row.name) { errors.push(`Row ${i}: missing name`); continue; }
+      if (!row.price || isNaN(Number(row.price))) { errors.push(`Row ${i}: invalid price`); continue; }
+      rows.push({
+        name: row.name,
+        description: row.description || '',
+        price: parseInt(row.price),
+        original_price: row.original_price ? parseInt(row.original_price) : null,
+        category: PRODUCT_CATEGORIES.includes(row.category || '') ? row.category : 'Uncategorized',
+        type: ['physical', 'digital'].includes(row.type || '') ? row.type : 'physical',
+        is_new: row.is_new === 'true',
+        is_halal: row.is_halal === 'true',
+        in_stock: row.in_stock !== 'false',
+        rating: parseFloat(row.rating) || 0,
+        reviews: parseInt(row.reviews) || 0,
+        series: row.series || null,
+        image_url: row.image_url || '/placeholder.svg',
+      });
+    }
+    return { rows, errors };
+  }, []);
+
+  const handleCSVFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const { rows, errors } = parseCSV(text);
+      setCsvPreview(rows);
+      setCsvErrors(errors);
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  const importCSV = async () => {
+    if (!csvPreview || csvPreview.length === 0) return;
+    setCsvImporting(true);
+    const { error } = await supabase.from('products').insert(csvPreview);
+    if (error) {
+      toast({ title: 'Import failed', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: '✅ Import complete', description: `${csvPreview.length} products imported successfully.` });
+      setCsvPreview(null);
+      setCsvErrors([]);
+      refetch();
+    }
+    setCsvImporting(false);
+  };
+
   // Product form view
   if (mode !== 'list') {
     return (
