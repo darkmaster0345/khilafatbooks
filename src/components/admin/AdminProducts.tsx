@@ -508,6 +508,12 @@ const AdminProducts = () => {
             </Button>
           )}
           <Button onClick={openAdd} className="gap-1"><Plus className="h-4 w-4" /> Add Product</Button>
+          <div>
+            <input ref={csvInputRef} type="file" accept=".csv" onChange={handleCSVFile} className="hidden" />
+            <Button variant="outline" onClick={() => csvInputRef.current?.click()} className="gap-1">
+              <FileUp className="h-4 w-4" /> Import CSV
+            </Button>
+          </div>
         </div>
       </div>
 
