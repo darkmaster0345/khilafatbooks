@@ -388,6 +388,47 @@ const AdminOrders = () => {
         </div>
       </div>
 
+      {/* Bulk Actions Bar */}
+      {selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
+          <div className="flex-1" />
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={bulkApprove} 
+            disabled={bulkProcessing}
+            className="gap-1"
+          >
+            <CheckCircle2 className="h-3.5 w-3.5" /> Approve All
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={exportSelectedCSV}
+            className="gap-1"
+          >
+            <FileDown className="h-3.5 w-3.5" /> Export CSV
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={bulkDelete} 
+            disabled={bulkProcessing}
+            className="gap-1 text-destructive hover:text-destructive border-destructive/30 hover:bg-destructive/10"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Delete
+          </Button>
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={() => setSelectedIds(new Set())}
+          >
+            Clear
+          </Button>
+        </div>
+      )}
+
       {/* Orders Table */}
       {loading ? (
         <p className="text-muted-foreground">Loading orders...</p>
@@ -398,6 +439,12 @@ const AdminOrders = () => {
           <table className="w-full text-sm">
             <thead className="bg-muted">
               <tr>
+                <th className="w-12 px-4 py-3">
+                  <Checkbox 
+                    checked={selectedIds.size === filtered.length && filtered.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="text-left px-4 py-3 font-medium text-foreground">Customer</th>
                 <th className="text-left px-4 py-3 font-medium text-foreground">Total</th>
                 <th className="text-left px-4 py-3 font-medium text-foreground">Status</th>
@@ -408,7 +455,13 @@ const AdminOrders = () => {
             </thead>
             <tbody>
               {filtered.map(order => (
-                <tr key={order.id} className="border-t border-border hover:bg-muted/50">
+                <tr key={order.id} className={`border-t border-border hover:bg-muted/50 ${selectedIds.has(order.id) ? 'bg-primary/5' : ''}`}>
+                  <td className="px-4 py-3">
+                    <Checkbox 
+                      checked={selectedIds.has(order.id)}
+                      onCheckedChange={() => toggleSelect(order.id)}
+                    />
+                  </td>
                   <td className="px-4 py-3">
                     <p className="font-medium text-foreground">{order.customer_name}</p>
                     <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
