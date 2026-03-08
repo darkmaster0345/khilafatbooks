@@ -100,23 +100,25 @@ const Cart = () => {
             </div>
 
             {/* Zakat */}
-            <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 mt-2">
-              <div className="flex items-center gap-2.5">
-                <Checkbox
-                  id="zakat"
-                  checked={zakatEnabled}
-                  onCheckedChange={(checked) => setZakatEnabled(!!checked)}
-                />
-                <label htmlFor="zakat" className="text-sm font-medium text-foreground cursor-pointer">
-                  Add Zakat (2.5%)
-                </label>
+            {isPluginEnabled('zakat_calculator') && (
+              <div className="rounded-xl border border-primary/15 bg-primary/5 p-4 mt-2">
+                <div className="flex items-center gap-2.5">
+                  <Checkbox
+                    id="zakat"
+                    checked={zakatEnabled}
+                    onCheckedChange={(checked) => setZakatEnabled(!!checked)}
+                  />
+                  <label htmlFor="zakat" className="text-sm font-medium text-foreground cursor-pointer">
+                    Add Zakat (2.5%)
+                  </label>
+                </div>
+                {zakatEnabled && (
+                  <p className="mt-2 text-xs text-muted-foreground pl-6">
+                    {formatPKR(zakatAmount)} will be donated to verified charitable causes
+                  </p>
+                )}
               </div>
-              {zakatEnabled && (
-                <p className="mt-2 text-xs text-muted-foreground pl-6">
-                  {formatPKR(zakatAmount)} will be donated to verified charitable causes
-                </p>
-              )}
-            </div>
+            )}
 
             <div className="border-t border-border pt-4 flex justify-between font-display font-bold text-foreground text-lg">
               <span>Total</span>

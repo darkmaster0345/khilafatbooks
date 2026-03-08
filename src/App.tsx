@@ -27,6 +27,7 @@ const queryClient = new QueryClient();
 const AppLayout = () => {
   const location = useLocation();
   const isAdmin = location.pathname.startsWith('/admin');
+  const { isPluginEnabled } = usePluginSettings();
 
   if (isAdmin) {
     return <Admin />;
@@ -49,8 +50,8 @@ const AppLayout = () => {
         </Routes>
       </div>
       <Footer />
-      <WhatsAppWidget />
-      <AIChatWidget />
+      {isPluginEnabled('whatsapp_notifications') && <WhatsAppWidget />}
+      {isPluginEnabled('ai_chat') && <AIChatWidget />}
     </div>
   );
 };
