@@ -11,6 +11,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import WhatsAppWidget from "@/components/WhatsAppWidget";
 import AIChatWidget from "@/components/AIChatWidget";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import BackToTop from "@/components/BackToTop";
 import ExitIntentDialog from "@/components/ExitIntentDialog";
 import { usePluginSettings } from "@/hooks/usePluginSettings";
