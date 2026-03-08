@@ -55,7 +55,8 @@ const Checkout = () => {
   const referralDiscount = referralRewardType === 'discount' && referralValidation?.valid
     ? referralValidation.discount_amount
     : 0;
-  const grandTotal = Math.max(0, total + shipping - discountAmount - referralDiscount);
+  const giftWrapFee = isGift && giftWrap ? GIFT_WRAP_FEE : 0;
+  const grandTotal = Math.max(0, total + shipping + giftWrapFee - discountAmount - referralDiscount);
   const hasPhysical = items.some(i => i.product.type === 'physical');
 
   const validateReferralCode = async () => {
