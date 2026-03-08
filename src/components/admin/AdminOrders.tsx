@@ -463,8 +463,13 @@ const AdminOrders = () => {
                     />
                   </td>
                   <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{order.customer_name}</p>
-                    <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                    <div className="flex items-center gap-1.5">
+                      <div>
+                        <p className="font-medium text-foreground">{order.customer_name}</p>
+                        <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
+                      </div>
+                      {(order as any).is_gift && <Gift className="h-3.5 w-3.5 text-primary shrink-0" />}
+                    </div>
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">{formatPKR(order.total)}</td>
                   <td className="px-4 py-3">
