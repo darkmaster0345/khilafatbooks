@@ -400,7 +400,14 @@ const AdminProducts = () => {
           <h2 className="font-display text-2xl font-bold text-foreground">Products</h2>
           <p className="text-sm text-muted-foreground">Manage your product catalog.</p>
         </div>
-        <Button onClick={openAdd} className="gap-1"><Plus className="h-4 w-4" /> Add Product</Button>
+        <div className="flex gap-2">
+          {localImageProducts.length > 0 && (
+            <Button variant="outline" onClick={migrateToCloudinary} disabled={migrating} className="gap-1">
+              <Cloud className="h-4 w-4" /> {migrating ? 'Migrating...' : `Migrate ${localImageProducts.length} to CDN`}
+            </Button>
+          )}
+          <Button onClick={openAdd} className="gap-1"><Plus className="h-4 w-4" /> Add Product</Button>
+        </div>
       </div>
 
       {/* Stats */}
