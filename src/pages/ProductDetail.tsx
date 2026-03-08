@@ -26,7 +26,10 @@ const ProductDetail = () => {
   const product = found ? toLegacyProduct(found) : null;
   const { addItem } = useCart();
   const { addProduct } = useRecentlyViewed();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const addToCartRef = useRef<HTMLButtonElement>(null);
+  const [notifyRequested, setNotifyRequested] = useState(false);
 
   // Track recently viewed
   useEffect(() => {
