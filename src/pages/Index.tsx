@@ -1,10 +1,14 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, ShieldCheck, Truck, Download, Heart, Star, BookOpen, Sparkles } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { ArrowRight, ShieldCheck, Truck, Download, Heart, Star, BookOpen, Sparkles, ShoppingCart } from 'lucide-react';
 import VerseOfTheDay from '@/components/VerseOfTheDay';
+import RecentlyViewed from '@/components/RecentlyViewed';
+import { OrganizationJsonLd } from '@/components/JsonLd';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
+import { useCart } from '@/context/CartContext';
 import heroBg from '@/assets/hero-bg-new.jpg';
 import productQuran from '@/assets/product-quran.jpg';
 import productOud from '@/assets/product-oud.jpg';
@@ -26,9 +30,32 @@ const categories = [
 const Index = () => {
   const { products, loading } = useProducts();
   const featured = products.slice(0, 6).map(toLegacyProduct);
+  const { items } = useCart();
 
   return (
     <main>
+      <Helmet>
+        <title>Khilafat Books — Islamic Books, Courses & Halal Products</title>
+        <meta name="description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products. Shop with EasyPaisa and enjoy Pakistan-wide delivery." />
+        <link rel="canonical" href="https://khilafatbooks.lovable.app/" />
+      </Helmet>
+      <OrganizationJsonLd />
+
+      {/* Abandoned Cart Banner */}
+      {items.length > 0 && (
+        <div className="bg-accent/10 border-b border-accent/20">
+          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+            <p className="text-sm text-foreground flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-accent" />
+              You have <strong>{items.length} item{items.length > 1 ? 's' : ''}</strong> in your cart
+            </p>
+            <Button asChild size="sm" variant="outline" className="h-8 text-xs rounded-lg">
+              <Link to="/cart">View Cart <ArrowRight className="ml-1 h-3 w-3" /></Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
       <section className="relative overflow-hidden min-h-[90vh] flex items-center">
         <div className="absolute inset-0">
@@ -67,8 +94,6 @@ const Index = () => {
                 </Link>
               </Button>
             </div>
-
-            {/* Trust badges */}
             <div className="mt-14 flex items-center gap-6 text-primary-foreground/50">
               <div className="flex items-center gap-2">
                 <div className="flex -space-x-1">
@@ -181,6 +206,11 @@ const Index = () => {
 
       {/* Verse of the Day */}
       <VerseOfTheDay />
+
+      {/* Recently Viewed */}
+      <div className="container mx-auto px-4">
+        <RecentlyViewed />
+      </div>
 
       {/* CTA */}
       <section className="relative overflow-hidden">

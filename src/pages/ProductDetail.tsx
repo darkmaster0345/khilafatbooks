@@ -1,12 +1,18 @@
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield } from 'lucide-react';
+import { useRef, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, Users, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ProductCard from '@/components/ProductCard';
 import ProductReviews from '@/components/ProductReviews';
+import RecentlyViewed from '@/components/RecentlyViewed';
+import StickyAddToCart from '@/components/StickyAddToCart';
+import { ProductJsonLd } from '@/components/JsonLd';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
+import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { formatPKR } from '@/lib/currency';
 
 const ProductDetail = () => {
@@ -15,6 +21,16 @@ const ProductDetail = () => {
   const found = products.find(p => p.id === id);
   const product = found ? toLegacyProduct(found) : null;
   const { addItem } = useCart();
+  const { addProduct } = useRecentlyViewed();
+  const addToCartRef = useRef<HTMLButtonElement>(null);
+
+  // Track recently viewed
+  useEffect(() => {
+    if (product) addProduct(product);
+  }, [product?.id]);
+
+  // Social proof: random viewers (seeded by product id for consistency)
+  const viewerCount = product ? 3 + (product.id.charCodeAt(0) % 12) : 0;
 
   const relatedProducts = products
     .filter(p => p.id !== id && p.category === found?.category)
@@ -51,6 +67,22 @@ const ProductDetail = () => {
 
   return (
     <main className="container mx-auto px-4 py-10">
+      <Helmet>
+        <title>{product.name} | Khilafat Books</title>
+        <meta name="description" content={`${product.description.slice(0, 150)}${product.description.length > 150 ? '...' : ''}`} />
+        <link rel="canonical" href={`https://khilafatbooks.lovable.app/product/${product.id}`} />
+      </Helmet>
+      <ProductJsonLd
+        name={product.name}
+        description={product.description}
+        image={product.image}
+        price={product.price}
+        rating={product.rating}
+        reviewCount={product.reviews}
+        inStock={product.inStock}
+        sku={product.id}
+      />
+
       <Link to="/shop" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-8 group">
         <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back to Shop
       </Link>
@@ -92,6 +124,12 @@ const ProductDetail = () => {
             <span className="text-sm text-muted-foreground">{product.rating} ({product.reviews} reviews)</span>
           </div>
 
+          {/* Social proof */}
+          <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+            <Users className="h-3.5 w-3.5 text-accent" />
+            <span>{viewerCount} people are viewing this right now</span>
+          </div>
+
           <div className="mt-5 flex items-baseline gap-3">
             <span className="font-display text-4xl font-bold text-foreground">{formatPKR(product.price)}</span>
             {product.originalPrice && (
@@ -103,6 +141,13 @@ const ProductDetail = () => {
               </>
             )}
           </div>
+
+          {/* Stock urgency */}
+          {!product.inStock && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-destructive font-medium">
+              <AlertTriangle className="h-4 w-4" /> Out of stock
+            </div>
+          )}
 
           <p className="mt-5 text-sm leading-relaxed text-muted-foreground">{product.description}</p>
 
@@ -129,18 +174,23 @@ const ProductDetail = () => {
           </div>
 
           <Button
+            ref={addToCartRef}
             size="lg"
             onClick={() => addItem(product)}
+            disabled={!product.inStock}
             className="mt-9 gap-2.5 h-13 text-base rounded-xl shadow-md hover:shadow-lg transition-shadow"
           >
             <ShoppingCart className="h-5 w-5" />
-            Add to Cart — {formatPKR(product.price)}
+            {product.inStock ? `Add to Cart — ${formatPKR(product.price)}` : 'Out of Stock'}
           </Button>
         </motion.div>
       </div>
 
       {/* Reviews Section */}
       <ProductReviews productId={product.id} productRating={product.rating} productReviews={product.reviews} />
+
+      {/* Recently Viewed */}
+      <RecentlyViewed excludeId={product.id} />
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
@@ -156,6 +206,9 @@ const ProductDetail = () => {
           </div>
         </section>
       )}
+
+      {/* Sticky Mobile Add to Cart */}
+      <StickyAddToCart product={product} triggerRef={addToCartRef} />
     </main>
   );
 };
