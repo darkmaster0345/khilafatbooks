@@ -281,6 +281,47 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          product_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          product_id?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          product_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           created_at: string
@@ -378,6 +419,7 @@ export type Database = {
           is_halal: boolean
           is_hidden: boolean
           is_new: boolean
+          low_stock_threshold: number
           name: string
           name_ar: string | null
           original_price: number | null
@@ -386,6 +428,7 @@ export type Database = {
           reviews: number
           series: string | null
           series_order: number | null
+          stock_quantity: number
           type: string
           updated_at: string
         }
@@ -402,6 +445,7 @@ export type Database = {
           is_halal?: boolean
           is_hidden?: boolean
           is_new?: boolean
+          low_stock_threshold?: number
           name: string
           name_ar?: string | null
           original_price?: number | null
@@ -410,6 +454,7 @@ export type Database = {
           reviews?: number
           series?: string | null
           series_order?: number | null
+          stock_quantity?: number
           type?: string
           updated_at?: string
         }
@@ -426,6 +471,7 @@ export type Database = {
           is_halal?: boolean
           is_hidden?: boolean
           is_new?: boolean
+          low_stock_threshold?: number
           name?: string
           name_ar?: string | null
           original_price?: number | null
@@ -434,6 +480,7 @@ export type Database = {
           reviews?: number
           series?: string | null
           series_order?: number | null
+          stock_quantity?: number
           type?: string
           updated_at?: string
         }
@@ -628,6 +675,35 @@ export type Database = {
           },
         ]
       }
+      review_images: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          review_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          review_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          review_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_images_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           comment: string | null
@@ -638,6 +714,7 @@ export type Database = {
           rating: number
           reviewer_name: string
           user_id: string
+          verified_purchase: boolean
         }
         Insert: {
           comment?: string | null
@@ -648,6 +725,7 @@ export type Database = {
           rating: number
           reviewer_name: string
           user_id: string
+          verified_purchase?: boolean
         }
         Update: {
           comment?: string | null
@@ -658,6 +736,7 @@ export type Database = {
           rating?: number
           reviewer_name?: string
           user_id?: string
+          verified_purchase?: boolean
         }
         Relationships: [
           {
@@ -798,18 +877,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          notify_on_sale: boolean
           product_id: string
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          notify_on_sale?: boolean
           product_id: string
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          notify_on_sale?: boolean
           product_id?: string
           user_id?: string
         }
