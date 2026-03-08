@@ -51,11 +51,11 @@ const Header = () => {
     >
       <div className="container mx-auto flex items-center justify-between px-4 h-16">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-3 group">
-          <img src={logo} alt="Khilafat Books" className="h-10 w-10 rounded-xl shadow-md transition-transform group-hover:scale-105 object-contain" />
-          <div>
-            <h1 className="font-display text-lg font-bold leading-none text-foreground tracking-tight">Khilafat Books</h1>
-            <p className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground font-medium mt-0.5">Islamic Bookstore</p>
+        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
+          <img src={logo} alt="Khilafat Books" className="h-9 w-9 rounded-xl shadow-md transition-transform group-hover:scale-105 object-contain" />
+          <div className="hidden xs:block">
+            <h1 className="font-display text-base sm:text-lg font-bold leading-none text-foreground tracking-tight whitespace-nowrap">Khilafat Books</h1>
+            <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.25em] text-muted-foreground font-medium mt-0.5">Islamic Bookstore</p>
           </div>
         </Link>
 
