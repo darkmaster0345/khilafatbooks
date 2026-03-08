@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import logo from '@/assets/logo.png';
 
 type Mode = 'signin' | 'signup' | 'forgot';
 
