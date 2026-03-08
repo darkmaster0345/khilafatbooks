@@ -21,6 +21,7 @@ import AdminPlugins from '@/components/admin/AdminPlugins';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminBookRequests from '@/components/admin/AdminBookRequests';
 import AdminSecurity from '@/components/admin/AdminSecurity';
+import logo from '@/assets/logo.png';
 
 type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests' | 'security';
 
@@ -109,9 +110,7 @@ const Admin = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl emerald-gradient mx-auto mb-4 shadow-md">
-            <span className="font-arabic text-xl text-primary-foreground">ك</span>
-          </div>
+          <img src={logo} alt="Khilafat Books" className="h-14 w-14 rounded-2xl mx-auto mb-4 shadow-md object-contain" />
           <p className="text-muted-foreground text-sm">Loading admin panel...</p>
         </div>
       </div>
@@ -156,9 +155,7 @@ const Admin = () => {
         {/* Logo */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl emerald-gradient shrink-0 shadow-sm">
-              <span className="font-arabic text-sm text-primary-foreground">ك</span>
-            </div>
+            <img src={logo} alt="Khilafat Books" className="h-9 w-9 rounded-xl shrink-0 shadow-sm object-contain" />
             {(!collapsed || mobileOpen) && (
               <div className="overflow-hidden">
                 <h1 className="font-display text-sm font-bold text-foreground leading-tight truncate">Khilafat Books</h1>

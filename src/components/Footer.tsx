@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
+import logo from '@/assets/logo.png';
 
 const Footer = () => (
   <footer className="border-t border-border bg-card pb-20 md:pb-0">
@@ -8,9 +9,7 @@ const Footer = () => (
       <div className="grid gap-10 py-14 md:grid-cols-4">
         <div className="md:col-span-1">
           <div className="flex items-center gap-3 mb-4">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl emerald-gradient shadow-sm">
-              <span className="font-arabic text-sm text-primary-foreground">ك</span>
-            </div>
+            <img src={logo} alt="Khilafat Books" className="h-9 w-9 rounded-xl shadow-sm object-contain" />
             <span className="font-display text-lg font-bold text-foreground">Khilafat Books</span>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-xs">
