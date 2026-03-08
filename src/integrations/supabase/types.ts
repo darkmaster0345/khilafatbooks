@@ -295,6 +295,7 @@ export type Database = {
       }
       products: {
         Row: {
+          bundle_discount: number | null
           category: string
           created_at: string
           description: string
@@ -311,10 +312,13 @@ export type Database = {
           price: number
           rating: number
           reviews: number
+          series: string | null
+          series_order: number | null
           type: string
           updated_at: string
         }
         Insert: {
+          bundle_discount?: number | null
           category?: string
           created_at?: string
           description?: string
@@ -331,10 +335,13 @@ export type Database = {
           price?: number
           rating?: number
           reviews?: number
+          series?: string | null
+          series_order?: number | null
           type?: string
           updated_at?: string
         }
         Update: {
+          bundle_discount?: number | null
           category?: string
           created_at?: string
           description?: string
@@ -351,6 +358,8 @@ export type Database = {
           price?: number
           rating?: number
           reviews?: number
+          series?: string | null
+          series_order?: number | null
           type?: string
           updated_at?: string
         }
