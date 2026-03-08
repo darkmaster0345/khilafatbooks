@@ -31,6 +31,7 @@ const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'payments', label: 'Payments', icon: CreditCard },
   { id: 'discounts', label: 'Discounts', icon: Tag },
   { id: 'audience', label: 'Audience', icon: Users },
+  { id: 'book-requests', label: 'Book Requests', icon: BookOpen },
   { id: 'plugins', label: 'Plugins', icon: Puzzle },
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
