@@ -45,8 +45,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 // Loyalty tier thresholds and discounts
 const TIER_CONFIG = {
   talib: { minSpent: 0, discount: 0, label: 'Talib' },
-  muallim: { minSpent: 10000, discount: 2, label: 'Muallim' },
-  alim: { minSpent: 50000, discount: 5, label: 'Alim' },
+  muallim: { minSpent: 2000, discount: 2, label: 'Muallim' },
+  alim: { minSpent: 10000, discount: 5, label: 'Alim' },
 };
 
 const calculateLoyaltyInfo = (tier: LoyaltyTier, totalSpent: number): LoyaltyInfo => {
