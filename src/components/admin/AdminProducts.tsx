@@ -69,7 +69,11 @@ const AdminProducts = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const digitalInputRef = useRef<HTMLInputElement>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
   const [migrating, setMigrating] = useState(false);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvPreview, setCsvPreview] = useState<any[] | null>(null);
+  const [csvErrors, setCsvErrors] = useState<string[]>([]);
 
   const localImageProducts = products.filter(p => p.image_url && p.image_url.startsWith('/product-'));
 
