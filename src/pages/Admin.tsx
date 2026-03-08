@@ -20,7 +20,7 @@ import AdminPlugins from '@/components/admin/AdminPlugins';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminBookRequests from '@/components/admin/AdminBookRequests';
 
-type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings';
+type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests';
 
 const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
