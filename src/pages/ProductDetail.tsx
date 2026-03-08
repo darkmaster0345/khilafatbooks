@@ -235,6 +235,33 @@ const ProductDetail = () => {
             <ShoppingCart className="h-5 w-5" />
             {product.inStock ? `Add to Cart — ${formatPKR(product.price)}` : 'Out of Stock'}
           </Button>
+
+          {/* Social Sharing */}
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Share:</span>
+            <button
+              onClick={() => {
+                const url = `https://khilafatbooks.lovable.app/product/${product.id}`;
+                const text = `Check out "${product.name}" on Khilafat Books! ${formatPKR(product.price)}\n${url}`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
+              aria-label="Share on WhatsApp"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => {
+                const url = `https://khilafatbooks.lovable.app/product/${product.id}`;
+                navigator.clipboard.writeText(url);
+                toast({ title: 'Link copied!', description: 'Product link copied to clipboard.' });
+              }}
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+              aria-label="Copy product link"
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+          </div>
         </motion.div>
       </div>
 
