@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { Helmet } from 'react-helmet-async';
+import { Search, SlidersHorizontal, X, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
-import { useProducts, toLegacyProduct, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
+import ProductQuickView from '@/components/ProductQuickView';
+import { useProducts, toLegacyProduct, LegacyProduct, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 
 const categories = ['All', ...PRODUCT_CATEGORIES];
 
@@ -13,8 +15,8 @@ const Shop = () => {
   const [searchParams] = useSearchParams();
   const { products, loading } = useProducts();
   const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [quickViewProduct, setQuickViewProduct] = useState<LegacyProduct | null>(null);
 
-  // Update search state if URL parameter changes
   useMemo(() => {
     const query = searchParams.get('search');
     if (query !== null) setSearch(query);
@@ -40,6 +42,12 @@ const Shop = () => {
 
   return (
     <main className="container mx-auto px-4 py-10">
+      <Helmet>
+        <title>Shop Islamic Books & Digital Courses | Khilafat Books</title>
+        <meta name="description" content="Browse our curated selection of Islamic books, digital courses, prayer essentials, and halal-certified products. Free shipping on orders over Rs. 5,000." />
+        <link rel="canonical" href="https://khilafatbooks.lovable.app/shop" />
+      </Helmet>
+
       {/* Header */}
       <div className="mb-8">
         <p className="section-heading">Browse</p>
@@ -152,12 +160,26 @@ const Shop = () => {
           ) : (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {filtered.map((product, i) => (
-                <ProductCard key={product.id} product={product} index={i} />
+                <div key={product.id} className="relative group/card">
+                  <ProductCard product={product} index={i} />
+                  <button
+                    onClick={() => setQuickViewProduct(product)}
+                    className="absolute bottom-[72px] left-1/2 -translate-x-1/2 opacity-0 group-hover/card:opacity-100 transition-all duration-300 bg-background/90 backdrop-blur-md text-foreground text-xs font-medium px-4 py-2 rounded-full shadow-lg border border-border hover:bg-background flex items-center gap-1.5 z-10"
+                  >
+                    <Eye className="h-3.5 w-3.5" /> Quick View
+                  </button>
+                </div>
               ))}
             </div>
           )}
         </>
       )}
+
+      <ProductQuickView
+        product={quickViewProduct}
+        open={!!quickViewProduct}
+        onOpenChange={(open) => !open && setQuickViewProduct(null)}
+      />
     </main>
   );
 };

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { LegacyProduct } from '@/hooks/useProducts';
+import { toast } from 'sonner';
 
 export type { LegacyProduct as Product } from '@/hooks/useProducts';
 
@@ -35,6 +36,13 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i);
       }
       return [...prev, { product, quantity: 1 }];
+    });
+    toast.success(`${product.name} added to cart`, {
+      description: `${product.category} • ${product.type === 'digital' ? 'Digital' : 'Physical'}`,
+      action: {
+        label: 'View Cart',
+        onClick: () => window.location.href = '/cart',
+      },
     });
   }, []);
 

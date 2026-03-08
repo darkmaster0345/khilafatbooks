@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Heart, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useWishlist } from '@/context/WishlistContext';
@@ -10,6 +11,7 @@ const Wishlist = () => {
 
   return (
     <main className="container mx-auto px-4 py-10">
+      <Helmet><title>Wishlist | Khilafat Books</title></Helmet>
       <div className="mb-8">
         <p className="section-heading">Your Collection</p>
         <h1 className="section-title">Wishlist</h1>
