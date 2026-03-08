@@ -229,12 +229,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } as any).then(() => {});
         });
       } else {
-        supabase.from('cart_activity').insert({
-          event_type: 'add_to_cart',
-          product_name: product.name,
-          product_id: product.id,
-          quantity: 1,
-        } as any).then(() => {});
+        // Anonymous users: skip cart activity tracking (requires authentication)
       }
     });
   }, []);
