@@ -51,13 +51,29 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return newItems;
     });
 
-    // Track cart activity (fire-and-forget)
-    supabase.from('cart_activity').insert({
-      event_type: 'add_to_cart',
-      product_name: product.name,
-      product_id: product.id,
-      quantity: 1,
-    } as any).then(() => {});
+    // Track cart activity (fire-and-forget) — respect privacy mode
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        supabase.from('profiles').select('privacy_mode').eq('user_id', data.user.id).single().then(({ data: profile }) => {
+          if ((profile as any)?.privacy_mode) return; // Skip tracking for private users
+          supabase.from('cart_activity').insert({
+            event_type: 'add_to_cart',
+            product_name: product.name,
+            product_id: product.id,
+            quantity: 1,
+            user_id: data.user!.id,
+          } as any).then(() => {});
+        });
+      } else {
+        // Anonymous user — track without user_id
+        supabase.from('cart_activity').insert({
+          event_type: 'add_to_cart',
+          product_name: product.name,
+          product_id: product.id,
+          quantity: 1,
+        } as any).then(() => {});
+      }
+    });
   }, []);
 
   const removeItem = useCallback((productId: string) => {

@@ -88,6 +88,9 @@ const Orders = () => {
         <p className="mt-2 text-sm text-muted-foreground">
           Track your current orders and view your purchase history.
         </p>
+        <div className="mt-6">
+          <PrivacyModeCard />
+        </div>
       </div>
 
       {orders.length === 0 ? (
