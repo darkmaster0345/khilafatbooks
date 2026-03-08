@@ -29,6 +29,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Admin = lazy(() => import("./pages/Admin"));
 const Wishlist = lazy(() => import("./pages/Wishlist"));
 const Orders = lazy(() => import("./pages/Orders"));
+const Library = lazy(() => import("./pages/Library"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const BookRequests = lazy(() => import("./pages/BookRequests"));
 
