@@ -114,7 +114,7 @@ const Index = () => {
               <Button asChild size="lg" className="gold-gradient border-0 text-foreground font-semibold h-13 px-10 text-base shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]">
                 <Link to="/shop">Shop Collection <ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10 h-13 px-8 text-base backdrop-blur-sm">
+              <Button asChild variant="outline" size="lg" className="border-gold-light/50 text-gold-light hover:bg-gold-light/15 hover:text-gold-light h-13 px-8 text-base backdrop-blur-sm">
                 <Link to="/shop?type=digital">
                   <Download className="mr-2 h-4 w-4" /> Digital Products
                 </Link>
