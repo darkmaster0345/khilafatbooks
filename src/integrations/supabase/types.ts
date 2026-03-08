@@ -967,6 +967,29 @@ export type Database = {
         }
         Returns: string
       }
+      get_digital_download_url: {
+        Args: { p_product_id: string }
+        Returns: string
+      }
+      get_my_referrals: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          order_id: string
+          referral_code_id: string
+          referred_reward_claimed: boolean
+          referred_reward_type: string
+          referred_user_id: string
+          referrer_discount_code: string
+          referrer_discount_expires_at: string
+          referrer_id: string
+          referrer_reward_claimed: boolean
+          referrer_reward_type: string
+          status: string
+        }[]
+      }
+      get_pledge_count: { Args: { p_request_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
