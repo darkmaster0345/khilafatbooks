@@ -49,6 +49,9 @@ const formFromProduct = (p: Product): ProductForm => ({
   in_stock: p.in_stock,
   rating: String(p.rating),
   reviews: String(p.reviews),
+  series: (p as any).series || '',
+  series_order: (p as any).series_order ? String((p as any).series_order) : '',
+  bundle_discount: (p as any).bundle_discount ? String((p as any).bundle_discount) : '100',
 });
 
 const AdminProducts = () => {
