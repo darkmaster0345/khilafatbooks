@@ -41,3 +41,9 @@ The existing `useAuth` hook already calls `is_admin()` RPC after login, and the 
 - Click "Admin Login" in footer or go to `/admin`
 - Full admin dashboard with order management, screenshot verification, and "Release Product" functionality
 
+
+## Hosting & Deployment Notes
+- **Hosting**: Vercel (custom domain and deployment)
+- **Backend**: Lovable Cloud (Supabase)
+- **Email**: Resend (transactional order notifications)
+- **Deployment config**: `vercel.json` in project root
