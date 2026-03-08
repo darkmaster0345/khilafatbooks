@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { formatPKR } from '@/lib/currency';
 import { useProducts } from '@/hooks/useProducts';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import LiveActivityFeed from './LiveActivityFeed';
 
 interface Order {
   id: string;
