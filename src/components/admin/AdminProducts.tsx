@@ -537,6 +537,60 @@ const AdminProducts = () => {
         </div>
       </div>
 
+      {/* CSV Preview */}
+      {csvPreview && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="font-display text-sm font-semibold text-foreground">
+              CSV Preview — {csvPreview.length} products ready to import
+            </h3>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => { setCsvPreview(null); setCsvErrors([]); }}>
+                <X className="h-4 w-4 mr-1" /> Cancel
+              </Button>
+              <Button size="sm" onClick={importCSV} disabled={csvImporting || csvPreview.length === 0} className="gap-1">
+                {csvImporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                Import {csvPreview.length} Products
+              </Button>
+            </div>
+          </div>
+          {csvErrors.length > 0 && (
+            <div className="rounded-md bg-destructive/10 p-3 space-y-1">
+              {csvErrors.map((err, i) => (
+                <p key={i} className="text-xs text-destructive flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 shrink-0" /> {err}
+                </p>
+              ))}
+            </div>
+          )}
+          <div className="max-h-48 overflow-y-auto rounded border border-border">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="bg-muted">
+                  <th className="px-2 py-1 text-left text-muted-foreground">Name</th>
+                  <th className="px-2 py-1 text-left text-muted-foreground">Price</th>
+                  <th className="px-2 py-1 text-left text-muted-foreground">Category</th>
+                  <th className="px-2 py-1 text-left text-muted-foreground">Type</th>
+                </tr>
+              </thead>
+              <tbody>
+                {csvPreview.slice(0, 10).map((row, i) => (
+                  <tr key={i} className="border-t border-border/50">
+                    <td className="px-2 py-1 text-foreground">{row.name}</td>
+                    <td className="px-2 py-1 text-foreground">{formatPKR(row.price)}</td>
+                    <td className="px-2 py-1 text-muted-foreground">{row.category}</td>
+                    <td className="px-2 py-1 text-muted-foreground">{row.type}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {csvPreview.length > 10 && (
+              <p className="text-center text-[10px] text-muted-foreground py-1">...and {csvPreview.length - 10} more</p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
