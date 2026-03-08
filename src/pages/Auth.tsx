@@ -6,8 +6,28 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 type Mode = 'signin' | 'signup' | 'forgot';
+
+// Log security event for tracking
+const logSecurityEvent = async (
+  eventType: string, 
+  email: string | null, 
+  success: boolean,
+  metadata: Record<string, any> = {}
+) => {
+  try {
+    await supabase.from('security_events').insert({
+      event_type: eventType,
+      user_email: email,
+      success,
+      metadata
+    });
+  } catch (e) {
+    console.error('Failed to log security event:', e);
+  }
+};
 
 const Auth = () => {
   const { user, loading, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
@@ -35,13 +55,28 @@ const Auth = () => {
 
     if (mode === 'signup') {
       const { error } = await signUp(email, password, fullName);
-      if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      else toast({ title: 'Account created!', description: 'Please check your email to verify your account.' });
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+        logSecurityEvent('login_attempt', email, false, { type: 'signup', error: error.message });
+      } else {
+        toast({ title: 'Account created!', description: 'Please check your email to verify your account.' });
+        logSecurityEvent('login_attempt', email, true, { type: 'signup' });
+      }
     } else {
       const { error } = await signIn(email, password);
-      if (error) toast({ title: 'Sign in failed', description: error.message, variant: 'destructive' });
+      if (error) {
+        toast({ title: 'Sign in failed', description: error.message, variant: 'destructive' });
+        logSecurityEvent('login_attempt', email, false, { type: 'signin', error: error.message });
+      } else {
+        logSecurityEvent('login_attempt', email, true, { type: 'signin' });
+      }
     }
     setSubmitting(false);
+  };
+
+  const handleGoogleSignIn = async () => {
+    logSecurityEvent('login_attempt', null, true, { type: 'google_oauth_start' });
+    signInWithGoogle();
   };
 
   return (
