@@ -1,13 +1,50 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // --- AUTH CHECK ---
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Only allow admins to upload images
+    const userId = claimsData.claims.sub as string;
+    const { data: roleData } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    if (!roleData) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- CLOUDINARY UPLOAD ---
     const CLOUD_NAME = Deno.env.get("CLOUDINARY_CLOUD_NAME");
     const API_KEY = Deno.env.get("CLOUDINARY_API_KEY");
     const API_SECRET = Deno.env.get("CLOUDINARY_API_SECRET");
@@ -19,14 +56,12 @@ Deno.serve(async (req) => {
     const folder = (formData.get("folder") as string) || "products";
     if (!file) throw new Error("No file provided");
 
-    // Stream file directly to Cloudinary using unsigned-style upload with signature
     const timestamp = Math.floor(Date.now() / 1000);
     const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
     const encoder = new TextEncoder();
     const hashBuffer = await crypto.subtle.digest("SHA-1", encoder.encode(paramsToSign + API_SECRET));
     const signature = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, "0")).join("");
 
-    // Upload raw file bytes directly (avoid base64 overhead)
     const uploadForm = new FormData();
     uploadForm.append("file", file);
     uploadForm.append("api_key", API_KEY);
@@ -42,7 +77,6 @@ Deno.serve(async (req) => {
     const uploadData = await uploadRes.json();
     if (!uploadRes.ok) throw new Error(`Cloudinary error: ${JSON.stringify(uploadData)}`);
 
-    // Return URL with aggressive caching transforms
     const optimizedUrl = uploadData.secure_url.replace(
       "/upload/",
       "/upload/f_auto,q_auto,w_800,c_limit/"
