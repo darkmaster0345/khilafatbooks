@@ -21,6 +21,7 @@ import AdminPlugins from '@/components/admin/AdminPlugins';
 import AdminSettings from '@/components/admin/AdminSettings';
 import AdminBookRequests from '@/components/admin/AdminBookRequests';
 import AdminSecurity from '@/components/admin/AdminSecurity';
+import logo from '@/assets/logo.png';
 
 type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests' | 'security';
 
