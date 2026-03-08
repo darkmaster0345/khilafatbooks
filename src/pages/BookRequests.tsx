@@ -53,17 +53,30 @@ const BookRequests = () => {
 
     const requestIds = reqs.map((r: any) => r.id);
 
-    const { data: pledges } = await supabase
-      .from('book_pledges')
-      .select('request_id, user_id')
-      .in('request_id', requestIds);
+    // Get pledge counts via secure RPC, and user's own pledges if logged in
+    const pledgeCounts = await Promise.all(
+      requestIds.map(async (id: string) => {
+        const { data: count } = await supabase.rpc('get_pledge_count', { p_request_id: id });
+        return { request_id: id, count: count || 0 };
+      })
+    );
+
+    let userPledges: string[] = [];
+    if (user) {
+      const { data: myPledges } = await supabase
+        .from('book_pledges')
+        .select('request_id')
+        .eq('user_id', user.id)
+        .in('request_id', requestIds);
+      userPledges = (myPledges || []).map((p: any) => p.request_id);
+    }
 
     const enriched: BookRequest[] = reqs.map((r: any) => {
-      const rPledges = (pledges || []).filter((p: any) => p.request_id === r.id);
+      const countEntry = pledgeCounts.find(pc => pc.request_id === r.id);
       return {
         ...r,
-        pledge_count: rPledges.length,
-        has_pledged: user ? rPledges.some((p: any) => p.user_id === user.id) : false,
+        pledge_count: countEntry?.count || 0,
+        has_pledged: userPledges.includes(r.id),
       };
     });
 
