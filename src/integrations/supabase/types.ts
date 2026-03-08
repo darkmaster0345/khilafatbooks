@@ -950,6 +950,23 @@ export type Database = {
         Returns: boolean
       }
       cleanup_private_orders: { Args: never; Returns: number }
+      create_verified_order: {
+        Args: {
+          p_customer_email?: string
+          p_customer_name: string
+          p_customer_phone: string
+          p_delivery_address?: string
+          p_delivery_city?: string
+          p_discount_code?: string
+          p_items: Json
+          p_payment_screenshot_url?: string
+          p_recovery_discount?: number
+          p_referral_discount?: number
+          p_transaction_id?: string
+          p_zakat_enabled?: boolean
+        }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
