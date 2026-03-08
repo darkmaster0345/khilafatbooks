@@ -1,9 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X, LogIn, LogOut, User, ChevronDown, Search, Heart } from 'lucide-react';
+import { ShoppingCart, Menu, X, LogIn, LogOut, User, Search, Heart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useWishlist } from '@/context/WishlistContext';
 import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 
@@ -22,6 +22,13 @@ const Header = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,7 +39,13 @@ const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/50 bg-background/90 backdrop-blur-lg">
+    <header
+      className={`sticky top-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? 'bg-background/70 backdrop-blur-xl shadow-[0_1px_20px_-6px_hsl(var(--foreground)/0.08)] border-b border-border/40'
+          : 'bg-background/95 backdrop-blur-md border-b border-border/50'
+      }`}
+    >
       <div className="container mx-auto flex items-center justify-between px-4 h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 group">
@@ -54,7 +67,9 @@ const Header = () => {
               placeholder="Search products..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-9 pr-4 rounded-full bg-muted/50 border-none text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+              className={`w-full h-10 pl-9 pr-4 rounded-full border-none text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none ${
+                scrolled ? 'bg-muted/70' : 'bg-muted/50'
+              }`}
             />
           </form>
 
@@ -154,7 +169,7 @@ const Header = () => {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="overflow-hidden border-t border-border/50 md:hidden bg-background"
+            className="overflow-hidden border-t border-border/50 md:hidden bg-background/95 backdrop-blur-xl"
           >
             <div className="px-4 py-4 border-b border-border/30">
               <form onSubmit={handleSearch} className="relative">
