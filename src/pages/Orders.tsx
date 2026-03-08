@@ -9,6 +9,7 @@ import { formatPKR } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import OrderTrackingTimeline from '@/components/OrderTrackingTimeline';
+import PrivacyModeCard from '@/components/PrivacyModeCard';
 
 interface Order {
   id: string;
@@ -87,6 +88,9 @@ const Orders = () => {
         <p className="mt-2 text-sm text-muted-foreground">
           Track your current orders and view your purchase history.
         </p>
+        <div className="mt-6">
+          <PrivacyModeCard />
+        </div>
       </div>
 
       {orders.length === 0 ? (
