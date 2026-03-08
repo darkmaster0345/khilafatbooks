@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye } from 'lucide-react';
+import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPKR } from '@/lib/currency';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 32 },
@@ -27,6 +28,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product.id);
   const [justAdded, setJustAdded] = useState(false);
+  const { toast } = useToast();
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -80,6 +82,22 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             <Link to={`/product/${product.id}`}>
               <Eye className="h-4 w-4" />
             </Link>
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-10 w-10 p-0 rounded-xl backdrop-blur-md bg-background/90 hover:bg-background shadow-lg"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              addItem(product);
+              toast({
+                title: '🎁 Gift this product!',
+                description: 'Toggle "Send as Gift" at checkout to add a message & gift wrap.',
+              });
+            }}
+          >
+            <Gift className="h-4 w-4" />
           </Button>
         </div>
         

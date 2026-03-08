@@ -1,7 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useRef, useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, Users, AlertTriangle, Share2, MessageCircle, Copy, Bell } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, Users, AlertTriangle, Share2, Copy, Bell, Gift, Link2 } from 'lucide-react';
+import WhatsAppIcon from '@/components/WhatsAppIcon';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -236,7 +237,7 @@ const ProductDetail = () => {
             {product.inStock ? `Add to Cart — ${formatPKR(product.price)}` : 'Out of Stock'}
           </Button>
 
-          {/* Social Sharing */}
+          {/* Social Sharing & Gift */}
           <div className="mt-4 flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Share:</span>
             <button
@@ -248,7 +249,7 @@ const ProductDetail = () => {
               className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 transition-colors"
               aria-label="Share on WhatsApp"
             >
-              <MessageCircle className="h-4 w-4" />
+              <WhatsAppIcon className="h-4 w-4" />
             </button>
             <button
               onClick={() => {
@@ -256,11 +257,27 @@ const ProductDetail = () => {
                 navigator.clipboard.writeText(url);
                 toast({ title: 'Link copied!', description: 'Product link copied to clipboard.' });
               }}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors"
+              className="flex h-auto items-center gap-1.5 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition-colors px-3 py-2 text-xs"
               aria-label="Copy product link"
             >
-              <Copy className="h-4 w-4" />
+              <Link2 className="h-3.5 w-3.5" />
+              Copy Link
             </button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1.5 text-xs rounded-xl"
+              onClick={() => {
+                addItem(product);
+                toast({
+                  title: '🎁 Gift this product!',
+                  description: 'Added to cart. Toggle "Send as Gift" at checkout to add a message & gift wrap.',
+                });
+              }}
+            >
+              <Gift className="h-3.5 w-3.5" />
+              Gift This
+            </Button>
           </div>
         </motion.div>
       </div>
