@@ -34,6 +34,7 @@ const Cart = () => {
 
   return (
     <main className="container mx-auto px-4 py-10">
+      <Helmet><title>Your Cart | Khilafat Books</title></Helmet>
       <Link to="/shop" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-6 group">
         <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Continue Shopping
       </Link>
