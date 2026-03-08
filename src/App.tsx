@@ -70,6 +70,7 @@ const AppLayout = () => {
         </Suspense>
       </div>
       <Footer />
+      <MobileBottomNav />
       <BackToTop />
       <ExitIntentDialog />
       {isPluginEnabled('whatsapp_notifications') && <WhatsAppWidget />}

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Heart } from 'lucide-react';
 
 const Footer = () => (
-  <footer className="border-t border-border bg-card">
+  <footer className="border-t border-border bg-card pb-20 md:pb-0">
     <div className="container mx-auto px-4">
       {/* Main footer */}
       <div className="grid gap-10 py-14 md:grid-cols-4">
