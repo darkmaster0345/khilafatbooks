@@ -644,6 +644,23 @@ const AdminOrders = () => {
               <div><span className="text-muted-foreground">TRX ID:</span> <span className="text-foreground">{selectedOrder.transaction_id || 'Not provided'}</span></div>
               <div><span className="text-muted-foreground">Status:</span> <Badge className={statusColors[selectedOrder.status] || 'bg-muted'}>{selectedOrder.status}</Badge></div>
 
+              {(selectedOrder as any).is_gift && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1">
+                  <div className="flex items-center gap-1.5 text-primary font-medium text-xs">
+                    <Gift className="h-3.5 w-3.5" /> Gift Order
+                  </div>
+                  {(selectedOrder as any).gift_recipient_name && (
+                    <div className="text-xs"><span className="text-muted-foreground">For:</span> <span className="text-foreground">{(selectedOrder as any).gift_recipient_name}</span></div>
+                  )}
+                  {(selectedOrder as any).gift_message && (
+                    <div className="text-xs"><span className="text-muted-foreground">Message:</span> <span className="text-foreground italic">"{(selectedOrder as any).gift_message}"</span></div>
+                  )}
+                  {(selectedOrder as any).gift_wrap && (
+                    <div className="text-xs text-muted-foreground">🎁 Gift wrapped (+{formatPKR((selectedOrder as any).gift_wrap_fee || 100)})</div>
+                  )}
+                </div>
+              )}
+
               <div>
                 <p className="text-muted-foreground mb-1">Items:</p>
                 <ul className="space-y-1">

@@ -495,6 +495,11 @@ const Checkout = () => {
                 <span>Zakat (2.5%)</span><span className="font-medium text-foreground">{formatPKR(zakatAmount)}</span>
               </div>
             )}
+            {giftWrapFee > 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <span>Gift Wrap</span><span className="font-medium text-foreground">{formatPKR(giftWrapFee)}</span>
+              </div>
+            )}
             {discountAmount > 0 && (
               <div className="flex justify-between text-primary">
                 <span>Discount</span><span className="font-medium">-{formatPKR(discountAmount)}</span>
