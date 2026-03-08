@@ -36,6 +36,7 @@ const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'discounts', label: 'Discounts', icon: Tag },
   { id: 'audience', label: 'Audience', icon: Users },
   { id: 'book-requests', label: 'Book Requests', icon: BookOpen },
+  { id: 'newsletter', label: 'Newsletter', icon: Mail },
   { id: 'security', label: 'Security', icon: Shield },
   { id: 'plugins', label: 'Plugins', icon: Puzzle },
   { id: 'settings', label: 'Settings', icon: Settings },
