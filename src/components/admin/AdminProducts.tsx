@@ -62,6 +62,54 @@ const AdminProducts = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const digitalInputRef = useRef<HTMLInputElement>(null);
+  const [migrating, setMigrating] = useState(false);
+
+  const localImageProducts = products.filter(p => p.image_url && p.image_url.startsWith('/product-'));
+
+  const migrateToCloudinary = async () => {
+    if (localImageProducts.length === 0) {
+      toast({ title: 'Nothing to migrate', description: 'All images are already on CDN.' });
+      return;
+    }
+    setMigrating(true);
+    let migrated = 0;
+
+    for (const product of localImageProducts) {
+      try {
+        // Fetch the local image as a blob
+        const resolvedUrl = resolveProductImage(product.image_url);
+        const response = await fetch(resolvedUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `${product.id}.jpg`, { type: 'image/jpeg' });
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'products');
+
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-image', {
+          body: formData,
+        });
+
+        if (uploadError || !uploadData?.success) {
+          console.error(`Failed to migrate ${product.name}:`, uploadError || uploadData?.error);
+          continue;
+        }
+
+        // Update the product's image_url in the database
+        await supabase.from('products').update({ image_url: uploadData.url } as any).eq('id', product.id);
+        migrated++;
+      } catch (err) {
+        console.error(`Error migrating ${product.name}:`, err);
+      }
+    }
+
+    toast({
+      title: '🎉 Migration Complete',
+      description: `${migrated}/${localImageProducts.length} images migrated to Cloudinary CDN.`,
+    });
+    setMigrating(false);
+    refetch();
+  };
 
   const filtered = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
