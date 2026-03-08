@@ -1,49 +1,62 @@
 
 
-# Fix Admin Access for Khilafat Books
+# Newsletter System Plan
 
-## Problem
-The admin email `ubaid0345@proton.me` was never registered as a user, so login always fails with "Invalid login credentials." Meanwhile, your Google account (`arifubaid0345@gmail.com`) signs in successfully but has no admin role.
+## Overview
+A complete newsletter system: subscribers sign up via the footer/homepage, admin composes rich newsletters in the admin portal with a subject + body editor, and clicks "Send" to blast it to all active subscribers via Resend.
 
-## Solution
-Assign the admin role to your existing Google account. This is how most e-commerce companies handle admin access -- the owner signs in with their regular account and gets elevated privileges based on their role in the database.
+## Database
 
-## Steps
+**`newsletter_subscribers` table:**
+- `id` (uuid, PK), `email` (text, unique, not null), `name` (text, nullable), `subscribed_at` (timestamptz, default now()), `is_active` (boolean, default true)
+- RLS: public anonymous `INSERT` (so visitors can subscribe without auth), admin-only `SELECT`/`UPDATE`/`DELETE`
 
-### 1. Assign admin role to your Google account
-Run a database migration to insert the admin role for your existing user (`d0423073-46d9-4fe7-8103-78f30d4343ca` / `arifubaid0345@gmail.com`).
+**`newsletter_campaigns` table** (tracks sent campaigns):
+- `id` (uuid, PK), `subject` (text), `body_html` (text), `sent_at` (timestamptz, default now()), `recipient_count` (integer), `sent_by` (uuid)
+- RLS: admin-only `ALL`
 
-```sql
-INSERT INTO public.user_roles (user_id, role)
-VALUES ('d0423073-46d9-4fe7-8103-78f30d4343ca', 'admin')
-ON CONFLICT (user_id, role) DO NOTHING;
-```
+## Frontend — Subscriber Signup
 
-### 2. Update Footer "Admin Login" link
-Change the footer link from pointing to a separate admin login to simply navigating to `/admin`. When clicked:
-- If signed in with admin role, the admin dashboard loads.
-- If not signed in, it redirects to `/auth` (existing behavior).
-- If signed in but not admin, it shows "Access Denied" (existing behavior).
+1. **`NewsletterSignup.tsx`** — reusable component: email input + subscribe button, inserts directly into `newsletter_subscribers` using anon key (public INSERT policy), shows success toast
+2. Embed in **`Footer.tsx`** (newsletter section) and **`Index.tsx`** (CTA section before footer)
 
-### 3. No code changes needed for auth or admin page
-The existing `useAuth` hook already calls `is_admin()` RPC after login, and the Admin page already checks `isAdmin`. Once the role is assigned in the database, everything will work automatically.
+## Admin — Newsletter Composer & Management
 
-## Technical Details
+**New `AdminNewsletter.tsx`** with two tabs:
 
-### Database change
-- Single INSERT into `user_roles` table for the existing Google user.
+**Tab 1 — Compose & Send:**
+- Subject line input
+- Rich text body area (textarea with HTML support or a simple WYSIWYG)
+- "Preview" button to see rendered email
+- "Send to All Subscribers" button → calls a new edge function
+- Confirmation dialog before sending
+- Shows last campaign stats after send
 
-### Files to verify/update
-- `src/components/Footer.tsx` -- ensure the "Admin Login" link points to `/admin` (likely already does, will verify).
+**Tab 2 — Subscribers:**
+- Table of all subscribers (email, name, date, active status)
+- Toggle active/inactive, search/filter, CSV export
+- Total count display
 
-## Result
-- Sign in with Google as usual
-- Click "Admin Login" in footer or go to `/admin`
-- Full admin dashboard with order management, screenshot verification, and "Release Product" functionality
+## Edge Function — `send-newsletter`
 
+- Accepts `subject`, `body_html` from admin (verified via JWT + `has_role` check)
+- Fetches all active subscribers from `newsletter_subscribers`
+- Sends emails in batches via Resend API (already configured as secret)
+- Logs the campaign to `newsletter_campaigns` table
+- Returns success count
 
-## Hosting & Deployment Notes
-- **Hosting**: Vercel (custom domain and deployment)
-- **Backend**: Lovable Cloud (Supabase)
-- **Email**: Resend (transactional order notifications)
-- **Deployment config**: `vercel.json` in project root
+## Admin Portal Integration
+
+- Add `'newsletter'` to the `Section` type in `Admin.tsx`
+- Add nav item with `Mail` icon
+- Register `AdminNewsletter` in `sectionComponents`
+
+## Files to Create/Edit
+- **Migration SQL** — create `newsletter_subscribers` + `newsletter_campaigns` tables with RLS
+- **`supabase/functions/send-newsletter/index.ts`** — bulk email sender via Resend
+- **`src/components/NewsletterSignup.tsx`** — public signup form
+- **`src/components/admin/AdminNewsletter.tsx`** — composer + subscriber management
+- **`src/components/Footer.tsx`** — embed signup form
+- **`src/pages/Index.tsx`** — add newsletter CTA section
+- **`src/pages/Admin.tsx`** — add Newsletter nav item + section
+
