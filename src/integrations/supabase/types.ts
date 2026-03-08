@@ -269,6 +269,8 @@ export type Database = {
           full_name: string | null
           id: string
           phone: string | null
+          privacy_mode: boolean
+          privacy_paid: boolean
           updated_at: string
           user_id: string
         }
@@ -278,6 +280,8 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          privacy_mode?: boolean
+          privacy_paid?: boolean
           updated_at?: string
           user_id: string
         }
@@ -287,6 +291,8 @@ export type Database = {
           full_name?: string | null
           id?: string
           phone?: string | null
+          privacy_mode?: boolean
+          privacy_paid?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -380,6 +386,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_private_orders: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
