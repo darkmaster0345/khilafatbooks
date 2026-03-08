@@ -1,4 +1,4 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,166 +6,61 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-interface OrderEmailRequest {
-  orderId: string;
-  newStatus: string; // 'approved' | 'rejected' | 'shipped' | 'delivered'
-}
-
 function formatPKR(amount: number) {
   return `PKR ${amount.toLocaleString("en-PK")}`;
 }
 
-function buildEmailHtml(
-  customerName: string,
-  status: string,
-  orderId: string,
-  total: number,
-  items: any[],
-  trackingNumber?: string | null
-): string {
-  const statusConfig: Record<string, { title: string; emoji: string; color: string; message: string }> = {
-    approved: {
-      title: "Payment Verified ✅",
-      emoji: "🎉",
-      color: "#059669",
-      message: "Great news! Your payment has been verified and your order is now being processed.",
-    },
-    rejected: {
-      title: "Payment Issue ❌",
-      emoji: "⚠️",
-      color: "#dc2626",
-      message: "Unfortunately, we could not verify your payment. Please contact us on WhatsApp for assistance.",
-    },
-    shipped: {
-      title: "Order Shipped 🚚",
-      emoji: "📦",
-      color: "#2563eb",
-      message: "Your order has been shipped and is on its way to you!",
-    },
-    delivered: {
-      title: "Order Delivered 🎊",
-      emoji: "✅",
-      color: "#059669",
-      message: "Your order has been delivered. We hope you enjoy your purchase!",
-    },
-  };
+const STATUS_CONFIG: Record<string, { title: string; emoji: string; color: string; message: string }> = {
+  approved: { title: "Payment Verified ✅", emoji: "🎉", color: "#059669", message: "Great news! Your payment has been verified and your order is now being processed." },
+  rejected: { title: "Payment Issue ❌", emoji: "⚠️", color: "#dc2626", message: "Unfortunately, we could not verify your payment. Please contact us on WhatsApp for assistance." },
+  shipped: { title: "Order Shipped 🚚", emoji: "📦", color: "#2563eb", message: "Your order has been shipped and is on its way to you!" },
+  delivered: { title: "Order Delivered 🎊", emoji: "✅", color: "#059669", message: "Your order has been delivered. We hope you enjoy your purchase!" },
+};
 
-  const config = statusConfig[status] || statusConfig.approved;
-
-  const itemsHtml = (Array.isArray(items) ? items : [])
-    .map(
-      (item: any) =>
-        `<tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#374151">${item.name}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#374151;text-align:center">${item.quantity}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#374151;text-align:right">${formatPKR(item.price * item.quantity)}</td>
-        </tr>`
-    )
-    .join("");
-
-  const trackingHtml = trackingNumber
-    ? `<div style="margin-top:16px;padding:12px 16px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe">
-         <p style="margin:0;font-size:14px;color:#1e40af"><strong>Tracking Number:</strong> ${trackingNumber}</p>
-       </div>`
-    : "";
-
-  return `
-<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f9fafb;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif">
-  <div style="max-width:600px;margin:0 auto;padding:20px">
-    <div style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
-      <!-- Header -->
-      <div style="background:${config.color};padding:28px 32px;text-align:center">
-        <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700">Khilafat Books</h1>
-        <p style="margin:4px 0 0;color:rgba(255,255,255,0.85);font-size:13px">Knowledge with Barakah</p>
-      </div>
-      
-      <!-- Body -->
-      <div style="padding:32px">
-        <h2 style="margin:0 0 8px;font-size:20px;color:#111827">${config.emoji} ${config.title}</h2>
-        <p style="margin:0 0 20px;font-size:15px;color:#6b7280;line-height:1.6">
-          Asalam-o-Alaikum <strong style="color:#111827">${customerName}</strong>,<br/>
-          ${config.message}
-        </p>
-
-        <!-- Order Details -->
-        <div style="background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:20px">
-          <p style="margin:0 0 8px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px">Order #${orderId.slice(0, 8).toUpperCase()}</p>
-          <table style="width:100%;border-collapse:collapse">
-            <thead>
-              <tr style="border-bottom:2px solid #e5e7eb">
-                <th style="padding:8px 12px;text-align:left;font-size:12px;color:#6b7280;text-transform:uppercase">Item</th>
-                <th style="padding:8px 12px;text-align:center;font-size:12px;color:#6b7280;text-transform:uppercase">Qty</th>
-                <th style="padding:8px 12px;text-align:right;font-size:12px;color:#6b7280;text-transform:uppercase">Total</th>
-              </tr>
-            </thead>
-            <tbody>${itemsHtml}</tbody>
-          </table>
-          <div style="margin-top:12px;padding-top:12px;border-top:2px solid #e5e7eb;text-align:right">
-            <span style="font-size:16px;font-weight:700;color:#111827">${formatPKR(total)}</span>
-          </div>
-        </div>
-
-        ${trackingHtml}
-
-        ${status === "rejected" ? `
-        <div style="margin-top:16px;padding:12px 16px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca">
-          <p style="margin:0;font-size:14px;color:#991b1b">Need help? Contact us on WhatsApp: <strong>03352706540</strong></p>
-        </div>` : ""}
-      </div>
-
-      <!-- Footer -->
-      <div style="padding:20px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:center">
-        <p style="margin:0;font-size:12px;color:#9ca3af">Thank you for shopping with Khilafat Books</p>
-        <p style="margin:4px 0 0;font-size:11px;color:#d1d5db">This is an automated notification. Please do not reply to this email.</p>
-      </div>
-    </div>
-  </div>
-</body>
-</html>`;
+// Pre-initialize Supabase client (reused across warm invocations)
+let supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!supabase) {
+    supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  }
+  return supabase;
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) {
-      throw new Error("RESEND_API_KEY is not configured");
-    }
+    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
 
-    const { orderId, newStatus } = (await req.json()) as OrderEmailRequest;
+    const { orderId, newStatus } = await req.json();
+    if (!orderId || !newStatus) throw new Error("orderId and newStatus are required");
 
-    if (!orderId || !newStatus) {
-      throw new Error("orderId and newStatus are required");
-    }
-
-    // Fetch order details
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    const { data: order, error: orderError } = await supabase
+    const db = getSupabase();
+    const { data: order, error: orderError } = await db
       .from("orders")
-      .select("*")
+      .select("customer_name, customer_email, total, items, tracking_number")
       .eq("id", orderId)
       .single();
 
-    if (orderError || !order) {
-      throw new Error(`Order not found: ${orderError?.message}`);
+    if (orderError || !order) throw new Error(`Order not found: ${orderError?.message}`);
+    if (!order.customer_email) {
+      return new Response(JSON.stringify({ success: false, message: "No customer email" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const customerEmail = order.customer_email;
-    if (!customerEmail) {
-      return new Response(
-        JSON.stringify({ success: false, message: "No customer email on this order" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const config = STATUS_CONFIG[newStatus] || STATUS_CONFIG.approved;
+    const items = Array.isArray(order.items) ? order.items : [];
+    const itemsHtml = items.map((item: any) =>
+      `<tr><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#374151">${item.name}</td><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#374151;text-align:center">${item.quantity}</td><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#374151;text-align:right">${formatPKR(item.price * item.quantity)}</td></tr>`
+    ).join("");
+
+    const trackingHtml = order.tracking_number
+      ? `<div style="margin-top:16px;padding:12px 16px;background:#eff6ff;border-radius:8px;border:1px solid #bfdbfe"><p style="margin:0;font-size:14px;color:#1e40af"><strong>Tracking:</strong> ${order.tracking_number}</p></div>`
+      : "";
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head><body style="margin:0;padding:0;background:#f9fafb;font-family:'Segoe UI',sans-serif"><div style="max-width:600px;margin:0 auto;padding:20px"><div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1)"><div style="background:${config.color};padding:28px 32px;text-align:center"><h1 style="margin:0;color:#fff;font-size:24px">Khilafat Books</h1><p style="margin:4px 0 0;color:rgba(255,255,255,0.85);font-size:13px">Knowledge with Barakah</p></div><div style="padding:32px"><h2 style="margin:0 0 8px;font-size:20px;color:#111827">${config.emoji} ${config.title}</h2><p style="margin:0 0 20px;font-size:15px;color:#6b7280;line-height:1.6">Asalam-o-Alaikum <strong style="color:#111827">${order.customer_name}</strong>,<br/>${config.message}</p><div style="background:#f9fafb;border-radius:8px;padding:16px;margin-bottom:20px"><p style="margin:0 0 8px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px">Order #${orderId.slice(0, 8).toUpperCase()}</p><table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:2px solid #e5e7eb"><th style="padding:8px 12px;text-align:left;font-size:12px;color:#6b7280">Item</th><th style="padding:8px 12px;text-align:center;font-size:12px;color:#6b7280">Qty</th><th style="padding:8px 12px;text-align:right;font-size:12px;color:#6b7280">Total</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="margin-top:12px;padding-top:12px;border-top:2px solid #e5e7eb;text-align:right"><span style="font-size:16px;font-weight:700;color:#111827">${formatPKR(order.total)}</span></div></div>${trackingHtml}${newStatus === "rejected" ? `<div style="margin-top:16px;padding:12px 16px;background:#fef2f2;border-radius:8px;border:1px solid #fecaca"><p style="margin:0;font-size:14px;color:#991b1b">Need help? WhatsApp: <strong>03352706540</strong></p></div>` : ""}</div><div style="padding:20px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:center"><p style="margin:0;font-size:12px;color:#9ca3af">Thank you for shopping with Khilafat Books</p></div></div></div></body></html>`;
 
     const subjectMap: Record<string, string> = {
       approved: `✅ Payment Verified — Order #${orderId.slice(0, 8).toUpperCase()}`,
@@ -174,43 +69,26 @@ Deno.serve(async (req) => {
       delivered: `✅ Order Delivered — #${orderId.slice(0, 8).toUpperCase()}`,
     };
 
-    const html = buildEmailHtml(
-      order.customer_name,
-      newStatus,
-      orderId,
-      order.total,
-      order.items as any[],
-      order.tracking_number
-    );
-
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         from: "Khilafat Books <onboarding@resend.dev>",
-        to: [customerEmail],
-        subject: subjectMap[newStatus] || `Order Update — Khilafat Books`,
+        to: [order.customer_email],
+        subject: subjectMap[newStatus] || "Order Update — Khilafat Books",
         html,
       }),
     });
 
     const resendData = await resendRes.json();
+    if (!resendRes.ok) throw new Error(`Resend error: ${JSON.stringify(resendData)}`);
 
-    if (!resendRes.ok) {
-      throw new Error(`Resend error: ${JSON.stringify(resendData)}`);
-    }
-
-    return new Response(
-      JSON.stringify({ success: true, emailId: resendData.id }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true, emailId: resendData.id }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (error: any) {
-    return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: false, error: error.message }), {
+      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
