@@ -102,6 +102,7 @@ const Cart = () => {
               </motion.div>
             ))}
           </AnimatePresence>
+          <CartBundleSuggestion cartItems={items} />
           <CartSuggestions cartItems={items} />
         </div>
 

@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Star, MessageSquare, Loader2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { useEffect, useState, useRef } from 'react';
+import { Star, MessageSquare, Loader2, BadgeCheck, Upload, Image as ImageIcon, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,8 @@ interface Review {
   rating: number;
   comment: string | null;
   created_at: string;
+  verified_purchase: boolean;
+  images?: string[];
 }
 
 interface Props {
@@ -33,6 +35,10 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
   const [hoverRating, setHoverRating] = useState(0);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [lightboxImage, setLightboxImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchReviews();
@@ -41,12 +47,44 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
   const fetchReviews = async () => {
     const { data } = await supabase
       .from('reviews')
-      .select('id, reviewer_name, rating, comment, created_at')
+      .select('id, reviewer_name, rating, comment, created_at, verified_purchase')
       .eq('product_id', productId)
       .order('created_at', { ascending: false })
       .limit(20);
-    if (data) setReviews(data);
+
+    if (data) {
+      // Fetch images for each review
+      const reviewIds = data.map((r: any) => r.id);
+      const { data: images } = await supabase
+        .from('review_images')
+        .select('review_id, image_url')
+        .in('review_id', reviewIds);
+
+      const reviewsWithImages = data.map((r: any) => ({
+        ...r,
+        images: images?.filter((img: any) => img.review_id === r.id).map((img: any) => img.image_url) || [],
+      }));
+
+      setReviews(reviewsWithImages);
+    }
     setLoading(false);
+  };
+
+  const handleImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (imageFiles.length + files.length > 3) {
+      toast({ title: 'Max 3 images', description: 'You can upload up to 3 images per review.', variant: 'destructive' });
+      return;
+    }
+    const newFiles = [...imageFiles, ...files].slice(0, 3);
+    setImageFiles(newFiles);
+    const previews = newFiles.map(f => URL.createObjectURL(f));
+    setImagePreviews(previews);
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => prev.filter((_, i) => i !== index));
   };
 
   const submitReview = async () => {
@@ -59,22 +97,43 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from('reviews').insert({
+
+    const { data: reviewData, error } = await supabase.from('reviews').insert({
       product_id: productId,
       user_id: user.id,
       reviewer_name: name.trim(),
       rating,
       comment: comment.trim(),
-    } as any);
+    } as any).select('id').single();
 
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
-    } else {
-      toast({ title: 'Review submitted!', description: 'Your review will appear after admin approval.' });
-      setShowForm(false);
-      setComment('');
-      setRating(5);
+      setSubmitting(false);
+      return;
     }
+
+    // Upload images if any
+    if (reviewData && imageFiles.length > 0) {
+      for (const file of imageFiles) {
+        const ext = file.name.split('.').pop();
+        const path = `${reviewData.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: upErr } = await supabase.storage.from('review-images').upload(path, file);
+        if (!upErr) {
+          const { data: urlData } = supabase.storage.from('review-images').getPublicUrl(path);
+          await supabase.from('review_images').insert({
+            review_id: reviewData.id,
+            image_url: urlData.publicUrl,
+          } as any);
+        }
+      }
+    }
+
+    toast({ title: 'Review submitted!', description: 'Your review will appear after admin approval.' });
+    setShowForm(false);
+    setComment('');
+    setRating(5);
+    setImageFiles([]);
+    setImagePreviews([]);
     setSubmitting(false);
   };
 
@@ -84,7 +143,6 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
 
   const totalReviews = reviews.length || productReviews;
 
-  // Star distribution
   const distribution = [5, 4, 3, 2, 1].map(star => {
     const count = reviews.filter(r => r.rating === star).length;
     return { star, count, percent: totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0 };
@@ -145,6 +203,34 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
               <label className="text-sm font-medium text-foreground">Your Review</label>
               <Textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Share your experience..." className="mt-1.5 rounded-xl" rows={4} maxLength={500} />
             </div>
+
+            {/* Photo Upload */}
+            <div>
+              <label className="text-sm font-medium text-foreground mb-2 block">Add Photos (optional, max 3)</label>
+              <div className="flex items-center gap-3 flex-wrap">
+                {imagePreviews.map((src, i) => (
+                  <div key={i} className="relative h-20 w-20 rounded-lg overflow-hidden border border-border">
+                    <img src={src} alt="" className="h-full w-full object-cover" />
+                    <button
+                      onClick={() => removeImage(i)}
+                      className="absolute top-0.5 right-0.5 bg-destructive text-white rounded-full p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+                {imageFiles.length < 3 && (
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex h-20 w-20 items-center justify-center rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors"
+                  >
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                )}
+                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageAdd} className="hidden" multiple />
+              </div>
+            </div>
+
             <Button onClick={submitReview} disabled={submitting} className="gap-2">
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Submit Review
@@ -184,7 +270,14 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <h4 className="font-semibold text-foreground">{review.reviewer_name}</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-foreground">{review.reviewer_name}</h4>
+                      {review.verified_purchase && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                          <BadgeCheck className="h-3 w-3" /> Verified Purchase
+                        </span>
+                      )}
+                    </div>
                     <span className="text-xs text-muted-foreground">
                       {new Date(review.created_at).toLocaleDateString()}
                     </span>
@@ -197,12 +290,47 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
                   {review.comment && (
                     <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>
                   )}
+                  {/* Review Images */}
+                  {review.images && review.images.length > 0 && (
+                    <div className="flex gap-2 mt-3">
+                      {review.images.map((img, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setLightboxImage(img)}
+                          className="h-16 w-16 rounded-lg overflow-hidden border border-border hover:border-primary/50 transition-colors"
+                        >
+                          <img src={img} alt="" className="h-full w-full object-cover" loading="lazy" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))
           )}
         </div>
       </div>
+
+      {/* Lightbox */}
+      <AnimatePresence>
+        {lightboxImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxImage(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/80 backdrop-blur-sm p-4"
+          >
+            <motion.img
+              initial={{ scale: 0.9 }}
+              animate={{ scale: 1 }}
+              src={lightboxImage}
+              alt="Review photo"
+              className="max-h-[80vh] max-w-[90vw] rounded-xl shadow-2xl object-contain"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
