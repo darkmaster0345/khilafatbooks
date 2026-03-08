@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ArrowRight, Gift } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ArrowRight, Gift, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,6 +10,7 @@ import { formatPKR } from '@/lib/currency';
 import { usePluginSettings } from '@/hooks/usePluginSettings';
 import FreeShippingBar from '@/components/FreeShippingBar';
 import CartSuggestions from '@/components/CartSuggestions';
+import LoyaltyBadge from '@/components/LoyaltyBadge';
 
 const Cart = () => {
   const {
