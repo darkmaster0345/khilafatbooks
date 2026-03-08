@@ -137,6 +137,12 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
                     {outOfStockProducts} product{outOfStockProducts > 1 ? 's' : ''} out of stock
                   </p>
                 )}
+                {lowStockProducts.length > 0 && (
+                  <p className="text-sm text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="inline h-3.5 w-3.5 mr-1" />
+                    {lowStockProducts.length} product{lowStockProducts.length > 1 ? 's' : ''} running low on stock
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex gap-2 shrink-0">
