@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { LegacyProduct } from '@/hooks/useProducts';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export type { LegacyProduct as Product } from '@/hooks/useProducts';
 
