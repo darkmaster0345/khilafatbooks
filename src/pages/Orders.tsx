@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ArrowRight } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
