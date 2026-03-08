@@ -90,9 +90,7 @@ const Auth = () => {
       >
         <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
           <div className="flex flex-col items-center mb-8">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl emerald-gradient mb-4 shadow-md">
-              <span className="font-arabic text-2xl text-primary-foreground">ك</span>
-            </div>
+            <img src={logo} alt="Khilafat Books" className="h-16 w-16 rounded-2xl mb-4 shadow-md object-contain" />
             <h1 className="font-display text-2xl font-bold text-foreground">
               {mode === 'signin' && 'Welcome back'}
               {mode === 'signup' && 'Create account'}
