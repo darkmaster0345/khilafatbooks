@@ -442,9 +442,11 @@ export type Database = {
           email: string | null
           full_name: string | null
           id: string
+          loyalty_tier: string
           phone: string | null
           privacy_mode: boolean
           privacy_paid: boolean
+          total_spent: number
           updated_at: string
           user_id: string
         }
@@ -453,9 +455,11 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          loyalty_tier?: string
           phone?: string | null
           privacy_mode?: boolean
           privacy_paid?: boolean
+          total_spent?: number
           updated_at?: string
           user_id: string
         }
@@ -464,9 +468,11 @@ export type Database = {
           email?: string | null
           full_name?: string | null
           id?: string
+          loyalty_tier?: string
           phone?: string | null
           privacy_mode?: boolean
           privacy_paid?: boolean
+          total_spent?: number
           updated_at?: string
           user_id?: string
         }
@@ -684,6 +690,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      loyalty_tier_type: "talib" | "muallim" | "alim"
       reading_status: "want_to_read" | "reading" | "completed"
     }
     CompositeTypes: {
@@ -813,6 +820,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      loyalty_tier_type: ["talib", "muallim", "alim"],
       reading_status: ["want_to_read", "reading", "completed"],
     },
   },
