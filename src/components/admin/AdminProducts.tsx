@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Package, Plus, Edit, Trash2, Search, Save, X, Upload, Download } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Search, Save, X, Upload, Download, Cloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useProducts, Product, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
+import { resolveProductImage } from '@/lib/productImages';
 
 type ProductForm = {
   name: string;
@@ -61,6 +62,54 @@ const AdminProducts = () => {
   const [deleting, setDeleting] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const digitalInputRef = useRef<HTMLInputElement>(null);
+  const [migrating, setMigrating] = useState(false);
+
+  const localImageProducts = products.filter(p => p.image_url && p.image_url.startsWith('/product-'));
+
+  const migrateToCloudinary = async () => {
+    if (localImageProducts.length === 0) {
+      toast({ title: 'Nothing to migrate', description: 'All images are already on CDN.' });
+      return;
+    }
+    setMigrating(true);
+    let migrated = 0;
+
+    for (const product of localImageProducts) {
+      try {
+        // Fetch the local image as a blob
+        const resolvedUrl = resolveProductImage(product.image_url);
+        const response = await fetch(resolvedUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `${product.id}.jpg`, { type: 'image/jpeg' });
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', 'products');
+
+        const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-image', {
+          body: formData,
+        });
+
+        if (uploadError || !uploadData?.success) {
+          console.error(`Failed to migrate ${product.name}:`, uploadError || uploadData?.error);
+          continue;
+        }
+
+        // Update the product's image_url in the database
+        await supabase.from('products').update({ image_url: uploadData.url } as any).eq('id', product.id);
+        migrated++;
+      } catch (err) {
+        console.error(`Error migrating ${product.name}:`, err);
+      }
+    }
+
+    toast({
+      title: '🎉 Migration Complete',
+      description: `${migrated}/${localImageProducts.length} images migrated to Cloudinary CDN.`,
+    });
+    setMigrating(false);
+    refetch();
+  };
 
   const filtered = products.filter(p => {
     const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
@@ -351,7 +400,14 @@ const AdminProducts = () => {
           <h2 className="font-display text-2xl font-bold text-foreground">Products</h2>
           <p className="text-sm text-muted-foreground">Manage your product catalog.</p>
         </div>
-        <Button onClick={openAdd} className="gap-1"><Plus className="h-4 w-4" /> Add Product</Button>
+        <div className="flex gap-2">
+          {localImageProducts.length > 0 && (
+            <Button variant="outline" onClick={migrateToCloudinary} disabled={migrating} className="gap-1">
+              <Cloud className="h-4 w-4" /> {migrating ? 'Migrating...' : `Migrate ${localImageProducts.length} to CDN`}
+            </Button>
+          )}
+          <Button onClick={openAdd} className="gap-1"><Plus className="h-4 w-4" /> Add Product</Button>
+        </div>
       </div>
 
       {/* Stats */}

@@ -1,5 +1,3 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -28,14 +26,25 @@ Deno.serve(async (req) => {
       throw new Error("No file provided");
     }
 
-    // Convert file to base64
+    // Convert file to base64 in chunks to avoid stack overflow
     const arrayBuffer = await file.arrayBuffer();
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+    const bytes = new Uint8Array(arrayBuffer);
+    
+    // Use a streaming approach for base64 encoding
+    const CHUNK = 4096;
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += CHUNK) {
+      const slice = bytes.subarray(offset, Math.min(offset + CHUNK, bytes.length));
+      for (let i = 0; i < slice.length; i++) {
+        binary += String.fromCharCode(slice[i]);
+      }
+    }
+    const base64 = btoa(binary);
     const dataUri = `data:${file.type};base64,${base64}`;
 
     // Generate signature for authenticated upload
     const timestamp = Math.floor(Date.now() / 1000);
-    const paramsToSign = `folder=${folder}&timestamp=${timestamp}&transformation=f_auto,q_auto`;
+    const paramsToSign = `folder=${folder}&timestamp=${timestamp}`;
     
     // Create SHA-1 signature
     const encoder = new TextEncoder();
@@ -51,7 +60,6 @@ Deno.serve(async (req) => {
     uploadForm.append("timestamp", String(timestamp));
     uploadForm.append("signature", signature);
     uploadForm.append("folder", folder);
-    uploadForm.append("transformation", "f_auto,q_auto");
 
     const uploadRes = await fetch(
       `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
@@ -82,7 +90,7 @@ Deno.serve(async (req) => {
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
-    console.error("Cloudinary upload error:", error);
+    console.error("Cloudinary upload error:", error.message);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
