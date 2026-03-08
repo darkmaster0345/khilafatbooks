@@ -163,6 +163,34 @@ const ProductDetail = () => {
               <div className="flex items-center gap-2 text-sm text-destructive font-medium">
                 <AlertTriangle className="h-4 w-4" /> Out of stock
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                disabled={notifyRequested}
+                onClick={async () => {
+                  if (!user) {
+                    toast({ title: 'Sign in required', description: 'Please sign in to get notified.', variant: 'destructive' });
+                    return;
+                  }
+                  const { error } = await supabase.from('stock_notifications').insert({
+                    user_id: user.id,
+                    product_id: product.id,
+                    user_email: user.email,
+                  } as any);
+                  if (error?.code === '23505') {
+                    toast({ title: 'Already subscribed', description: "You'll be notified when this is back in stock." });
+                  } else if (error) {
+                    toast({ title: 'Error', description: error.message, variant: 'destructive' });
+                  } else {
+                    toast({ title: 'Subscribed!', description: "We'll notify you when this product is back in stock." });
+                  }
+                  setNotifyRequested(true);
+                }}
+              >
+                <Bell className="h-4 w-4" />
+                {notifyRequested ? 'Notification Set ✓' : 'Notify Me When Available'}
+              </Button>
               <SmartSuggest 
                 reason="out_of_stock"
                 category={found?.category}
