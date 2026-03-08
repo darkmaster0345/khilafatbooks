@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
-import { BookOpen, Users, Plus, Check, Sparkles, TrendingUp, ArrowRight } from 'lucide-react';
+import { BookOpen, Users, Plus, Check, Sparkles, TrendingUp, ArrowRight, ShieldCheck, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,10 +25,11 @@ interface BookRequest {
   pledge_fee: number;
   pledge_count: number;
   has_pledged: boolean;
+  estimated_price: number | null;
   created_at: string;
 }
 
-const PLEDGE_FEE = 200;
+const PLEDGE_FEE = 500;
 
 const BookRequests = () => {
   const { user } = useAuth();
@@ -50,7 +51,6 @@ const BookRequests = () => {
 
     if (!reqs) { setLoading(false); return; }
 
-    // Get pledge counts and user's pledges
     const requestIds = reqs.map((r: any) => r.id);
 
     const { data: pledges } = await supabase
@@ -74,7 +74,6 @@ const BookRequests = () => {
   useEffect(() => {
     fetchRequests();
 
-    // Realtime pledge updates
     const channel = supabase
       .channel('book-pledges-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'book_pledges' }, () => {
@@ -129,8 +128,8 @@ const BookRequests = () => {
         toast.error('Failed to pledge');
       }
     } else {
-      toast.success('Pledge recorded! 🎉', {
-        description: `Rs. ${PLEDGE_FEE} commitment fee. You'll be notified when the book is available.`,
+      toast.success('Security deposit registered! 🎉', {
+        description: `Rs. ${PLEDGE_FEE} deposit recorded. This will be credited towards your purchase when the book arrives.`,
       });
       fetchRequests();
     }
@@ -140,7 +139,7 @@ const BookRequests = () => {
   const handleUnpledge = async (requestId: string) => {
     if (!user) return;
     await supabase.from('book_pledges').delete().eq('request_id', requestId).eq('user_id', user.id);
-    toast.success('Pledge removed');
+    toast.success('Pledge withdrawn — your deposit is refunded');
     fetchRequests();
   };
 
@@ -152,7 +151,7 @@ const BookRequests = () => {
     <main className="container mx-auto px-4 py-10 max-w-5xl">
       <Helmet>
         <title>Request a Book | Khilafat Books</title>
-        <meta name="description" content="Vote on which Islamic books you want us to import next. Pledge Rs. 200 and we'll bring it to Pakistan when 20 people agree." />
+        <meta name="description" content="Vote on which Islamic books you want us to import next. Pledge Rs. 500 as a security deposit and we'll bring it to Pakistan when 20 people agree." />
       </Helmet>
 
       {/* Hero */}
@@ -165,8 +164,8 @@ const BookRequests = () => {
             <h1 className="section-title">Request a Book</h1>
             <p className="mt-2 text-sm text-muted-foreground max-w-lg leading-relaxed">
               Can't find a book you want? Suggest it! When 20 people pledge{' '}
-              <strong className="text-foreground">{formatPKR(PLEDGE_FEE)}</strong> each, we'll import it.
-              Your pledge fee is credited towards your purchase.
+              <strong className="text-foreground">{formatPKR(PLEDGE_FEE)}</strong> each as a security deposit, we'll import it.
+              Your deposit is fully credited towards your purchase.
             </p>
           </div>
 
@@ -202,12 +201,12 @@ const BookRequests = () => {
         </div>
       </div>
 
-      {/* How it works */}
-      <div className="grid grid-cols-3 gap-4 mb-10">
+      {/* How it works — Shariah Compliant */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         {[
-          { step: '1', title: 'Suggest or Vote', desc: 'Suggest a book or pledge on existing ones' },
-          { step: '2', title: '20 Pledges', desc: `Each pledge is ${formatPKR(PLEDGE_FEE)} — credited towards purchase` },
-          { step: '3', title: 'We Import It', desc: "We buy in bulk and notify you when it's here" },
+          { step: '1', title: 'Suggest or Vote', desc: 'Suggest a book or show interest by pledging' },
+          { step: '2', title: 'Security Deposit', desc: `${formatPKR(PLEDGE_FEE)} deposit (Hamish Jiddiyyah) — fully refundable` },
+          { step: '3', title: 'We Import & You Buy', desc: "The actual sale happens only when the book is in our possession" },
         ].map((s, i) => (
           <div key={i} className="rounded-xl border border-border bg-card p-4 text-center">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm mx-auto mb-2">
@@ -217,6 +216,20 @@ const BookRequests = () => {
             <p className="text-[11px] text-muted-foreground mt-1">{s.desc}</p>
           </div>
         ))}
+      </div>
+
+      {/* Shariah Compliance Notice */}
+      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-10 flex gap-3 items-start">
+        <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+        <div className="text-xs text-muted-foreground leading-relaxed">
+          <p className="font-semibold text-foreground text-sm mb-1">100% Shariah Compliant</p>
+          <ul className="space-y-1 list-disc list-inside">
+            <li>Your <strong className="text-foreground">{formatPKR(PLEDGE_FEE)}</strong> is a <strong className="text-foreground">security deposit</strong> (Hamish Jiddiyyah), not a sale — the actual sale happens only when the book is in our possession.</li>
+            <li>Your deposit is <strong className="text-foreground">fully credited</strong> towards the final purchase price.</li>
+            <li>If the final price changes significantly from the estimate, you have <strong className="text-foreground">full right to withdraw</strong> and get your deposit back.</li>
+            <li>If import fails, you choose: <strong className="text-foreground">full EasyPaisa refund</strong> or <strong className="text-foreground">store credit</strong> — your choice, no coercion.</li>
+          </ul>
+        </div>
       </div>
 
       {loading ? (
@@ -231,7 +244,6 @@ const BookRequests = () => {
         </div>
       ) : (
         <div className="space-y-8">
-          {/* Active Voting */}
           {votingRequests.length > 0 && (
             <section>
               <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
@@ -254,7 +266,6 @@ const BookRequests = () => {
             </section>
           )}
 
-          {/* Funded */}
           {fundedRequests.length > 0 && (
             <section>
               <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
@@ -268,7 +279,6 @@ const BookRequests = () => {
             </section>
           )}
 
-          {/* Fulfilled */}
           {fulfilledRequests.length > 0 && (
             <section>
               <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
@@ -333,8 +343,17 @@ const RequestCard = ({
         </div>
       </div>
 
+      {/* Estimated Price */}
+      {req.estimated_price && (
+        <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Info className="h-3 w-3" />
+          <span>Estimated final price: <strong className="text-foreground">{formatPKR(req.estimated_price)}</strong></span>
+          <span className="text-[10px]">(may vary — you can withdraw if it changes significantly)</span>
+        </div>
+      )}
+
       {/* Progress */}
-      <div className="mt-4">
+      <div className="mt-3">
         <div className="flex items-center justify-between text-xs mb-1.5">
           <span className="text-muted-foreground flex items-center gap-1">
             <Users className="h-3 w-3" />
@@ -348,7 +367,7 @@ const RequestCard = ({
       {/* Actions */}
       <div className="mt-4 flex items-center justify-between">
         <span className="text-[11px] text-muted-foreground">
-          {formatPKR(req.pledge_fee)} per pledge
+          {formatPKR(req.pledge_fee)} security deposit
         </span>
 
         {isFulfilled ? (
@@ -371,7 +390,7 @@ const RequestCard = ({
             disabled={pledging === req.id}
             className="rounded-lg h-8 text-xs gap-1"
           >
-            {pledging === req.id ? 'Pledging...' : `Pledge ${formatPKR(req.pledge_fee)}`}
+            {pledging === req.id ? 'Pledging...' : `Deposit ${formatPKR(req.pledge_fee)}`}
           </Button>
         )}
       </div>

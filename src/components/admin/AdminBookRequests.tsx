@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { BookOpen, Users, Send, Check, Trash2, ExternalLink } from 'lucide-react';
+import { BookOpen, Users, Send, Check, Trash2, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPKR } from '@/lib/currency';
@@ -15,6 +16,7 @@ interface BookRequest {
   pledge_goal: number;
   pledge_fee: number;
   pledge_count: number;
+  estimated_price: number | null;
   created_at: string;
 }
 
@@ -22,6 +24,8 @@ const AdminBookRequests = () => {
   const [requests, setRequests] = useState<BookRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [notifying, setNotifying] = useState<string | null>(null);
+  const [editingPrice, setEditingPrice] = useState<string | null>(null);
+  const [priceValue, setPriceValue] = useState('');
 
   const fetchRequests = async () => {
     const { data: reqs } = await supabase
@@ -51,6 +55,16 @@ const AdminBookRequests = () => {
   const updateStatus = async (id: string, status: string) => {
     await supabase.from('book_requests').update({ status } as any).eq('id', id);
     toast.success(`Status updated to ${status}`);
+    fetchRequests();
+  };
+
+  const saveEstimatedPrice = async (id: string) => {
+    const price = parseInt(priceValue);
+    if (isNaN(price) || price <= 0) { toast.error('Enter a valid price'); return; }
+    await supabase.from('book_requests').update({ estimated_price: price } as any).eq('id', id);
+    toast.success('Estimated price updated — visible to pledgers');
+    setEditingPrice(null);
+    setPriceValue('');
     fetchRequests();
   };
 
@@ -88,7 +102,7 @@ const AdminBookRequests = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold text-foreground">Book Requests</h2>
-          <p className="text-sm text-muted-foreground">Manage community book requests and pledges</p>
+          <p className="text-sm text-muted-foreground">Manage community book requests and pledges (Shariah-compliant)</p>
         </div>
         <Badge variant="outline" className="gap-1.5">
           <BookOpen className="h-3 w-3" /> {requests.length} requests
@@ -118,16 +132,55 @@ const AdminBookRequests = () => {
                     </div>
                     {req.author && <p className="text-xs text-muted-foreground mt-0.5">by {req.author}</p>}
 
-                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
                       <Users className="h-3 w-3" />
                       <span>{req.pledge_count}/{req.pledge_goal} pledges</span>
                       <span>•</span>
-                      <span>Revenue: {formatPKR(req.pledge_count * req.pledge_fee)}</span>
+                      <span>Deposits: {formatPKR(req.pledge_count * req.pledge_fee)}</span>
+                      {req.estimated_price && (
+                        <>
+                          <span>•</span>
+                          <span>Est. price: {formatPKR(req.estimated_price)}</span>
+                        </>
+                      )}
                     </div>
 
                     <div className="mt-2 max-w-xs">
                       <Progress value={progress} className="h-1.5" />
                     </div>
+
+                    {/* Set estimated price */}
+                    {req.status === 'voting' && (
+                      <div className="mt-3">
+                        {editingPrice === req.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              placeholder="Estimated final price (Rs.)"
+                              value={priceValue}
+                              onChange={e => setPriceValue(e.target.value)}
+                              className="h-8 text-xs w-40 rounded-lg"
+                            />
+                            <Button size="sm" variant="outline" onClick={() => saveEstimatedPrice(req.id)} className="h-8 text-xs">
+                              Save
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setEditingPrice(null)} className="h-8 text-xs">
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => { setEditingPrice(req.id); setPriceValue(req.estimated_price?.toString() || ''); }}
+                            className="h-7 text-[11px] gap-1 text-muted-foreground"
+                          >
+                            <DollarSign className="h-3 w-3" />
+                            {req.estimated_price ? 'Update estimated price' : 'Set estimated price (for transparency)'}
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0">
