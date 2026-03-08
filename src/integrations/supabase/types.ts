@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      abandoned_carts: {
+        Row: {
+          cart_items: Json
+          cart_total: number
+          created_at: string
+          id: string
+          last_activity_at: string
+          recovered_at: string | null
+          recovered_order_id: string | null
+          recovery_code: string | null
+          recovery_code_expires_at: string | null
+          reminder_count: number
+          reminder_sent_at: string | null
+          status: string
+          updated_at: string
+          user_email: string
+          user_id: string
+          user_name: string | null
+        }
+        Insert: {
+          cart_items?: Json
+          cart_total?: number
+          created_at?: string
+          id?: string
+          last_activity_at?: string
+          recovered_at?: string | null
+          recovered_order_id?: string | null
+          recovery_code?: string | null
+          recovery_code_expires_at?: string | null
+          reminder_count?: number
+          reminder_sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_email: string
+          user_id: string
+          user_name?: string | null
+        }
+        Update: {
+          cart_items?: Json
+          cart_total?: number
+          created_at?: string
+          id?: string
+          last_activity_at?: string
+          recovered_at?: string | null
+          recovered_order_id?: string | null
+          recovery_code?: string | null
+          recovery_code_expires_at?: string | null
+          reminder_count?: number
+          reminder_sent_at?: string | null
+          status?: string
+          updated_at?: string
+          user_email?: string
+          user_id?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       book_pledges: {
         Row: {
           created_at: string
@@ -235,6 +292,8 @@ export type Database = {
           id: string
           items: Json
           payment_screenshot_url: string | null
+          recovered_from_cart: string | null
+          recovery_discount: number | null
           shipped_at: string | null
           shipping: number
           shipping_status: string | null
@@ -257,6 +316,8 @@ export type Database = {
           id?: string
           items: Json
           payment_screenshot_url?: string | null
+          recovered_from_cart?: string | null
+          recovery_discount?: number | null
           shipped_at?: string | null
           shipping?: number
           shipping_status?: string | null
@@ -279,6 +340,8 @@ export type Database = {
           id?: string
           items?: Json
           payment_screenshot_url?: string | null
+          recovered_from_cart?: string | null
+          recovery_discount?: number | null
           shipped_at?: string | null
           shipping?: number
           shipping_status?: string | null
@@ -291,7 +354,15 @@ export type Database = {
           user_id?: string
           zakat_amount?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "orders_recovered_from_cart_fkey"
+            columns: ["recovered_from_cart"]
+            isOneToOne: false
+            referencedRelation: "abandoned_carts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       products: {
         Row: {
