@@ -125,24 +125,22 @@ const Checkout = () => {
       screenshotPath = filePath;
     }
 
-    const orderItems = items.map(i => ({ name: i.product.name, id: i.product.id, quantity: i.quantity, price: i.product.price, type: i.product.type }));
+    const orderItems = items.map(i => ({ id: i.product.id, quantity: i.quantity }));
 
-    const { data: orderData, error } = await supabase.from('orders').insert({
-      user_id: user.id,
-      items: orderItems,
-      subtotal,
-      shipping,
-      zakat_amount: zakatAmount,
-      total: grandTotal,
-      status: 'pending',
-      payment_screenshot_url: screenshotPath,
-      transaction_id: transactionId || null,
-      customer_name: name,
-      customer_phone: phone,
-      customer_email: email || null,
-      delivery_address: address || null,
-      delivery_city: city || null,
-    } as any).select('id').single();
+    const { data: orderData, error } = await supabase.rpc('create_verified_order', {
+      p_items: orderItems,
+      p_customer_name: name,
+      p_customer_phone: phone,
+      p_customer_email: email || null,
+      p_delivery_address: address || null,
+      p_delivery_city: city || null,
+      p_payment_screenshot_url: screenshotPath,
+      p_transaction_id: transactionId || null,
+      p_zakat_enabled: zakatEnabled,
+      p_discount_code: discount?.code || null,
+      p_referral_discount: referralDiscount,
+      p_recovery_discount: 0,
+    } as any);
 
     if (error) {
       toast({ title: 'Order failed', description: error.message, variant: 'destructive' });
