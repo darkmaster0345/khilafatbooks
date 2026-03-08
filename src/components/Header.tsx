@@ -51,9 +51,7 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between px-4 h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 group">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl emerald-gradient shadow-md transition-transform group-hover:scale-105">
-            <span className="font-arabic text-lg text-primary-foreground">ك</span>
-          </div>
+          <img src={logo} alt="Khilafat Books" className="h-10 w-10 rounded-xl shadow-md transition-transform group-hover:scale-105 object-contain" />
           <div>
             <h1 className="font-display text-lg font-bold leading-none text-foreground tracking-tight">Khilafat Books</h1>
             <p className="text-[9px] uppercase tracking-[0.25em] text-muted-foreground font-medium mt-0.5">Islamic Bookstore</p>
