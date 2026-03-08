@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, ShoppingCart, User, Heart } from 'lucide-react';
+import { Home, Search, ShoppingCart, BookOpen, Heart } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
