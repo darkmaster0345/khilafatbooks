@@ -10,6 +10,7 @@ import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import DiscountCodeInput, { AppliedDiscount } from '@/components/DiscountCodeInput';
+import { usePluginSettings } from '@/hooks/usePluginSettings';
 
 const EASYPAISA_ACCOUNT = '03352706540';
 
@@ -29,6 +30,7 @@ const Checkout = () => {
   const [transactionId, setTransactionId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
+  const { isPluginEnabled } = usePluginSettings();
 
   const shipping = subtotal < 5000 ? 500 : 0;
   const discountAmount = discount?.discountAmount ?? 0;
@@ -242,21 +244,23 @@ const Checkout = () => {
 
           {step === 'payment' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-              <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
-                <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
-                  <Phone className="h-5 w-5 text-primary" /> EasyPaisa Payment
-                </h2>
-                <p className="mt-3 text-sm text-foreground">
-                  Please send <span className="font-bold text-primary text-base">{formatPKR(grandTotal)}</span> to:
-                </p>
-                <div className="mt-3 flex items-center gap-3 rounded-xl bg-background border border-border px-5 py-3.5">
-                  <span className="font-mono text-xl font-bold text-foreground tracking-wider">{EASYPAISA_ACCOUNT}</span>
-                  <button onClick={copyAccount} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/10">
-                    <Copy className="h-4 w-4" />
-                  </button>
+              {isPluginEnabled('easypaisa_payments') && (
+                <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
+                  <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+                    <Phone className="h-5 w-5 text-primary" /> EasyPaisa Payment
+                  </h2>
+                  <p className="mt-3 text-sm text-foreground">
+                    Please send <span className="font-bold text-primary text-base">{formatPKR(grandTotal)}</span> to:
+                  </p>
+                  <div className="mt-3 flex items-center gap-3 rounded-xl bg-background border border-border px-5 py-3.5">
+                    <span className="font-mono text-xl font-bold text-foreground tracking-wider">{EASYPAISA_ACCOUNT}</span>
+                    <button onClick={copyAccount} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/10">
+                      <Copy className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">Account Title: Khilafat Books</p>
                 </div>
-                <p className="mt-2 text-xs text-muted-foreground">Account Title: Khilafat Books</p>
-              </div>
+              )}
 
               <div className="rounded-xl border border-border bg-card p-6">
                 <label className="text-sm font-medium text-foreground">Upload Payment Screenshot *</label>
