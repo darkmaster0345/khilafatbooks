@@ -83,6 +83,22 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
               <Eye className="h-4 w-4" />
             </Link>
           </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="h-10 w-10 p-0 rounded-xl backdrop-blur-md bg-background/90 hover:bg-background shadow-lg"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              addItem(product);
+              toast({
+                title: '🎁 Gift this product!',
+                description: 'Toggle "Send as Gift" at checkout to add a message & gift wrap.',
+              });
+            }}
+          >
+            <Gift className="h-4 w-4" />
+          </Button>
         </div>
         
         {/* Badges */}
