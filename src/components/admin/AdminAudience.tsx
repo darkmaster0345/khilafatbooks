@@ -60,6 +60,16 @@ const AdminAudience = () => {
   const totalCustomers = customers.length;
   const totalRevenue = customers.reduce((s, c) => s + c.totalSpent, 0);
   const avgPerCustomer = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
+  const repeatBuyers = customers.filter(c => c.orderCount > 1).length;
+  const oneTimeBuyers = customers.filter(c => c.orderCount === 1).length;
+  
+  // City distribution
+  const cityMap: Record<string, number> = {};
+  customers.forEach(c => {
+    const city = c.city || 'Unknown';
+    cityMap[city] = (cityMap[city] || 0) + 1;
+  });
+  const topCities = Object.entries(cityMap).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   return (
     <div className="space-y-6">
