@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProducts } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
-import { HelmetProvider, Helmet } from 'react-helmet-async';
+import { Helmet } from 'react-helmet-async';
 
 type ReadingStatus = 'want_to_read' | 'reading' | 'completed';
 
