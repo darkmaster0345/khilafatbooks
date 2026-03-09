@@ -153,10 +153,11 @@ const Library = () => {
   const completionPercent = readingGoal > 0 ? Math.min(100, (stats.completed / readingGoal) * 100) : 0;
 
   return (
-    <HelmetProvider>
+    <>
       <Helmet>
         <title>My Library | Khilafat Books</title>
-        <meta name="description" content="Track your reading journey with Khilafat Books" />
+        <meta name="description" content="Track your reading journey with Khilafat Books. Manage your digital books and set reading goals." />
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
       <div className="min-h-screen bg-background">

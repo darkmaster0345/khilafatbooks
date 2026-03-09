@@ -236,6 +236,10 @@ const Checkout = () => {
 
   return (
     <main className="container mx-auto px-4 py-10">
+      <Helmet>
+        <title>Checkout | Khilafat Books</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <Link to="/cart" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-6 group">
         <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back to Cart
       </Link>
