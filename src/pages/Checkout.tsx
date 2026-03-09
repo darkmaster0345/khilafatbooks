@@ -109,12 +109,51 @@ const Checkout = () => {
     toast({ title: 'Copied!', description: 'EasyPaisa account number copied to clipboard.' });
   };
 
+  const validateInputs = () => {
+    const trimmedName = name.trim();
+    const trimmedPhone = phone.trim().replace(/[-\s]/g, '');
+    const trimmedEmail = email.trim();
+
+    if (trimmedName.length < 3) {
+      toast({ title: 'Invalid Name', description: 'Please enter your full name (at least 3 characters).', variant: 'destructive' });
+      return false;
+    }
+
+    // Basic Pakistan mobile number validation: 03xxxxxxxxx or 923xxxxxxxxx
+    const phoneRegex = /^(03|923|\+923)\d{8,9}$/;
+    if (!phoneRegex.test(trimmedPhone)) {
+      toast({ title: 'Invalid Phone', description: 'Please enter a valid WhatsApp number (e.g., 03001234567).', variant: 'destructive' });
+      return false;
+    }
+
+    if (trimmedEmail && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmedEmail)) {
+      toast({ title: 'Invalid Email', description: 'Please enter a valid email address.', variant: 'destructive' });
+      return false;
+    }
+
+    if (hasPhysical) {
+      if (address.trim().length < 10) {
+        toast({ title: 'Invalid Address', description: 'Please enter a complete delivery address.', variant: 'destructive' });
+        return false;
+      }
+      if (city.trim().length < 3) {
+        toast({ title: 'Invalid City', description: 'Please enter a valid city name.', variant: 'destructive' });
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleSubmitOrder = async () => {
     if (!user) {
       toast({ title: 'Please sign in', description: 'You need to be logged in to place an order.', variant: 'destructive' });
       navigate('/auth');
       return;
     }
+
+    if (!validateInputs()) return;
+
     if (!screenshotFile && !transactionId) {
       toast({ title: 'Payment proof required', description: 'Please upload a screenshot or enter a transaction ID.', variant: 'destructive' });
       return;
@@ -410,15 +449,9 @@ const Checkout = () => {
 
               <Button
                 onClick={() => {
-                  if (!name || !phone) {
-                    toast({ title: 'Required fields', description: 'Please enter your name and phone number.', variant: 'destructive' });
-                    return;
+                  if (validateInputs()) {
+                    setStep('payment');
                   }
-                  if (hasPhysical && (!address || !city)) {
-                    toast({ title: 'Address required', description: 'Please enter delivery address for physical products.', variant: 'destructive' });
-                    return;
-                  }
-                  setStep('payment');
                 }}
                 size="lg"
                 className="h-12 px-8 text-base"
