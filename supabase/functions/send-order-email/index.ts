@@ -11,6 +11,7 @@ function formatPKR(amount: number) {
 }
 
 const STATUS_CONFIG: Record<string, { title: string; emoji: string; color: string; message: string }> = {
+  pending: { title: "Order Received 📋", emoji: "🎉", color: "#059669", message: "Thank you for your order! We've received your payment proof and will verify it shortly. You'll receive another email once your payment is confirmed." },
   approved: { title: "Payment Verified ✅", emoji: "🎉", color: "#059669", message: "Great news! Your payment has been verified and your order is now being processed." },
   rejected: { title: "Payment Issue ❌", emoji: "⚠️", color: "#dc2626", message: "Unfortunately, we could not verify your payment. Please contact us on WhatsApp for assistance." },
   shipped: { title: "Order Shipped 🚚", emoji: "📦", color: "#2563eb", message: "Your order has been shipped and is on its way to you!" },
