@@ -17,15 +17,25 @@ const NewsletterSignup = ({ variant = 'footer' }: NewsletterSignupProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) return;
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Enhanced email validation regex
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(trimmedEmail)) {
       toast({ title: 'Invalid email', description: 'Please enter a valid email address.', variant: 'destructive' });
       return;
     }
 
+    // Cooldown check (5 seconds) to prevent spam/double-submit
+    const lastSubmit = sessionStorage.getItem('newsletter_last_submit');
+    if (lastSubmit && Date.now() - parseInt(lastSubmit) < 5000) {
+      toast({ title: 'Slow down', description: 'Please wait a moment before trying again.' });
+      return;
+    }
+
     setLoading(true);
+    sessionStorage.setItem('newsletter_last_submit', Date.now().toString());
     try {
       const { error } = await supabase
         .from('newsletter_subscribers' as any)
