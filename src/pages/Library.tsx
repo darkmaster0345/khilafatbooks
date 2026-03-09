@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProducts } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
-import { HelmetProvider, Helmet } from 'react-helmet-async';
+import { Helmet } from 'react-helmet-async';
 
 type ReadingStatus = 'want_to_read' | 'reading' | 'completed';
 
@@ -153,10 +153,11 @@ const Library = () => {
   const completionPercent = readingGoal > 0 ? Math.min(100, (stats.completed / readingGoal) * 100) : 0;
 
   return (
-    <HelmetProvider>
+    <>
       <Helmet>
         <title>My Library | Khilafat Books</title>
-        <meta name="description" content="Track your reading journey with Khilafat Books" />
+        <meta name="description" content="Track your reading journey with Khilafat Books. Manage your digital books and set reading goals." />
+        <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
       <div className="min-h-screen bg-background">
@@ -388,7 +389,7 @@ const Library = () => {
           )}
         </div>
       </div>
-    </HelmetProvider>
+    </>
   );
 };
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
@@ -82,6 +83,11 @@ const Auth = () => {
 
   return (
     <main className="flex min-h-[75vh] items-center justify-center px-4 py-12">
+      <Helmet>
+        <title>Sign In | Khilafat Books</title>
+        <meta name="description" content="Sign in or create your Khilafat Books account to track orders, save wishlists, and access digital products." />
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}

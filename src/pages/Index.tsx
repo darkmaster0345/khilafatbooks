@@ -54,6 +54,14 @@ const Index = () => {
         <title>Khilafat Books — Islamic Books, Courses & Halal Products</title>
         <meta name="description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products. Shop with EasyPaisa and enjoy Pakistan-wide delivery." />
         <link rel="canonical" href="https://khilafatbooks.lovable.app/" />
+        <meta property="og:title" content="Khilafat Books — Islamic Books, Courses & Halal Products" />
+        <meta property="og:description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products. Shop with EasyPaisa and enjoy Pakistan-wide delivery." />
+        <meta property="og:url" content="https://khilafatbooks.lovable.app/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://khilafatbooks.lovable.app/favicon.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Khilafat Books — Islamic Books, Courses & Halal Products" />
+        <meta name="twitter:description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products." />
       </Helmet>
       <OrganizationJsonLd />
 

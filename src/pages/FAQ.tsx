@@ -65,6 +65,11 @@ const FAQ = () => {
         <title>Frequently Asked Questions | Khilafat Books</title>
         <meta name="description" content="Find answers to common questions about ordering, shipping, payments, returns, and our loyalty program at Khilafat Books." />
         <link rel="canonical" href="https://khilafatbooks.lovable.app/faq" />
+        <meta property="og:title" content="FAQ | Khilafat Books" />
+        <meta property="og:description" content="Find answers to common questions about ordering, shipping, payments, and returns." />
+        <meta property="og:url" content="https://khilafatbooks.lovable.app/faq" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary" />
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
 
