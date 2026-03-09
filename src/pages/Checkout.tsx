@@ -187,6 +187,13 @@ const Checkout = () => {
       } as any);
     }
 
+    // Send order confirmation email (non-blocking)
+    if (orderId && email) {
+      supabase.functions.invoke('send-order-email', {
+        body: { orderId: orderId as string, newStatus: 'pending' },
+      }).catch(() => {}); // Don't block on email failure
+    }
+
     clearCart();
     setSubmitting(false);
     if (orderId) {
