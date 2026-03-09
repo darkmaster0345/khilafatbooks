@@ -165,6 +165,12 @@ const BookRequests = () => {
       <Helmet>
         <title>Request a Book | Khilafat Books</title>
         <meta name="description" content="Vote on which Islamic books you want us to import next. Pledge Rs. 500 as a security deposit and we'll bring it to Pakistan when 20 people agree." />
+        <link rel="canonical" href="https://khilafatbooks.lovable.app/book-requests" />
+        <meta property="og:title" content="Request a Book | Khilafat Books" />
+        <meta property="og:description" content="Vote on which Islamic books you want us to import next. Community-driven book importing for Pakistan." />
+        <meta property="og:url" content="https://khilafatbooks.lovable.app/book-requests" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary" />
       </Helmet>
 
       {/* Hero */}

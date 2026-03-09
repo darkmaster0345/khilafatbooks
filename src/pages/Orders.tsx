@@ -84,7 +84,11 @@ const Orders = () => {
 
   return (
     <main className="container mx-auto px-4 py-10 max-w-4xl">
-      <Helmet><title>My Orders | Khilafat Books</title></Helmet>
+      <Helmet>
+        <title>My Orders | Khilafat Books</title>
+        <meta name="description" content="Track your orders, view order history, and manage your Khilafat Books purchases." />
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="mb-8">
         <p className="section-heading">Your History</p>
         <h1 className="section-title">My Orders</h1>

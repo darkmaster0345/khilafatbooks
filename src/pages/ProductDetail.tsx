@@ -87,6 +87,17 @@ const ProductDetail = () => {
         <title>{product.name} | Khilafat Books</title>
         <meta name="description" content={`${product.description.slice(0, 150)}${product.description.length > 150 ? '...' : ''}`} />
         <link rel="canonical" href={`https://khilafatbooks.lovable.app/product/${product.id}`} />
+        <meta property="og:title" content={`${product.name} | Khilafat Books`} />
+        <meta property="og:description" content={product.description.slice(0, 150)} />
+        <meta property="og:url" content={`https://khilafatbooks.lovable.app/product/${product.id}`} />
+        <meta property="og:type" content="product" />
+        <meta property="og:image" content={product.image} />
+        <meta property="product:price:amount" content={String(product.price)} />
+        <meta property="product:price:currency" content="PKR" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${product.name} | Khilafat Books`} />
+        <meta name="twitter:description" content={product.description.slice(0, 150)} />
+        <meta name="twitter:image" content={product.image} />
       </Helmet>
       <ProductJsonLd
         name={product.name}

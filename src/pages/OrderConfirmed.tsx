@@ -53,7 +53,10 @@ const OrderConfirmed = () => {
 
   return (
     <main className="container mx-auto px-4 py-16 max-w-2xl">
-      <Helmet><title>Order Confirmed | Khilafat Books</title></Helmet>
+      <Helmet>
+        <title>Order Confirmed | Khilafat Books</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200 }} className="text-center mb-10">
         <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 mx-auto">
