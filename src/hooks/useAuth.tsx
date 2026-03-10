@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import type { User, Session } from '@supabase/supabase-js';
 
+const isCustomDomain = () => {
+  const hostname = window.location.hostname;
+  return hostname.includes('vercel.app') || 
+    (!hostname.includes('lovable.app') && !hostname.includes('localhost'));
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -68,6 +74,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
+    if (isCustomDomain()) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          skipBrowserRedirect: true,
+        },
+      });
+      if (error) return { error };
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+      return { error: null };
+    }
     const result = await lovable.auth.signInWithOAuth('google', {
       redirect_uri: window.location.origin,
     });
