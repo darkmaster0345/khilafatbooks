@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,11 +9,12 @@ import {
   Shield, ShieldCheck, ShieldAlert, ShieldX, 
   Globe, MapPin, AlertTriangle, RefreshCw, 
   Lock, CheckCircle2, XCircle, Clock,
-  TrendingUp, Users, Activity
+  TrendingUp, Users, Activity, ChevronDown, ChevronUp,
+  Info, Eye, EyeOff
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { format, subDays, subHours } from 'date-fns';
+import { format, subHours } from 'date-fns';
 
 interface SecurityEvent {
   id: string;
@@ -33,11 +34,27 @@ interface GeoStats {
   suspicious: number;
 }
 
+interface PolicyDetail {
+  name: string;
+  command: string;
+  permissive: boolean;
+  usingExpr: string | null;
+  checkExpr: string | null;
+}
+
+interface Issue {
+  severity: 'critical' | 'warning' | 'info';
+  message: string;
+  recommendation: string;
+}
+
 interface RLSCheck {
   table: string;
-  policies: number;
+  hasRLS: boolean;
+  policyCount: number;
+  policies: PolicyDetail[];
+  issues: Issue[];
   status: 'secure' | 'warning' | 'critical';
-  details: string;
 }
 
 const AdminSecurity = () => {
@@ -46,6 +63,8 @@ const AdminSecurity = () => {
   const [rlsChecks, setRlsChecks] = useState<RLSCheck[]>([]);
   const [loading, setLoading] = useState(true);
   const [checkingRLS, setCheckingRLS] = useState(false);
+  const [expandedTable, setExpandedTable] = useState<string | null>(null);
+  const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null);
   const [stats, setStats] = useState({
     totalAttempts: 0,
     failedAttempts: 0,
@@ -54,14 +73,9 @@ const AdminSecurity = () => {
     suspiciousActivity: 0
   });
 
-  useEffect(() => {
-    fetchSecurityData();
-  }, []);
-
-  const fetchSecurityData = async () => {
+  const fetchSecurityData = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch recent security events
       const { data: eventsData } = await supabase
         .from('security_events')
         .select('*')
@@ -71,25 +85,22 @@ const AdminSecurity = () => {
       if (eventsData) {
         setEvents(eventsData as SecurityEvent[]);
 
-        // Calculate stats
         const last24h = subHours(new Date(), 24);
         const recentEvents = eventsData.filter(e => new Date(e.created_at) > last24h);
         
-        const loginAttempts = recentEvents.filter(e => e.event_type === 'login_attempt');
-        const failedLogins = loginAttempts.filter(e => !e.success);
+        const failed = recentEvents.filter(e => !e.success);
         const rateLimits = recentEvents.filter(e => e.event_type === 'rate_limit');
         const suspicious = recentEvents.filter(e => e.event_type === 'suspicious_activity');
         const uniqueIPs = new Set(recentEvents.map(e => e.ip_address).filter(Boolean));
 
         setStats({
-          totalAttempts: loginAttempts.length,
-          failedAttempts: failedLogins.length,
+          totalAttempts: recentEvents.length,
+          failedAttempts: failed.length,
           rateLimitHits: rateLimits.length,
           uniqueIPs: uniqueIPs.size,
           suspiciousActivity: suspicious.length
         });
 
-        // Calculate geo stats
         const geoMap = new Map<string, { count: number; suspicious: number }>();
         eventsData.forEach(event => {
           const country = event.country || 'Unknown';
@@ -101,105 +112,85 @@ const AdminSecurity = () => {
           geoMap.set(country, current);
         });
 
-        const geoArray: GeoStats[] = Array.from(geoMap.entries())
-          .map(([country, data]) => ({ country, ...data }))
-          .sort((a, b) => b.count - a.count);
-        
-        setGeoStats(geoArray);
+        setGeoStats(
+          Array.from(geoMap.entries())
+            .map(([country, data]) => ({ country, ...data }))
+            .sort((a, b) => b.count - a.count)
+        );
       }
     } catch (error) {
       console.error('Error fetching security data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchSecurityData();
+
+    // Subscribe to realtime security events
+    const channel = supabase
+      .channel('security-events-realtime')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'security_events' },
+        (payload) => {
+          const newEvent = payload.new as SecurityEvent;
+          setEvents(prev => [newEvent, ...prev].slice(0, 100));
+          
+          // Update stats
+          setStats(prev => ({
+            ...prev,
+            totalAttempts: prev.totalAttempts + 1,
+            failedAttempts: newEvent.success ? prev.failedAttempts : prev.failedAttempts + 1,
+            uniqueIPs: prev.uniqueIPs + (newEvent.ip_address ? 1 : 0),
+            suspiciousActivity: newEvent.event_type === 'suspicious_activity' 
+              ? prev.suspiciousActivity + 1 : prev.suspiciousActivity,
+            rateLimitHits: newEvent.event_type === 'rate_limit'
+              ? prev.rateLimitHits + 1 : prev.rateLimitHits,
+          }));
+
+          // Show toast for failed or suspicious events
+          if (!newEvent.success) {
+            toast.warning(`Failed ${newEvent.event_type.replace(/_/g, ' ')} from ${newEvent.ip_address || 'unknown IP'}`, {
+              description: newEvent.user_email || undefined,
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchSecurityData]);
 
   const runRLSIntegrityCheck = async () => {
     setCheckingRLS(true);
     try {
-      // Check RLS status for all critical tables
-      const criticalTables = [
-        'orders', 'profiles', 'user_roles', 'products', 
-        'discounts', 'reviews', 'wishlists', 'user_library',
-        'book_requests', 'book_pledges', 'security_events'
-      ];
+      const { data, error } = await supabase.functions.invoke('security-check');
 
-      const checks: RLSCheck[] = [];
-
-      for (const table of criticalTables) {
-        // We can't directly query pg_policies from client, so we'll do a policy check
-        // by attempting operations and seeing RLS behavior
-        let status: 'secure' | 'warning' | 'critical' = 'secure';
-        let details = 'RLS enabled and policies active';
-        let policyCount = 0;
-
-        // Check based on known policies
-        switch (table) {
-          case 'orders':
-            policyCount = 6;
-            details = 'User isolation + Admin access policies';
-            break;
-          case 'profiles':
-            policyCount = 3;
-            details = 'User can only access own profile';
-            break;
-          case 'user_roles':
-            policyCount = 2;
-            details = 'Restricted - Users read own, Admins read all';
-            status = 'secure';
-            break;
-          case 'products':
-            policyCount = 4;
-            details = 'Public read, Admin write';
-            break;
-          case 'discounts':
-            policyCount = 1;
-            details = 'Admin-only access';
-            break;
-          case 'reviews':
-            policyCount = 3;
-            details = 'Public read approved, User create, Admin manage';
-            break;
-          case 'wishlists':
-            policyCount = 4;
-            details = 'User isolation + Admin access';
-            break;
-          case 'user_library':
-            policyCount = 5;
-            details = 'Full user isolation with Admin override';
-            break;
-          case 'book_requests':
-            policyCount = 3;
-            details = 'Public read, Auth create, Admin manage';
-            break;
-          case 'book_pledges':
-            policyCount = 4;
-            details = 'Public read counts, User manage own';
-            break;
-          case 'security_events':
-            policyCount = 3;
-            status = 'warning';
-            details = 'Public INSERT allowed for logging';
-            break;
-          default:
-            status = 'warning';
-            details = 'Unknown table - verify manually';
-        }
-
-        checks.push({ table, policies: policyCount, status, details });
+      if (error) {
+        toast.error('Failed to run integrity check: ' + error.message);
+        return;
       }
 
-      setRlsChecks(checks);
-      
-      const criticalCount = checks.filter(c => c.status === 'critical').length;
-      const warningCount = checks.filter(c => c.status === 'warning').length;
-      
-      if (criticalCount > 0) {
-        toast.error(`Security Alert: ${criticalCount} critical issues found!`);
-      } else if (warningCount > 0) {
-        toast.warning(`${warningCount} warnings found, but no critical issues.`);
-      } else {
-        toast.success('All RLS policies are active and secure!');
+      if (data?.checks) {
+        setRlsChecks(data.checks as RLSCheck[]);
+        setLastCheckedAt(data.checkedAt);
+
+        const criticalCount = data.checks.filter((c: RLSCheck) => c.status === 'critical').length;
+        const warningCount = data.checks.filter((c: RLSCheck) => c.status === 'warning').length;
+        const secureCount = data.checks.filter((c: RLSCheck) => c.status === 'secure').length;
+        const totalIssues = data.checks.reduce((acc: number, c: RLSCheck) => acc + c.issues.length, 0);
+
+        if (criticalCount > 0) {
+          toast.error(`🚨 ${criticalCount} critical security issues found! ${totalIssues} total findings.`);
+        } else if (warningCount > 0) {
+          toast.warning(`⚠️ ${warningCount} warnings across ${totalIssues} findings. ${secureCount} tables fully secure.`);
+        } else {
+          toast.success(`✅ All ${data.checks.length} tables are secure! ${totalIssues} informational notes.`);
+        }
       }
     } catch (error) {
       console.error('Error checking RLS:', error);
@@ -219,6 +210,22 @@ const AdminSecurity = () => {
     if (stats.rateLimitHits > 10 || stats.suspiciousActivity > 5) return 'high';
     if (failureRate > 50 || stats.rateLimitHits > 5) return 'medium';
     return 'low';
+  };
+
+  const getSeverityIcon = (severity: string) => {
+    switch (severity) {
+      case 'critical': return <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />;
+      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-500 flex-shrink-0" />;
+      default: return <Info className="h-4 w-4 text-blue-500 flex-shrink-0" />;
+    }
+  };
+
+  const getSeverityBg = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'bg-destructive/10 border-destructive/30';
+      case 'warning': return 'bg-yellow-500/10 border-yellow-500/30';
+      default: return 'bg-blue-500/10 border-blue-500/30';
+    }
   };
 
   const threatLevel = getThreatLevel();
@@ -241,13 +248,19 @@ const AdminSecurity = () => {
             Security Perimeter
           </h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Monitor threats, track geographic activity, and verify security policies
+            Real-time threat monitoring, geographic analysis, and RLS policy verification
           </p>
         </div>
-        <Button variant="outline" onClick={fetchSecurityData}>
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            Live
+          </div>
+          <Button variant="outline" onClick={fetchSecurityData}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Threat Level Banner */}
@@ -292,7 +305,7 @@ const AdminSecurity = () => {
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <Activity className="h-4 w-4" />
-              Login Attempts
+              Events (24h)
             </div>
             <p className="text-2xl font-bold mt-1">{stats.totalAttempts}</p>
           </CardContent>
@@ -301,7 +314,7 @@ const AdminSecurity = () => {
           <CardContent className="pt-4">
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <XCircle className="h-4 w-4" />
-              Failed Logins
+              Failed
             </div>
             <p className="text-2xl font-bold mt-1 text-destructive">{stats.failedAttempts}</p>
           </CardContent>
@@ -338,21 +351,29 @@ const AdminSecurity = () => {
       {/* Main Content Tabs */}
       <Tabs defaultValue="alerts" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="alerts">Rate-Limit Alerts</TabsTrigger>
+          <TabsTrigger value="alerts">Security Events</TabsTrigger>
           <TabsTrigger value="geo">Geographic Traffic</TabsTrigger>
-          <TabsTrigger value="integrity">Integrity Check</TabsTrigger>
+          <TabsTrigger value="integrity">
+            Integrity Check
+            {rlsChecks.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs">
+                {rlsChecks.filter(c => c.status !== 'secure').length || '✓'}
+              </Badge>
+            )}
+          </TabsTrigger>
         </TabsList>
 
-        {/* Rate-Limit Alerts Tab */}
+        {/* Security Events Tab */}
         <TabsContent value="alerts">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5" />
                 Recent Security Events
+                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
               </CardTitle>
               <CardDescription>
-                Login attempts, rate limits, and suspicious activity
+                Real-time feed of login attempts, rate limits, and suspicious activity
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -360,7 +381,7 @@ const AdminSecurity = () => {
                 <div className="text-center py-8 text-muted-foreground">
                   <Shield className="h-12 w-12 mx-auto mb-3 opacity-50" />
                   <p>No security events recorded yet.</p>
-                  <p className="text-sm">Events will appear here as users interact with the system.</p>
+                  <p className="text-sm">Events will appear here in real-time as users interact with the system.</p>
                 </div>
               ) : (
                 <Table>
@@ -375,18 +396,18 @@ const AdminSecurity = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {events.slice(0, 20).map((event) => (
-                      <TableRow key={event.id}>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {format(new Date(event.created_at), 'MMM d, HH:mm')}
+                    {events.slice(0, 30).map((event) => (
+                      <TableRow key={event.id} className={!event.success ? 'bg-destructive/5' : ''}>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {format(new Date(event.created_at), 'MMM d, HH:mm:ss')}
                         </TableCell>
                         <TableCell>
                           <Badge variant={
-                            event.event_type === 'rate_limit' ? 'destructive' :
-                            event.event_type === 'suspicious_activity' ? 'destructive' :
-                            'secondary'
+                            event.event_type === 'rate_limit' || event.event_type === 'suspicious_activity' 
+                              ? 'destructive' 
+                              : event.event_type === 'login_failed' ? 'outline' : 'secondary'
                           }>
-                            {event.event_type.replace('_', ' ')}
+                            {event.event_type.replace(/_/g, ' ')}
                           </Badge>
                         </TableCell>
                         <TableCell className="font-mono text-sm">
@@ -436,7 +457,7 @@ const AdminSecurity = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {geoStats.map((geo, i) => {
+                  {geoStats.map((geo) => {
                     const maxCount = geoStats[0]?.count || 1;
                     const percentage = Math.round((geo.count / maxCount) * 100);
                     const suspiciousRate = geo.count > 0 
@@ -455,7 +476,7 @@ const AdminSecurity = () => {
                             )}
                           </div>
                           <span className="text-muted-foreground">
-                            {geo.count} requests
+                            {geo.count} requests ({geo.suspicious} failed)
                           </span>
                         </div>
                         <div className="relative">
@@ -487,14 +508,19 @@ const AdminSecurity = () => {
                     RLS Policy Integrity Check
                   </CardTitle>
                   <CardDescription>
-                    Verify all Row Level Security policies are active and properly configured
+                    Live verification of Row Level Security policies across all {rlsChecks.length || 23} tables
+                    {lastCheckedAt && (
+                      <span className="ml-2 text-xs">
+                        · Last checked: {format(new Date(lastCheckedAt), 'MMM d, HH:mm:ss')}
+                      </span>
+                    )}
                   </CardDescription>
                 </div>
                 <Button onClick={runRLSIntegrityCheck} disabled={checkingRLS}>
                   {checkingRLS ? (
                     <>
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      Checking...
+                      Scanning {rlsChecks.length || 23} tables...
                     </>
                   ) : (
                     <>
@@ -509,49 +535,134 @@ const AdminSecurity = () => {
               {rlsChecks.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Shield className="h-12 w-12 mx-auto mb-3 opacity-50" />
-                  <p>Click "Run Integrity Check" to verify RLS policies</p>
+                  <p>Click "Run Integrity Check" to scan all database tables</p>
+                  <p className="text-sm mt-1">This will verify RLS policies, access controls, and identify potential security gaps</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {rlsChecks.map((check) => (
-                    <div 
-                      key={check.table}
-                      className={`flex items-center justify-between p-3 rounded-lg border ${
-                        check.status === 'critical' ? 'border-destructive bg-destructive/5' :
-                        check.status === 'warning' ? 'border-yellow-500 bg-yellow-500/5' :
-                        'border-border bg-muted/30'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {check.status === 'secure' ? (
-                          <CheckCircle2 className="h-5 w-5 text-primary" />
-                        ) : check.status === 'warning' ? (
-                          <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                        ) : (
-                          <XCircle className="h-5 w-5 text-destructive" />
+                <div className="space-y-2">
+                  {rlsChecks.map((check) => {
+                    const isExpanded = expandedTable === check.table;
+                    const issueCount = check.issues.length;
+                    const criticalIssues = check.issues.filter(i => i.severity === 'critical').length;
+                    const warningIssues = check.issues.filter(i => i.severity === 'warning').length;
+
+                    return (
+                      <div key={check.table} className="border rounded-lg overflow-hidden">
+                        {/* Table row - clickable */}
+                        <button
+                          onClick={() => setExpandedTable(isExpanded ? null : check.table)}
+                          className={`w-full flex items-center justify-between p-3 hover:bg-muted/50 transition-colors ${
+                            check.status === 'critical' ? 'bg-destructive/5' :
+                            check.status === 'warning' ? 'bg-yellow-500/5' :
+                            'bg-muted/20'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            {check.status === 'secure' ? (
+                              <CheckCircle2 className="h-5 w-5 text-primary" />
+                            ) : check.status === 'warning' ? (
+                              <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                            ) : (
+                              <XCircle className="h-5 w-5 text-destructive" />
+                            )}
+                            <div className="text-left">
+                              <p className="font-medium font-mono text-sm">{check.table}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {check.policyCount} policies · {issueCount} finding{issueCount !== 1 ? 's' : ''}
+                                {criticalIssues > 0 && <span className="text-destructive ml-1">({criticalIssues} critical)</span>}
+                                {warningIssues > 0 && !criticalIssues && <span className="text-yellow-600 ml-1">({warningIssues} warning{warningIssues !== 1 ? 's' : ''})</span>}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant={check.status === 'secure' ? 'default' : check.status === 'warning' ? 'secondary' : 'destructive'}>
+                              {check.status}
+                            </Badge>
+                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                          </div>
+                        </button>
+
+                        {/* Expanded details */}
+                        {isExpanded && (
+                          <div className="border-t p-4 space-y-4 bg-background">
+                            {/* Policies list */}
+                            <div>
+                              <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                                <Eye className="h-3.5 w-3.5" />
+                                Active Policies ({check.policies.length})
+                              </h4>
+                              <div className="grid gap-1.5">
+                                {check.policies.map((policy, i) => (
+                                  <div key={i} className="flex items-center gap-2 text-xs p-2 rounded bg-muted/40">
+                                    <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">
+                                      {policy.command}
+                                    </Badge>
+                                    <span className="text-muted-foreground">{policy.name}</span>
+                                    {policy.usingExpr && (
+                                      <code className="ml-auto text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded max-w-[300px] truncate">
+                                        USING: {policy.usingExpr}
+                                      </code>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Issues / Findings */}
+                            {check.issues.length > 0 && (
+                              <div>
+                                <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                                  <AlertTriangle className="h-3.5 w-3.5" />
+                                  Findings ({check.issues.length})
+                                </h4>
+                                <div className="space-y-2">
+                                  {check.issues.map((issue, i) => (
+                                    <div key={i} className={`p-3 rounded-lg border ${getSeverityBg(issue.severity)}`}>
+                                      <div className="flex items-start gap-2">
+                                        {getSeverityIcon(issue.severity)}
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium">{issue.message}</p>
+                                          <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                            <strong>Recommendation:</strong> {issue.recommendation}
+                                          </p>
+                                        </div>
+                                        <Badge variant="outline" className="text-[10px] flex-shrink-0">
+                                          {issue.severity}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+
+                            {check.issues.length === 0 && (
+                              <div className="text-center py-3 text-sm text-muted-foreground">
+                                <CheckCircle2 className="h-5 w-5 text-primary mx-auto mb-1" />
+                                No issues found. This table's security configuration is solid.
+                              </div>
+                            )}
+                          </div>
                         )}
-                        <div>
-                          <p className="font-medium font-mono text-sm">{check.table}</p>
-                          <p className="text-xs text-muted-foreground">{check.details}</p>
-                        </div>
                       </div>
-                      <div className="text-right">
-                        <Badge variant={check.status === 'secure' ? 'default' : 'secondary'}>
-                          {check.policies} policies
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   
+                  {/* Summary */}
                   <div className="mt-6 p-4 rounded-lg bg-muted/50 border">
                     <div className="flex items-start gap-3">
                       <Shield className="h-5 w-5 text-primary mt-0.5" />
                       <div className="text-sm">
                         <p className="font-medium">Security Summary</p>
                         <p className="text-muted-foreground mt-1">
-                          {rlsChecks.filter(c => c.status === 'secure').length} tables secure, {' '}
-                          {rlsChecks.filter(c => c.status === 'warning').length} warnings, {' '}
-                          {rlsChecks.filter(c => c.status === 'critical').length} critical issues
+                          <span className="text-primary font-medium">{rlsChecks.filter(c => c.status === 'secure').length}</span> secure, {' '}
+                          <span className="text-yellow-600 font-medium">{rlsChecks.filter(c => c.status === 'warning').length}</span> warnings, {' '}
+                          <span className="text-destructive font-medium">{rlsChecks.filter(c => c.status === 'critical').length}</span> critical
+                          {' · '}
+                          {rlsChecks.reduce((acc, c) => acc + c.issues.length, 0)} total findings across {rlsChecks.length} tables
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Click on any table row to see detailed policy information and actionable recommendations.
                         </p>
                       </div>
                     </div>
