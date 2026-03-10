@@ -3,6 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable/index';
 import type { User, Session } from '@supabase/supabase-js';
 
+const isCustomDomain = () => {
+  const hostname = window.location.hostname;
+  return hostname.includes('vercel.app') || 
+    (!hostname.includes('lovable.app') && !hostname.includes('localhost'));
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
