@@ -77,7 +77,7 @@ const Auth = () => {
   };
 
   const handleGoogleSignIn = async () => {
-    logSecurityEvent('login_attempt', null, true, { type: 'google_oauth_start' });
+    logSecurityEvent('login', null, true, { type: 'google_oauth_start' });
     signInWithGoogle();
   };
 
