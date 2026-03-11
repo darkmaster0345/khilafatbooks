@@ -1,5 +1,13 @@
 project_id = "qdsjmhafojbmqcwlkmra"
 
+[auth]
+site_url = "https://khilafatbooks.vercel.app"
+additional_redirect_urls = [
+  "https://khilafatbooks.vercel.app/*",
+  "http://localhost:8080/*",
+  "https://khilafatbooks.vercel.app/auth/callback"
+]
+
 [functions.ai-chat]
 verify_jwt = false
 
