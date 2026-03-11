@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveProductImage } from '@/lib/productImages';
 import { useEffect } from 'react';
+import { slugify } from '@/lib/utils';
 
 export interface Product {
   id: string;
@@ -29,6 +30,7 @@ export const PRODUCT_PUBLIC_COLUMNS = 'id, name, name_ar, description, price, or
 // Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
   id: string;
+  slug: string;
   name: string;
   nameAr?: string;
   description: string;
@@ -48,6 +50,7 @@ export interface LegacyProduct {
 export function toLegacyProduct(p: Product): LegacyProduct {
   return {
     id: p.id,
+    slug: slugify(p.name),
     name: p.name,
     nameAr: p.name_ar || undefined,
     description: p.description,

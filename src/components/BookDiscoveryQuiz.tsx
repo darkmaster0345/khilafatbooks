@@ -406,7 +406,7 @@ export default function BookDiscoveryQuiz() {
                       </p>
 
                       {/* Product card */}
-                      <Link to={`/product/${legacyProduct.id}`} className="group block">
+                      <Link to={`/product/${legacyProduct.slug}`} className="group block">
                         <div className="flex flex-col sm:flex-row items-center gap-6 bg-background border border-border rounded-2xl p-5 hover:border-primary/40 transition-colors">
                           <img
                             src={legacyProduct.image}

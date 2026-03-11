@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProducts } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
+import { slugify } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Helmet } from 'react-helmet-async';
 
@@ -278,7 +279,7 @@ const Library = () => {
                     className="rounded-xl border border-border bg-card overflow-hidden group"
                   >
                     {/* Book Image */}
-                    <Link to={`/product/${item.product_id}`} className="block aspect-[4/3] overflow-hidden bg-muted">
+                    <Link to={`/product/${item.product ? slugify(item.product.name) : item.product_id}`} className="block aspect-[4/3] overflow-hidden bg-muted">
                       {item.product?.image_url ? (
                         <img 
                           src={item.product.image_url} 

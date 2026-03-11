@@ -75,13 +75,13 @@ const Cart = () => {
                 exit={{ opacity: 0, x: -100 }}
                 className="flex gap-4 rounded-xl border border-border bg-card p-4 hover:shadow-sm transition-shadow"
               >
-                <Link to={`/product/${product.id}`} className="shrink-0">
+                <Link to={`/product/${product.slug}`} className="shrink-0">
                   <img src={product.image} alt={product.name} className="h-24 w-24 rounded-lg object-cover" />
                 </Link>
                 <div className="flex flex-1 flex-col min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <Link to={`/product/${product.id}`} className="font-display text-sm font-semibold text-foreground hover:text-primary transition-colors line-clamp-1">
+                      <Link to={`/product/${product.slug}`} className="font-display text-sm font-semibold text-foreground hover:text-primary transition-colors line-clamp-1">
                         {product.name}
                       </Link>
                       <p className="text-xs text-muted-foreground mt-0.5">{product.category} • {product.type === 'digital' ? 'Digital' : 'Physical'}</p>
