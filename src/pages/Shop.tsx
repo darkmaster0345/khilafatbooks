@@ -41,7 +41,7 @@ const Shop = () => {
 
     let query = supabase
       .from('products')
-      .select('*')
+      .select(PRODUCT_PUBLIC_COLUMNS)
       .eq('is_hidden', false);
 
     if (search) query = query.ilike('name', `%${search}%`);

@@ -38,7 +38,7 @@ const CartBundleSuggestion = ({ cartItems }: Props) => {
       for (const series of seriesNames) {
         const { data: seriesProducts } = await supabase
           .from('products')
-          .select('*')
+          .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('series', series as string)
           .eq('is_hidden', false)
           .order('series_order', { ascending: true });
