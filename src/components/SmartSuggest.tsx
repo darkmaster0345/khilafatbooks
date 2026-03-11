@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { toLegacyProduct, type LegacyProduct } from '@/hooks/useProducts';
+import { toLegacyProduct, type LegacyProduct, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 import { useCart } from '@/context/CartContext';
 
@@ -43,7 +43,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       if (series) {
         const { data } = await supabase
           .from('products')
-          .select('*')
+          .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('series', series)
           .eq('in_stock', true)
           .neq('id', excludeId || '')
@@ -56,7 +56,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       if (products.length < limit && category) {
         const { data } = await supabase
           .from('products')
-          .select('*')
+          .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('category', category)
           .eq('in_stock', true)
           .neq('id', excludeId || '')
@@ -73,7 +73,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       if (products.length < limit) {
         const { data } = await supabase
           .from('products')
-          .select('*')
+          .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('in_stock', true)
           .neq('id', excludeId || '')
           .order('reviews', { ascending: false })

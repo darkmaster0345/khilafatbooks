@@ -3,7 +3,7 @@ import { Package, Plus, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/context/CartContext';
-import { toLegacyProduct, Product } from '@/hooks/useProducts';
+import { toLegacyProduct, Product, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 import { Button } from '@/components/ui/button';
 
@@ -24,7 +24,7 @@ const CartBundleSuggestion = ({ cartItems }: Props) => {
       // Fetch cart products with series info
       const { data: cartProducts } = await supabase
         .from('products')
-        .select('*')
+        .select(PRODUCT_PUBLIC_COLUMNS)
         .in('id', cartIds)
         .not('series', 'is', null);
 
@@ -38,7 +38,7 @@ const CartBundleSuggestion = ({ cartItems }: Props) => {
       for (const series of seriesNames) {
         const { data: seriesProducts } = await supabase
           .from('products')
-          .select('*')
+          .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('series', series as string)
           .eq('is_hidden', false)
           .order('series_order', { ascending: true });
