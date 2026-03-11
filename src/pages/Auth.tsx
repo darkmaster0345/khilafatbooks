@@ -70,7 +70,7 @@ const Auth = () => {
         toast({ title: 'Sign in failed', description: error.message, variant: 'destructive' });
         logSecurityEvent('login_failed', email, false, { error: error.message });
       } else {
-        logSecurityEvent('login_attempt', email, true, { type: 'signin' });
+        logSecurityEvent('login', email, true, {});
       }
     }
     setSubmitting(false);
