@@ -93,7 +93,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    const config = STATUS_CONFIG[newStatus] || STATUS_CONFIG.approved;
+    let config = STATUS_CONFIG[newStatus] || STATUS_CONFIG.approved;
+
+    // Customize for free digital orders
+    if (order.total === 0 && newStatus === 'approved') {
+      config = {
+        ...config,
+        title: "Your free download is ready 📥",
+        message: "Your free order has been processed! You can now download your digital items from your Library or the Order Details page."
+      };
+    }
+
     const items = Array.isArray(order.items) ? order.items : [];
     const itemsHtml = items.map((item: any) =>
       `<tr><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#374151">${item.name}</td><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#374151;text-align:center">${item.quantity}</td><td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;font-size:14px;color:#374151;text-align:right">${formatPKR(item.price * item.quantity)}</td></tr>`
@@ -107,7 +117,9 @@ Deno.serve(async (req) => {
 
     const subjectMap: Record<string, string> = {
       pending: `📋 Order Received — #${orderId.slice(0, 8).toUpperCase()}`,
-      approved: `✅ Payment Verified — Order #${orderId.slice(0, 8).toUpperCase()}`,
+      approved: order.total === 0
+        ? `📥 Your free download is ready — #${orderId.slice(0, 8).toUpperCase()}`
+        : `✅ Payment Verified — Order #${orderId.slice(0, 8).toUpperCase()}`,
       rejected: `⚠️ Payment Issue — Order #${orderId.slice(0, 8).toUpperCase()}`,
       shipped: `🚚 Your Order Has Shipped — #${orderId.slice(0, 8).toUpperCase()}`,
       delivered: `✅ Order Delivered — #${orderId.slice(0, 8).toUpperCase()}`,

@@ -62,9 +62,13 @@ const OrderConfirmed = () => {
         <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 mx-auto">
           <CheckCircle2 className="h-14 w-14 text-primary" />
         </div>
-        <h1 className="mt-6 font-display text-3xl font-bold text-foreground">Order Placed!</h1>
+        <h1 className="mt-6 font-display text-3xl font-bold text-foreground">
+          {order?.total === 0 ? 'Ready to Download!' : 'Order Placed!'}
+        </h1>
         <p className="mt-3 text-muted-foreground max-w-md mx-auto leading-relaxed">
-          JazakAllah Khair! Your order is under review. We'll verify your payment within 24 hours.
+          {order?.total === 0
+            ? 'JazakAllah Khair! Your free order has been processed. You can now download your digital items from your Library or Order Details.'
+            : "JazakAllah Khair! Your order is under review. We'll verify your payment within 24 hours."}
         </p>
       {order && (
           <p className="mt-2 text-xs text-muted-foreground font-mono">
