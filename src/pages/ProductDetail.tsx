@@ -14,7 +14,7 @@ import SmartSuggest from '@/components/SmartSuggest';
 import { ProductJsonLd } from '@/components/JsonLd';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 
-const BASE_URL = 'https://khilafatbooks.lovable.app';
+const BASE_URL = 'https://khilafatbooks.vercel.app';
 import { useCart } from '@/context/CartContext';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { formatPKR } from '@/lib/currency';
@@ -97,10 +97,6 @@ const ProductDetail = () => {
         <meta property="og:title" content={`${product.name} | Khilafat Books`} />
         <meta property="og:description" content={product.description.slice(0, 150)} />
         <meta property="og:url" content={absoluteProductUrl} />
-        <link rel="canonical" href={`https://khilafatbooks.vercel.app/product/${product.slug}`} />
-        <meta property="og:title" content={`${product.name} | Khilafat Books`} />
-        <meta property="og:description" content={product.description.slice(0, 150)} />
-        <meta property="og:url" content={`https://khilafatbooks.vercel.app/product/${product.slug}`} />
         <meta property="og:type" content="product" />
         <meta property="og:image" content={absoluteImageUrl} />
 

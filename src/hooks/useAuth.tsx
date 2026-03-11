@@ -6,6 +6,7 @@ import type { User, Session } from '@supabase/supabase-js';
 const isCustomDomain = () => {
   const hostname = window.location.hostname;
   return hostname.includes('vercel.app') || 
+    hostname.includes('khilafatbooks.com') ||
     (!hostname.includes('lovable.app') && !hostname.includes('localhost'));
 };
 
@@ -62,7 +63,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
       options: {
         data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: `${window.location.origin}/auth`,
       },
     });
     return { error };
@@ -74,11 +75,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
+    const redirectTo = `${window.location.origin}/auth/callback`;
+
     if (isCustomDomain()) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin,
+          redirectTo,
           skipBrowserRedirect: true,
         },
       });
@@ -88,8 +91,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       return { error: null };
     }
+
     const result = await lovable.auth.signInWithOAuth('google', {
-      redirect_uri: window.location.origin,
+      redirect_uri: redirectTo,
     });
     return { error: result.error || null };
   };

@@ -16,7 +16,7 @@ interface ProductJsonLdProps {
   itemCondition?: string;
 }
 
-const BASE_URL = 'https://khilafatbooks.lovable.app';
+const BASE_URL = 'https://khilafatbooks.vercel.app';
 
 const ensureAbsoluteUrl = (path: string) => {
   if (path.startsWith('http')) return path;
