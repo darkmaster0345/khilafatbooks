@@ -16,7 +16,7 @@ import LoyaltyBadge from '@/components/LoyaltyBadge';
 const Cart = () => {
   const {
     items, removeItem, updateQuantity, totalItems,
-    subtotal, zakatEnabled, setZakatEnabled, zakatAmount, total,
+    subtotal, shipping, zakatEnabled, setZakatEnabled, zakatAmount, total,
     recoveryDiscount, recoveryCode, applyRecoveryCode,
     loyaltyInfo, loyaltyDiscount,
   } = useCart();
@@ -123,7 +123,7 @@ const Cart = () => {
             </div>
             <div className="flex justify-between text-muted-foreground">
               <span>Shipping</span>
-              <span className="font-medium text-foreground">{subtotal >= 5000 ? 'Free' : formatPKR(500)}</span>
+              <span className="font-medium text-foreground">{formatPKR(shipping)}</span>
             </div>
 
             {/* Zakat */}
@@ -192,7 +192,7 @@ const Cart = () => {
               )}
               <div className="flex justify-between font-display font-bold text-foreground text-lg">
                 <span>Total</span>
-                <span>{formatPKR(total + (subtotal < 5000 ? 500 : 0))}</span>
+                <span>{formatPKR(total)}</span>
               </div>
             </div>
           </div>

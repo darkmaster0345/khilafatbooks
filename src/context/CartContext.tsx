@@ -29,6 +29,7 @@ interface CartContextType {
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
+  shipping: number;
   zakatEnabled: boolean;
   setZakatEnabled: (enabled: boolean) => void;
   zakatAmount: number;
@@ -196,6 +197,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const subtotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
+  const shipping = items.reduce((sum, i) => sum + (i.product.shipping_cost || 0) * i.quantity, 0);
   
   // Calculate loyalty discount
   const loyaltyDiscount = loyaltyInfo && loyaltyInfo.discountPercent > 0
@@ -293,12 +295,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const zakatAmount = zakatEnabled ? subtotal * 0.025 : 0;
-  const total = subtotal + zakatAmount - recoveryDiscount - loyaltyDiscount;
+  const total = subtotal + shipping + zakatAmount - recoveryDiscount - loyaltyDiscount;
 
   return (
     <CartContext.Provider value={{
       items, addItem, removeItem, updateQuantity, clearCart,
-      totalItems, subtotal, zakatEnabled, setZakatEnabled, zakatAmount, total,
+      totalItems, subtotal, shipping, zakatEnabled, setZakatEnabled, zakatAmount, total,
       recoveryDiscount, recoveryCode, applyRecoveryCode,
       loyaltyInfo, loyaltyDiscount,
     }}>
