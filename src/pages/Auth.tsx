@@ -68,7 +68,7 @@ const Auth = () => {
       const { error } = await signIn(email, password);
       if (error) {
         toast({ title: 'Sign in failed', description: error.message, variant: 'destructive' });
-        logSecurityEvent('login_attempt', email, false, { type: 'signin', error: error.message });
+        logSecurityEvent('login_failed', email, false, { error: error.message });
       } else {
         logSecurityEvent('login_attempt', email, true, { type: 'signin' });
       }
