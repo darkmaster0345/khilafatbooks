@@ -22,6 +22,11 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Only cache GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
+
   // Skip API calls, external resources (fonts, CDNs) to avoid CSP issues
   if (event.request.url.includes('/rest/') || event.request.url.includes('/functions/') ||
       event.request.url.includes('fonts.googleapis.com') || event.request.url.includes('fonts.gstatic.com') ||
