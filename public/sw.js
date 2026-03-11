@@ -22,8 +22,10 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network-first strategy for API calls, cache-first for static assets
-  if (event.request.url.includes('/rest/') || event.request.url.includes('/functions/')) {
+  // Skip API calls, external resources (fonts, CDNs) to avoid CSP issues
+  if (event.request.url.includes('/rest/') || event.request.url.includes('/functions/') ||
+      event.request.url.includes('fonts.googleapis.com') || event.request.url.includes('fonts.gstatic.com') ||
+      event.request.url.includes('res.cloudinary.com')) {
     return;
   }
 
