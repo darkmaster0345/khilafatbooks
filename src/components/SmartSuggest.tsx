@@ -43,7 +43,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       if (series) {
         const { data } = await supabase
           .from('products')
-          .select('*')
+          .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('series', series)
           .eq('in_stock', true)
           .neq('id', excludeId || '')
