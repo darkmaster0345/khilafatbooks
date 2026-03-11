@@ -96,6 +96,10 @@ const ProductDetail = () => {
         <meta property="og:title" content={`${product.name} | Khilafat Books`} />
         <meta property="og:description" content={product.description.slice(0, 150)} />
         <meta property="og:url" content={absoluteProductUrl} />
+        <link rel="canonical" href={`https://khilafatbooks.vercel.app/product/${product.id}`} />
+        <meta property="og:title" content={`${product.name} | Khilafat Books`} />
+        <meta property="og:description" content={product.description.slice(0, 150)} />
+        <meta property="og:url" content={`https://khilafatbooks.vercel.app/product/${product.id}`} />
         <meta property="og:type" content="product" />
         <meta property="og:image" content={absoluteImageUrl} />
 
@@ -268,7 +272,7 @@ const ProductDetail = () => {
             <span className="text-xs text-muted-foreground">Share:</span>
             <button
               onClick={() => {
-                const url = `https://khilafatbooks.lovable.app/product/${product.id}`;
+                const url = `https://khilafatbooks.vercel.app/product/${product.id}`;
                 const text = `Check out "${product.name}" on Khilafat Books! ${formatPKR(product.price)}\n${url}`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
               }}
@@ -279,7 +283,7 @@ const ProductDetail = () => {
             </button>
             <button
               onClick={() => {
-                const url = `https://khilafatbooks.lovable.app/product/${product.id}`;
+                const url = `https://khilafatbooks.vercel.app/product/${product.id}`;
                 navigator.clipboard.writeText(url);
                 toast({ title: 'Link copied!', description: 'Product link copied to clipboard.' });
               }}

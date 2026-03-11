@@ -92,12 +92,12 @@ const Shop = () => {
       <Helmet>
         <title>Shop Islamic Books & Digital Courses | Khilafat Books</title>
         <meta name="description" content="Browse our curated selection of Islamic books, digital courses, prayer essentials, and halal-certified products. Free shipping on orders over Rs. 5,000." />
-        <link rel="canonical" href="https://khilafatbooks.lovable.app/shop" />
+        <link rel="canonical" href="https://khilafatbooks.vercel.app/shop" />
         <meta property="og:title" content="Shop Islamic Books & Digital Courses | Khilafat Books" />
         <meta property="og:description" content="Browse our curated selection of Islamic books, digital courses, prayer essentials, and halal-certified products." />
-        <meta property="og:url" content="https://khilafatbooks.lovable.app/shop" />
+        <meta property="og:url" content="https://khilafatbooks.vercel.app/shop" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://khilafatbooks.lovable.app/favicon.png" />
+        <meta property="og:image" content="https://khilafatbooks.vercel.app/favicon.png" />
         <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 

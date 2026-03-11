@@ -71,7 +71,9 @@ const NewsletterSignup = ({ variant = 'footer' }: NewsletterSignupProps) => {
   if (variant === 'cta') {
     return (
       <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+        <label htmlFor="newsletter-email-cta" className="sr-only">Email Address</label>
         <Input
+          id="newsletter-email-cta"
           type="email"
           placeholder="Enter your email"
           value={email}
@@ -88,7 +90,9 @@ const NewsletterSignup = ({ variant = 'footer' }: NewsletterSignupProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex gap-2">
+      <label htmlFor="newsletter-email-footer" className="sr-only">Email Address</label>
       <Input
+        id="newsletter-email-footer"
         type="email"
         placeholder="Your email"
         value={email}
