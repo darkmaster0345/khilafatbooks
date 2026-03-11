@@ -21,11 +21,12 @@ import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { slugify } from '@/lib/utils';
 
 const ProductDetail = () => {
-  const { id } = useParams();
+  const { slug } = useParams();
   const { products, loading } = useProducts();
-  const found = products.find(p => p.id === id);
+  const found = products.find(p => p.id === slug || slugify(p.name) === slug);
   const product = found ? toLegacyProduct(found) : null;
   const { addItem } = useCart();
   const { addProduct } = useRecentlyViewed();
@@ -43,7 +44,7 @@ const ProductDetail = () => {
   const viewerCount = product ? 3 + (product.id.charCodeAt(0) % 12) : 0;
 
   const relatedProducts = products
-    .filter(p => p.id !== id && p.category === found?.category)
+    .filter(p => p.id !== found?.id && p.category === found?.category)
     .sort((a, b) => b.reviews - a.reviews)
     .slice(0, 4)
     .map(toLegacyProduct);
@@ -84,7 +85,7 @@ const ProductDetail = () => {
   }
 
   const absoluteImageUrl = product.image.startsWith('http') ? product.image : `${BASE_URL}${product.image}`;
-  const absoluteProductUrl = `${BASE_URL}/product/${product.id}`;
+  const absoluteProductUrl = `${BASE_URL}/product/${product.slug}`;
 
   return (
     <main className="container mx-auto px-4 py-10">
@@ -96,10 +97,10 @@ const ProductDetail = () => {
         <meta property="og:title" content={`${product.name} | Khilafat Books`} />
         <meta property="og:description" content={product.description.slice(0, 150)} />
         <meta property="og:url" content={absoluteProductUrl} />
-        <link rel="canonical" href={`https://khilafatbooks.vercel.app/product/${product.id}`} />
+        <link rel="canonical" href={`https://khilafatbooks.vercel.app/product/${product.slug}`} />
         <meta property="og:title" content={`${product.name} | Khilafat Books`} />
         <meta property="og:description" content={product.description.slice(0, 150)} />
-        <meta property="og:url" content={`https://khilafatbooks.vercel.app/product/${product.id}`} />
+        <meta property="og:url" content={`https://khilafatbooks.vercel.app/product/${product.slug}`} />
         <meta property="og:type" content="product" />
         <meta property="og:image" content={absoluteImageUrl} />
 
@@ -272,7 +273,7 @@ const ProductDetail = () => {
             <span className="text-xs text-muted-foreground">Share:</span>
             <button
               onClick={() => {
-                const url = `https://khilafatbooks.vercel.app/product/${product.id}`;
+                const url = `https://khilafatbooks.vercel.app/product/${product.slug}`;
                 const text = `Check out "${product.name}" on Khilafat Books! ${formatPKR(product.price)}\n${url}`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
               }}
@@ -283,7 +284,7 @@ const ProductDetail = () => {
             </button>
             <button
               onClick={() => {
-                const url = `https://khilafatbooks.vercel.app/product/${product.id}`;
+                const url = `https://khilafatbooks.vercel.app/product/${product.slug}`;
                 navigator.clipboard.writeText(url);
                 toast({ title: 'Link copied!', description: 'Product link copied to clipboard.' });
               }}

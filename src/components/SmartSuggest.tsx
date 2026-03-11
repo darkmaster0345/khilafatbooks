@@ -176,7 +176,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
                   : 'border-border bg-card'
               }`}
             >
-              <Link to={`/product/${product.id}`} className="shrink-0 relative">
+              <Link to={`/product/${product.slug}`} className="shrink-0 relative">
                 <img 
                   src={product.image} 
                   alt={product.name} 
@@ -192,7 +192,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
 
               <div className="flex-1 min-w-0">
                 <Link 
-                  to={`/product/${product.id}`} 
+                  to={`/product/${product.slug}`}
                   className="text-sm font-semibold text-foreground hover:text-primary transition-colors line-clamp-1"
                 >
                   {product.name}

@@ -3,6 +3,7 @@ import { useProducts, toLegacyProduct, type LegacyProduct } from '@/hooks/usePro
 import { useCart, type CartItem } from '@/context/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPKR } from '@/lib/currency';
+import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ShoppingCart, Plus, Sparkles, BookOpen } from 'lucide-react';
@@ -143,7 +144,7 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                       key={sp.id}
                       className="flex items-center gap-3 rounded-lg bg-card border border-border p-3"
                     >
-                      <Link to={`/product/${sp.id}`} className="shrink-0">
+                      <Link to={`/product/${slugify(sp.name)}`} className="shrink-0">
                         {sp.image_url ? (
                           <img src={sp.image_url} alt={sp.name} className="h-14 w-14 rounded-lg object-cover" />
                         ) : (
@@ -153,7 +154,7 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                         )}
                       </Link>
                       <div className="flex-1 min-w-0">
-                        <Link to={`/product/${sp.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
+                        <Link to={`/product/${slugify(sp.name)}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
                           {sp.name}
                         </Link>
                         <div className="flex items-center gap-2 mt-1">
@@ -210,11 +211,11 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                 key={product.id}
                 className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow"
               >
-                <Link to={`/product/${product.id}`} className="shrink-0">
+                <Link to={`/product/${product.slug}`} className="shrink-0">
                   <img src={product.image} alt={product.name} className="h-16 w-16 rounded-lg object-cover" />
                 </Link>
                 <div className="flex-1 min-w-0">
-                  <Link to={`/product/${product.id}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
+                  <Link to={`/product/${product.slug}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
                     {product.name}
                   </Link>
                   <p className="text-xs text-muted-foreground mt-0.5">{product.category}</p>

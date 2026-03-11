@@ -66,7 +66,7 @@ const ProductQuickView = ({ product, open, onOpenChange }: Props) => {
                 <ShoppingCart className="h-4 w-4" /> Add to Cart — {formatPKR(product.price)}
               </Button>
               <Button variant="outline" asChild className="w-full rounded-xl">
-                <Link to={`/product/${product.id}`} onClick={() => onOpenChange(false)}>View Full Details</Link>
+                <Link to={`/product/${product.slug}`} onClick={() => onOpenChange(false)}>View Full Details</Link>
               </Button>
             </div>
           </div>
