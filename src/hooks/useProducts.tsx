@@ -18,10 +18,12 @@ export interface Product {
   rating: number;
   reviews: number;
   in_stock: boolean;
-  digital_file_url: string | null;
   created_at: string;
   updated_at: string;
 }
+
+// Safe columns to select for public-facing product queries (excludes digital_file_url)
+export const PRODUCT_PUBLIC_COLUMNS = 'id, name, name_ar, description, price, original_price, image_url, category, type, is_new, is_halal, ethical_source, rating, reviews, in_stock, stock_quantity, low_stock_threshold, series, series_order, bundle_discount, is_hidden, created_at, updated_at' as const;
 
 // Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
