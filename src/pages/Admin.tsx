@@ -75,12 +75,17 @@ const Admin = () => {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
 
-      // Processing shipping count
-      const { count: processingShipping } = await supabase
+      // Processing shipping count (only for physical orders)
+      const { data: approvedOrders } = await supabase
         .from('orders')
-        .select('*', { count: 'exact', head: true })
+        .select('items, shipping_status')
         .eq('status', 'approved')
         .or('shipping_status.eq.pending,shipping_status.eq.processing');
+
+      const processingShipping = (approvedOrders || []).filter(order => {
+        const items = Array.isArray(order.items) ? order.items : [];
+        return items.some((item: any) => item.type === 'physical');
+      }).length;
 
       // Out of stock products
       const { count: outOfStock } = await supabase

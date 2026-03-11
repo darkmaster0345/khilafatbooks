@@ -8,12 +8,15 @@ const steps = [
   { key: 'delivered', label: 'Delivered', icon: CheckCircle2 },
 ];
 
-function getActiveStep(status: string, shippingStatus: string | null): number {
+function getActiveStep(status: string, shippingStatus: string | null, hasPhysical: boolean): number {
   if (status === 'rejected') return -1;
   if (shippingStatus === 'delivered') return 4;
   if (shippingStatus === 'shipped') return 3;
   if (shippingStatus === 'processing') return 2;
-  if (status === 'approved') return 1;
+  if (status === 'approved') {
+    // For digital-only orders, 'approved' means 'Ready to Download'
+    return !hasPhysical ? 4 : 1;
+  }
   return 0; // pending
 }
 
@@ -26,8 +29,8 @@ interface Props {
 }
 
 const OrderTrackingTimeline = ({ status, shippingStatus, trackingNumber, items = [], total }: Props) => {
-  const active = getActiveStep(status, shippingStatus);
   const hasPhysical = items.length > 0 ? items.some(i => i.type === 'physical') : true;
+  const active = getActiveStep(status, shippingStatus, hasPhysical);
   const isFree = total === 0;
 
   // For digital-only orders, hide packing/shipping steps
