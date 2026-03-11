@@ -3,7 +3,7 @@ import { Package, Plus, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useCart } from '@/context/CartContext';
-import { toLegacyProduct, Product } from '@/hooks/useProducts';
+import { toLegacyProduct, Product, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 import { Button } from '@/components/ui/button';
 
