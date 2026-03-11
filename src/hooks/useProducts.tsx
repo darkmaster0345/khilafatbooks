@@ -72,7 +72,7 @@ export function useProducts() {
     setLoading(true);
     const { data, error } = await supabase
       .from('products')
-      .select('*')
+      .select(PRODUCT_PUBLIC_COLUMNS)
       .order('created_at', { ascending: false });
     if (!error && data) {
       setProducts(data);
