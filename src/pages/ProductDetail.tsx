@@ -13,6 +13,8 @@ import StickyAddToCart from '@/components/StickyAddToCart';
 import SmartSuggest from '@/components/SmartSuggest';
 import { ProductJsonLd } from '@/components/JsonLd';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
+
+const BASE_URL = 'https://khilafatbooks.lovable.app';
 import { useCart } from '@/context/CartContext';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { formatPKR } from '@/lib/currency';
@@ -81,23 +83,38 @@ const ProductDetail = () => {
     );
   }
 
+  const absoluteImageUrl = product.image.startsWith('http') ? product.image : `${BASE_URL}${product.image}`;
+  const absoluteProductUrl = `${BASE_URL}/product/${product.id}`;
+
   return (
     <main className="container mx-auto px-4 py-10">
       <Helmet>
         <title>{product.name} | Khilafat Books</title>
         <meta name="description" content={`${product.description.slice(0, 150)}${product.description.length > 150 ? '...' : ''}`} />
+        <link rel="canonical" href={absoluteProductUrl} />
+        <meta property="og:site_name" content="Khilafat Books" />
+        <meta property="og:title" content={`${product.name} | Khilafat Books`} />
+        <meta property="og:description" content={product.description.slice(0, 150)} />
+        <meta property="og:url" content={absoluteProductUrl} />
         <link rel="canonical" href={`https://khilafatbooks.vercel.app/product/${product.id}`} />
         <meta property="og:title" content={`${product.name} | Khilafat Books`} />
         <meta property="og:description" content={product.description.slice(0, 150)} />
         <meta property="og:url" content={`https://khilafatbooks.vercel.app/product/${product.id}`} />
         <meta property="og:type" content="product" />
-        <meta property="og:image" content={product.image} />
+        <meta property="og:image" content={absoluteImageUrl} />
+
+        {/* Pinterest & Rich Pin specific tags */}
         <meta property="product:price:amount" content={String(product.price)} />
         <meta property="product:price:currency" content="PKR" />
+        <meta property="product:availability" content={product.inStock ? 'instock' : 'out of stock'} />
+        <meta property="product:condition" content="new" />
+        <meta property="og:price:amount" content={String(product.price)} />
+        <meta property="og:price:currency" content="PKR" />
+
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={`${product.name} | Khilafat Books`} />
         <meta name="twitter:description" content={product.description.slice(0, 150)} />
-        <meta name="twitter:image" content={product.image} />
+        <meta name="twitter:image" content={absoluteImageUrl} />
       </Helmet>
       <ProductJsonLd
         name={product.name}
@@ -109,6 +126,7 @@ const ProductDetail = () => {
         inStock={product.inStock}
         sku={product.id}
         category={product.category}
+        url={absoluteProductUrl}
       />
 
       <Link to="/shop" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-8 group">

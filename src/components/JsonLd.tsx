@@ -12,6 +12,17 @@ interface ProductJsonLdProps {
   sku?: string;
   brand?: string;
   category?: string;
+  url?: string;
+  itemCondition?: string;
+}
+
+const BASE_URL = 'https://khilafatbooks.lovable.app';
+
+const ensureAbsoluteUrl = (path: string) => {
+  if (path.startsWith('http')) return path;
+  return `${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
 }
 
 export const ProductJsonLd = ({
@@ -25,6 +36,13 @@ export const ProductJsonLd = ({
   inStock = true,
   sku,
   brand = 'Khilafat Books',
+  category,
+  url,
+  itemCondition = 'https://schema.org/NewCondition',
+}: ProductJsonLdProps) => {
+  const absoluteImage = ensureAbsoluteUrl(image);
+  const absoluteUrl = url ? ensureAbsoluteUrl(url) : undefined;
+
   category
 }: ProductJsonLdProps) => {
   const data: any = {
@@ -32,6 +50,18 @@ export const ProductJsonLd = ({
     '@type': 'Product',
     name,
     description,
+    image: absoluteImage,
+    brand: {
+      '@type': 'Brand',
+      name: brand,
+    },
+    offers: {
+      '@type': 'Offer',
+      price: price.toFixed(2),
+      priceCurrency: currency,
+      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      url: absoluteUrl,
+      itemCondition: itemCondition,
     image,
     sku: sku || name.toLowerCase().replace(/\s+/g, '-'),
     brand: {
@@ -88,6 +118,7 @@ export const ProductJsonLd = ({
   };
 
   if (category) data.category = category;
+  if (sku) data.sku = sku;
 
   if (rating && reviewCount) {
     data.aggregateRating = {
@@ -112,6 +143,7 @@ export const OrganizationJsonLd = () => (
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'Khilafat Books',
+      url: BASE_URL,
       url: 'https://khilafatbooks.vercel.app',
       description: 'Premium Islamic books, courses, and ethically sourced products.',
       sameAs: [
