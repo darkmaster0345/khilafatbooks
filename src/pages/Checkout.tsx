@@ -195,6 +195,8 @@ const Checkout = () => {
       p_gift_recipient_name: isGift ? giftRecipientName || null : null,
       p_gift_message: isGift ? giftMessage || null : null,
       p_gift_wrap: isGift && giftWrap,
+      p_referral_code_id: referralValidation?.valid ? referralValidation.code_id : null,
+      p_referred_reward_type: referralRewardType || null,
     } as any);
 
     const orderId = orderData as unknown as string;
@@ -205,26 +207,7 @@ const Checkout = () => {
       return;
     }
 
-    // Create referral record if referral code was used
-    if (referralValidation?.valid && orderId) {
-      await supabase.from('referrals').insert({
-        referrer_id: referralValidation.referrer_id,
-        referred_user_id: user.id,
-        referral_code_id: referralValidation.code_id,
-        order_id: orderId,
-        referred_reward_type: referralRewardType || 'digital_pack',
-        referred_reward_claimed: true,
-        status: 'pending',
-      } as any);
-
-      await supabase.from('referral_audit_log').insert({
-        event_type: 'referral_created',
-        referral_code: referralCode.trim().toUpperCase(),
-        user_id: user.id,
-        success: true,
-        metadata: { order_id: orderId, reward_type: referralRewardType },
-      } as any);
-    }
+    // Referral is now created server-side in create_verified_order
 
     // Send order confirmation email (non-blocking)
     if (orderId && email) {

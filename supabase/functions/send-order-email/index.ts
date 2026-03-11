@@ -22,6 +22,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Require Authorization header for all requests
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -32,32 +33,32 @@ Deno.serve(async (req) => {
     const { orderId, newStatus } = await req.json();
     if (!orderId || !newStatus) throw new Error("orderId and newStatus are required");
 
-    // For "pending" status (order confirmation), allow the order owner to send
-    // For other statuses, require admin role
+    // Validate newStatus against allowed values
+    const allowedStatuses = ["pending", "approved", "rejected", "shipped", "delivered"];
+    if (!allowedStatuses.includes(newStatus)) {
+      throw new Error("Invalid status value");
+    }
+
+    // Create authenticated client to verify the caller
     const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    if (newStatus === "pending") {
-      // Verify the caller is authenticated
-      const { data: { user }, error: userError } = await userClient.auth.getUser();
-      if (userError || !user) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-    } else {
-      // Admin-only for status changes
-      const token = authHeader.replace("Bearer ", "");
-      const { data: claimsData, error: claimsError } = await userClient.auth.getClaims(token);
-      if (claimsError || !claimsData?.claims) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    // Verify the caller is authenticated
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
+    if (newStatus === "pending") {
+      // For order confirmation emails, verify the caller owns the order
+      // (checked below via service role query)
+    } else {
+      // For status change emails (approved/rejected/shipped/delivered), require admin
       const { data: isAdmin } = await userClient.rpc("is_admin");
       if (!isAdmin) {
         return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
@@ -73,11 +74,19 @@ Deno.serve(async (req) => {
     const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: order, error: orderError } = await db
       .from("orders")
-      .select("customer_name, customer_email, total, items, tracking_number")
+      .select("customer_name, customer_email, total, items, tracking_number, user_id")
       .eq("id", orderId)
       .single();
 
     if (orderError || !order) throw new Error(`Order not found: ${orderError?.message}`);
+
+    // For pending status, verify the caller owns the order
+    if (newStatus === "pending" && order.user_id !== user.id) {
+      return new Response(JSON.stringify({ error: "Forbidden: you can only send confirmation for your own orders" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!order.customer_email) {
       return new Response(JSON.stringify({ success: false, message: "No customer email" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
