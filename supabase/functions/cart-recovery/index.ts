@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
         ).join("");
 
         // Build recovery link - points to cart page with recovery code
-        const baseUrl = Deno.env.get("SITE_URL") || "https://khilafatbooks.lovable.app";
+        const baseUrl = Deno.env.get("SITE_URL") || "https://khilafatbooks.vercel.app";
         const recoveryLink = `${baseUrl}/cart?recover=${recoveryCode}`;
 
         // Build email HTML

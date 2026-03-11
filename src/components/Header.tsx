@@ -10,6 +10,11 @@ import ThemeToggle from '@/components/ThemeToggle';
 import NotificationBell from '@/components/NotificationBell';
 import logo from '@/assets/logo.png';
 
+/**
+ * NOTE: The logo asset 'logo.png' is currently 800KB.
+ * For production, it should be converted to WebP and resized to ~100x100px.
+ */
+
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/shop', label: 'Shop' },
@@ -52,9 +57,19 @@ const Header = () => {
       <div className="container mx-auto flex items-center justify-between px-4 h-16">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-          <img src={logo} alt="Khilafat Books" className="h-9 w-9 rounded-xl shadow-md transition-transform group-hover:scale-105 object-contain" />
+          <div className="relative h-9 w-9 rounded-xl bg-muted/50 overflow-hidden shadow-md transition-transform group-hover:scale-105">
+            <img
+              src={logo}
+              alt="Khilafat Books"
+              width="36"
+              height="36"
+              className="h-full w-full object-contain"
+              fetchPriority="high"
+              loading="eager"
+            />
+          </div>
           <div className="hidden xs:block">
-            <h1 className="font-display text-base sm:text-lg font-bold leading-none text-foreground tracking-tight whitespace-nowrap">Khilafat Books</h1>
+            <span className="block font-display text-base sm:text-lg font-bold leading-none text-foreground tracking-tight whitespace-nowrap">Khilafat Books</span>
             <p className="text-[8px] sm:text-[9px] uppercase tracking-[0.25em] text-muted-foreground font-medium mt-0.5">Islamic Bookstore</p>
           </div>
         </Link>
@@ -133,11 +148,11 @@ const Header = () => {
             </Button>
           )}
 
-          <ThemeToggle />
+          <ThemeToggle aria-label="Toggle theme" />
 
-          {user && <NotificationBell />}
+          {user && <NotificationBell aria-label="Notifications" />}
 
-          <Link to="/wishlist" aria-label={`Wishlist${wishlist.length > 0 ? ` (${wishlist.length} items)` : ''}`} className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
+          <Link to="/wishlist" aria-label={`Wishlist${wishlist.length > 0 ? ` (${wishlist.length} items)` : ''}`} title={`Wishlist${wishlist.length > 0 ? ` (${wishlist.length} items)` : ''}`} className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
             <Heart className="h-5 w-5 text-foreground" />
             {wishlist.length > 0 && (
               <motion.span

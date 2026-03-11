@@ -5,7 +5,7 @@ import VerseOfTheDay from '@/components/VerseOfTheDay';
 import Testimonials from '@/components/Testimonials';
 import TrustBadges from '@/components/TrustBadges';
 import RecentlyViewed from '@/components/RecentlyViewed';
-import { OrganizationJsonLd } from '@/components/JsonLd';
+import { OrganizationJsonLd, LocalBusinessJsonLd } from '@/components/JsonLd';
 import BookDiscoveryQuiz from '@/components/BookDiscoveryQuiz';
 import NewArrivals from '@/components/NewArrivals';
 import { motion, useScroll, useTransform } from 'framer-motion';
@@ -53,17 +53,18 @@ const Index = () => {
       <Helmet>
         <title>Khilafat Books — Islamic Books, Courses & Halal Products</title>
         <meta name="description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products. Shop with EasyPaisa and enjoy Pakistan-wide delivery." />
-        <link rel="canonical" href="https://khilafatbooks.lovable.app/" />
+        <link rel="canonical" href="https://khilafatbooks.vercel.app/" />
         <meta property="og:title" content="Khilafat Books — Islamic Books, Courses & Halal Products" />
         <meta property="og:description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products. Shop with EasyPaisa and enjoy Pakistan-wide delivery." />
-        <meta property="og:url" content="https://khilafatbooks.lovable.app/" />
+        <meta property="og:url" content="https://khilafatbooks.vercel.app/" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://khilafatbooks.lovable.app/favicon.png" />
+        <meta property="og:image" content="https://khilafatbooks.vercel.app/favicon.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Khilafat Books — Islamic Books, Courses & Halal Products" />
         <meta name="twitter:description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products." />
       </Helmet>
       <OrganizationJsonLd />
+      <LocalBusinessJsonLd />
 
       {/* Abandoned Cart Banner */}
       {items.length > 0 && (
@@ -89,7 +90,10 @@ const Index = () => {
         <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
           <img
             src={heroBg}
-            alt="Islamic books and products collection"
+            alt=""
+            role="presentation"
+            width="1920"
+            height="1080"
             className="h-[120%] w-full object-cover"
             fetchPriority="high"
           />
@@ -242,6 +246,66 @@ const Index = () => {
 
       {/* Book Discovery Quiz */}
       <BookDiscoveryQuiz />
+
+      {/* Why Choose Us - Content Rich Section */}
+      <section className="bg-muted/30 py-24 border-y border-border/50">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto text-center mb-16">
+            <h2 className="section-title text-4xl mb-6">Your Trusted Partner in Islamic Knowledge</h2>
+            <p className="text-lg text-muted-foreground leading-relaxed">
+              At Khilafat Books, we are dedicated to providing the Ummah with access to authentic, high-quality Islamic resources.
+              Our mission is to bridge the gap between tradition and the modern lifestyle, offering products that inspire
+              spiritual growth and intellectual development. From the majestic Noble Quran and classical Hadith collections
+              to contemporary Islamic literature and digital learning courses, every item in our catalog is carefully
+              vetted to ensure it aligns with authentic Islamic values.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-12">
+            <div className="space-y-4">
+              <h3 className="font-display text-2xl font-bold text-primary">Authentic Curations</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                We take great pride in our selection process. Our team of knowledgeable curators works closely with
+                renowned publishers and scholars to bring you books that are rich in wisdom and grounded in
+                the Sunnah. Whether you are a student of knowledge or someone looking for daily inspiration,
+                our library caters to all levels of spiritual pursuit.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <h3 className="font-display text-2xl font-bold text-primary">Ethical & Halal</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Khilafat Books is more than just a bookstore. We are a community-focused brand that prioritizes
+                ethical sourcing and fair trade. Our range of fragrances, prayer essentials, and lifestyle
+                products are 100% halal-certified and ethically produced. We believe that the barakah in a
+                product comes from how it was made and sourced.
+              </p>
+            </div>
+            <div className="space-y-4">
+              <h3 className="font-display text-2xl font-bold text-primary">Digital Future</h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Embracing the convenience of technology, we offer a wide array of digital products and online
+                courses. From Arabic calligraphy workshops to intensive Fiqh studies, our digital platform
+                enables you to learn at your own pace, from anywhere in the world. Our instant delivery
+                system ensures that your journey of learning starts the moment you click 'buy'.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-20 p-8 rounded-3xl bg-card border border-border shadow-sm max-w-3xl mx-auto text-center">
+            <h3 className="font-display text-2xl font-bold mb-4">Supporting the Ummah</h3>
+            <p className="text-muted-foreground mb-6">
+              We believe in the power of Sadaqah. A portion of every sale goes towards supporting Islamic
+              educational initiatives and local community projects in Karachi and across Pakistan. By shopping
+              with us, you are not just buying a book; you are investing in the future of the Ummah.
+            </p>
+            <div className="flex flex-wrap justify-center gap-4 text-sm font-medium">
+              <span className="px-4 py-2 rounded-full bg-primary/5 text-primary border border-primary/10">10,000+ Books Delivered</span>
+              <span className="px-4 py-2 rounded-full bg-primary/5 text-primary border border-primary/10">5,000+ Students Enrolled</span>
+              <span className="px-4 py-2 rounded-full bg-primary/5 text-primary border border-primary/10">100% Halal Certified</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Testimonials */}
       <Testimonials />

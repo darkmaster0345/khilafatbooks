@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveProductImage } from '@/lib/productImages';
+import { useEffect } from 'react';
 
 export interface Product {
   id: string;
@@ -65,26 +66,23 @@ export function toLegacyProduct(p: Product): LegacyProduct {
 }
 
 export function useProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const fetchProducts = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('products')
-      .select(PRODUCT_PUBLIC_COLUMNS)
-      .order('created_at', { ascending: false });
-    if (!error && data) {
-      setProducts(data);
-    }
-    setLoading(false);
-  }, []);
+  const { data: products = [], isLoading, refetch } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select(PRODUCT_PUBLIC_COLUMNS)
+        .order('created_at', { ascending: false });
 
-  useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+      if (error) throw error;
+      return data as Product[];
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-  return { products, loading, refetch: fetchProducts };
+  return { products, loading: isLoading, refetch };
 }
 
 export const PRODUCT_CATEGORIES = [

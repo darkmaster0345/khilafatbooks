@@ -10,29 +10,81 @@ interface ProductJsonLdProps {
   reviewCount?: number;
   inStock?: boolean;
   sku?: string;
+  brand?: string;
+  category?: string;
 }
 
-export const ProductJsonLd = ({ name, description, image, price, currency = 'PKR', rating, reviewCount, inStock = true, sku }: ProductJsonLdProps) => {
+export const ProductJsonLd = ({
+  name,
+  description,
+  image,
+  price,
+  currency = 'PKR',
+  rating,
+  reviewCount,
+  inStock = true,
+  sku,
+  brand = 'Khilafat Books',
+  category
+}: ProductJsonLdProps) => {
   const data: any = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name,
     description,
     image,
+    sku: sku || name.toLowerCase().replace(/\s+/g, '-'),
+    brand: {
+      '@type': 'Brand',
+      name: brand,
+    },
     offers: {
       '@type': 'Offer',
+      url: window.location.href,
       price: price.toFixed(2),
       priceCurrency: currency,
       availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+      priceValidUntil: new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0],
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: '0',
+          currency: 'PKR',
+        },
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: 'PK',
+        },
+        deliveryTime: {
+          '@type': 'ShippingDeliveryTime',
+          handlingTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 0,
+            maxValue: 1,
+            unitCode: 'DAY',
+          },
+          transitTime: {
+            '@type': 'QuantitativeValue',
+            minValue: 2,
+            maxValue: 5,
+            unitCode: 'DAY',
+          },
+        },
+      },
     },
   };
 
-  if (sku) data.sku = sku;
+  if (category) data.category = category;
+
   if (rating && reviewCount) {
     data.aggregateRating = {
       '@type': 'AggregateRating',
       ratingValue: rating.toString(),
       reviewCount: reviewCount.toString(),
+      bestRating: '5',
+      worstRating: '1',
     };
   }
 
@@ -49,9 +101,55 @@ export const OrganizationJsonLd = () => (
       '@context': 'https://schema.org',
       '@type': 'Organization',
       name: 'Khilafat Books',
-      url: 'https://khilafatbooks.lovable.app',
+      url: 'https://khilafatbooks.vercel.app',
       description: 'Premium Islamic books, courses, and ethically sourced products.',
-      sameAs: [],
+      sameAs: [
+        'https://facebook.com/KhilafatBooks',
+        'https://instagram.com/KhilafatBooks',
+        'https://twitter.com/KhilafatBooks'
+      ],
+    })}</script>
+  </Helmet>
+);
+
+export const LocalBusinessJsonLd = () => (
+  <Helmet>
+    <script type="application/ld+json">{JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'LocalBusiness',
+      name: 'Khilafat Books',
+      image: 'https://khilafatbooks.vercel.app/favicon.png',
+      '@id': 'https://khilafatbooks.vercel.app',
+      url: 'https://khilafatbooks.vercel.app',
+      telephone: '+92 345 2867726',
+      email: 'support@khilafatbooks.com',
+      priceRange: 'PKR',
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: 'Main Rashid Minhas Road',
+        addressLocality: 'Karachi',
+        addressRegion: 'Sindh',
+        postalCode: '74800',
+        addressCountry: 'PK'
+      },
+      geo: {
+        '@type': 'GeoCoordinates',
+        latitude: 24.9142,
+        longitude: 67.1129
+      },
+      openingHoursSpecification: {
+        '@type': 'OpeningHoursSpecification',
+        dayOfWeek: [
+          'Monday',
+          'Tuesday',
+          'Wednesday',
+          'Thursday',
+          'Friday',
+          'Saturday'
+        ],
+        opens: '10:00',
+        closes: '20:00'
+      }
     })}</script>
   </Helmet>
 );
