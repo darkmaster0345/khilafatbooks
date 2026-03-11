@@ -21,10 +21,19 @@ interface Props {
   status: string;
   shippingStatus: string | null;
   trackingNumber?: string | null;
+  items?: any[];
 }
 
-const OrderTrackingTimeline = ({ status, shippingStatus, trackingNumber }: Props) => {
+const OrderTrackingTimeline = ({ status, shippingStatus, trackingNumber, items = [] }: Props) => {
   const active = getActiveStep(status, shippingStatus);
+  const hasPhysical = items.length > 0 ? items.some(i => i.type === 'physical') : true;
+
+  // For digital-only orders, hide packing/shipping steps
+  const displaySteps = hasPhysical
+    ? steps
+    : steps.filter(s => !['processing', 'shipped'].includes(s.key)).map(s =>
+        s.key === 'delivered' ? { ...s, label: 'Ready to Download' } : s
+      );
 
   if (status === 'rejected') {
     return (
@@ -43,9 +52,11 @@ const OrderTrackingTimeline = ({ status, shippingStatus, trackingNumber }: Props
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-1 overflow-x-auto pb-1">
-        {steps.map((step, i) => {
-          const isActive = i <= active;
-          const isCurrent = i === active;
+        {displaySteps.map((step, i) => {
+          // Adjust active index for filtered steps
+          const originalIndex = steps.findIndex(s => s.key === step.key);
+          const isActive = originalIndex <= active;
+          const isCurrent = (originalIndex === active) || (originalIndex < active && i === displaySteps.length - 1);
           const Icon = step.icon;
           return (
             <div key={step.key} className="flex items-center">
@@ -65,7 +76,7 @@ const OrderTrackingTimeline = ({ status, shippingStatus, trackingNumber }: Props
                   {step.label}
                 </span>
               </div>
-              {i < steps.length - 1 && (
+              {i < displaySteps.length - 1 && (
                 <div className={`h-0.5 w-6 mt-[-18px] rounded-full transition-colors ${
                   i < active ? 'bg-primary/30' : 'bg-border'
                 }`} />

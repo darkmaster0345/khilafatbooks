@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ArrowRight, Gift } from 'lucide-react';
+import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ArrowRight, Gift, Download, ExternalLink } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,6 +13,7 @@ import OrderTrackingTimeline from '@/components/OrderTrackingTimeline';
 import PrivacyModeCard from '@/components/PrivacyModeCard';
 import LoyaltyBadge from '@/components/LoyaltyBadge';
 import ReferralDashboard from '@/components/ReferralDashboard';
+import { toast } from 'sonner';
 
 interface Order {
   id: string;
@@ -47,6 +48,7 @@ const Orders = () => {
   const { user, loading: authLoading } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -67,6 +69,27 @@ const Orders = () => {
       setOrders(data as unknown as Order[]);
     }
     setLoading(false);
+  };
+
+  const handleDownload = async (productId: string, productName: string) => {
+    setDownloading(productId);
+    try {
+      const { data, error } = await supabase.rpc('get_digital_download_url', { p_product_id: productId });
+
+      if (error) throw error;
+
+      if (data) {
+        window.open(data, '_blank');
+        toast.success(`Opening download link for ${productName}`);
+      } else {
+        toast.error('Download link not available. Please ensure your order is approved.');
+      }
+    } catch (err: any) {
+      console.error('Download error:', err);
+      toast.error('Failed to get download link');
+    } finally {
+      setDownloading(null);
+    }
   };
 
   if (authLoading || loading) {
@@ -198,6 +221,7 @@ const Orders = () => {
                           status={order.status}
                           shippingStatus={order.shipping_status}
                           trackingNumber={order.tracking_number}
+                          items={Array.isArray(order.items) ? order.items : []}
                         />
                       </div>
 
@@ -208,14 +232,32 @@ const Orders = () => {
                             <div key={idx} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                               <div className="flex items-center gap-3">
                                 <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden border border-border/50">
-                                   <Package className="h-6 w-6 text-muted-foreground/40" />
+                                   {item.type === 'digital' ? <Download className="h-6 w-6 text-primary/40" /> : <Package className="h-6 w-6 text-muted-foreground/40" />}
                                 </div>
                                 <div>
                                   <p className="text-sm font-semibold text-foreground line-clamp-1">{item.name}</p>
-                                  <p className="text-xs text-muted-foreground">Quantity: {item.quantity}</p>
+                                  <p className="text-xs text-muted-foreground">Quantity: {item.quantity} {item.type === 'digital' && '• Digital'}</p>
                                 </div>
                               </div>
-                              <p className="text-sm font-medium text-foreground">{formatPKR(item.price * item.quantity)}</p>
+                              <div className="flex flex-col items-end gap-1">
+                                <p className="text-sm font-medium text-foreground">{formatPKR(item.price * item.quantity)}</p>
+                                {item.type === 'digital' && (order.status === 'approved' || order.shipping_status === 'delivered') && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-7 text-[10px] gap-1 px-2 border-primary text-primary hover:bg-primary/10"
+                                    onClick={() => handleDownload(item.id, item.name)}
+                                    disabled={downloading === item.id}
+                                  >
+                                    {downloading === item.id ? (
+                                      <Clock className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      <ExternalLink className="h-3 w-3" />
+                                    )}
+                                    Download
+                                  </Button>
+                                )}
+                              </div>
                             </div>
                           ))}
                         </div>

@@ -20,7 +20,7 @@ import ReferralRewardModal from '@/components/ReferralRewardModal';
 const EASYPAISA_ACCOUNT = '03352706540';
 
 const Checkout = () => {
-  const { items, subtotal, zakatEnabled, zakatAmount, total, clearCart } = useCart();
+  const { items, subtotal, shipping, zakatEnabled, zakatAmount, total, clearCart } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -51,13 +51,12 @@ const Checkout = () => {
   const [referralRewardType, setReferralRewardType] = useState<'discount' | 'digital_pack' | null>(null);
   const [showRewardModal, setShowRewardModal] = useState(false);
 
-  const shipping = subtotal < 5000 ? 500 : 0;
   const discountAmount = discount?.discountAmount ?? 0;
   const referralDiscount = referralRewardType === 'discount' && referralValidation?.valid
     ? referralValidation.discount_amount
     : 0;
   const giftWrapFee = isGift && giftWrap ? GIFT_WRAP_FEE : 0;
-  const grandTotal = Math.max(0, total + shipping + giftWrapFee - discountAmount - referralDiscount);
+  const grandTotal = Math.max(0, total + giftWrapFee - discountAmount - referralDiscount);
   const hasPhysical = items.some(i => i.product.type === 'physical');
 
   const validateReferralCode = async () => {
@@ -154,7 +153,7 @@ const Checkout = () => {
 
     if (!validateInputs()) return;
 
-    if (!screenshotFile && !transactionId) {
+    if (grandTotal > 0 && !screenshotFile && !transactionId) {
       toast({ title: 'Payment proof required', description: 'Please upload a screenshot or enter a transaction ID.', variant: 'destructive' });
       return;
     }
@@ -446,7 +445,17 @@ const Checkout = () => {
 
           {step === 'payment' && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-              {isPluginEnabled('easypaisa_payments') && (
+              {grandTotal === 0 && (
+                <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6 text-center">
+                  <CheckCircle2 className="h-10 w-10 text-primary mx-auto mb-3" />
+                  <h2 className="font-display text-lg font-bold text-foreground">Free Order</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Your order total is Rs. 0. No payment is required. Your order will be processed immediately upon submission.
+                  </p>
+                </div>
+              )}
+
+              {grandTotal > 0 && isPluginEnabled('easypaisa_payments') && (
                 <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
                   <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
                     <Phone className="h-5 w-5 text-primary" /> EasyPaisa Payment
@@ -464,8 +473,9 @@ const Checkout = () => {
                 </div>
               )}
 
-              <div className="rounded-xl border border-border bg-card p-6">
-                <label className="text-sm font-medium text-foreground">Upload Payment Screenshot *</label>
+              {grandTotal > 0 && (
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <label className="text-sm font-medium text-foreground">Upload Payment Screenshot *</label>
                 <div className="mt-3 rounded-xl border-2 border-dashed border-border hover:border-primary/30 transition-colors p-8 text-center">
                   {screenshotPreview ? (
                     <div className="space-y-3">
@@ -484,11 +494,14 @@ const Checkout = () => {
                   )}
                 </div>
               </div>
+              )}
 
-              <div className="rounded-xl border border-border bg-card p-6">
-                <label className="text-sm font-medium text-foreground">Transaction ID (optional)</label>
-                <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1.5 h-11 rounded-xl" maxLength={50} />
-              </div>
+              {grandTotal > 0 && (
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <label className="text-sm font-medium text-foreground">Transaction ID (optional)</label>
+                  <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1.5 h-11 rounded-xl" maxLength={50} />
+                </div>
+              )}
 
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep('details')} className="h-11">Back</Button>
@@ -516,7 +529,7 @@ const Checkout = () => {
               <span>Subtotal</span><span className="font-medium text-foreground">{formatPKR(subtotal)}</span>
             </div>
             <div className="flex justify-between text-muted-foreground">
-              <span>Shipping</span><span className="font-medium text-foreground">{shipping === 0 ? 'Free' : formatPKR(shipping)}</span>
+              <span>Shipping</span><span className="font-medium text-foreground">{formatPKR(shipping)}</span>
             </div>
             {zakatEnabled && (
               <div className="flex justify-between text-muted-foreground">
