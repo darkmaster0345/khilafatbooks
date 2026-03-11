@@ -222,6 +222,7 @@ const Orders = () => {
                           shippingStatus={order.shipping_status}
                           trackingNumber={order.tracking_number}
                           items={Array.isArray(order.items) ? order.items : []}
+                          total={order.total}
                         />
                       </div>
 
@@ -267,7 +268,7 @@ const Orders = () => {
                     {/* Footer / Actions */}
                     <div className="bg-muted/10 px-6 py-4 border-t border-border/50 flex justify-end">
                        <Button variant="ghost" size="sm" className="gap-2 text-xs font-semibold" asChild>
-                          <Link to={`/checkout?id=${order.id}`}>View Details <ArrowRight className="h-3.5 w-3.5" /></Link>
+                          <Link to={`/order-details/${order.id}`}>View Details <ArrowRight className="h-3.5 w-3.5" /></Link>
                        </Button>
                     </div>
                   </motion.div>

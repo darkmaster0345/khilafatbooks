@@ -210,8 +210,10 @@ const Checkout = () => {
 
     // Send order confirmation email (non-blocking)
     if (orderId && email) {
+      // For free orders, send the 'approved' email immediately since they are auto-approved
+      const initialEmailStatus = grandTotal === 0 ? 'approved' : 'pending';
       supabase.functions.invoke('send-order-email', {
-        body: { orderId: orderId as string, newStatus: 'pending' },
+        body: { orderId: orderId as string, newStatus: initialEmailStatus },
       }).catch(() => {}); // Don't block on email failure
     }
 

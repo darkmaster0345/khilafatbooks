@@ -22,18 +22,25 @@ interface Props {
   shippingStatus: string | null;
   trackingNumber?: string | null;
   items?: any[];
+  total?: number;
 }
 
-const OrderTrackingTimeline = ({ status, shippingStatus, trackingNumber, items = [] }: Props) => {
+const OrderTrackingTimeline = ({ status, shippingStatus, trackingNumber, items = [], total }: Props) => {
   const active = getActiveStep(status, shippingStatus);
   const hasPhysical = items.length > 0 ? items.some(i => i.type === 'physical') : true;
+  const isFree = total === 0;
 
   // For digital-only orders, hide packing/shipping steps
-  const displaySteps = hasPhysical
+  let displaySteps = hasPhysical
     ? steps
     : steps.filter(s => !['processing', 'shipped'].includes(s.key)).map(s =>
         s.key === 'delivered' ? { ...s, label: 'Ready to Download' } : s
       );
+
+  // If digital-only and free, bypass "Payment Verified" step
+  if (!hasPhysical && isFree) {
+    displaySteps = displaySteps.filter(s => s.key !== 'verified');
+  }
 
   if (status === 'rejected') {
     return (

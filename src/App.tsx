@@ -35,6 +35,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const BookRequests = lazy(() => import("./pages/BookRequests"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const OrderConfirmed = lazy(() => import("./pages/OrderConfirmed"));
+const OrderDetail = lazy(() => import("./pages/OrderDetail"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 
@@ -68,6 +69,7 @@ const AppLayout = () => {
               <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
               <Route path="/wishlist" element={<PageTransition><Wishlist /></PageTransition>} />
               <Route path="/orders" element={<PageTransition><Orders /></PageTransition>} />
+              <Route path="/order-details/:id" element={<PageTransition><OrderDetail /></PageTransition>} />
               <Route path="/library" element={<PageTransition><Library /></PageTransition>} />
               <Route path="/book-requests" element={<PageTransition><BookRequests /></PageTransition>} />
               <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
