@@ -38,42 +38,53 @@ export const ProductJsonLd = ({
       '@type': 'Brand',
       name: brand,
     },
-    offers: {
-      '@type': 'Offer',
-      url: window.location.href,
-      price: price.toFixed(2),
-      priceCurrency: currency,
-      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      itemCondition: 'https://schema.org/NewCondition',
-      priceValidUntil: new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0],
-      shippingDetails: {
-        '@type': 'OfferShippingDetails',
-        shippingRate: {
-          '@type': 'MonetaryAmount',
-          value: '0',
-          currency: 'PKR',
-        },
-        shippingDestination: {
-          '@type': 'DefinedRegion',
-          addressCountry: 'PK',
-        },
-        deliveryTime: {
-          '@type': 'ShippingDeliveryTime',
-          handlingTime: {
-            '@type': 'QuantitativeValue',
-            minValue: 0,
-            maxValue: 1,
-            unitCode: 'DAY',
+    offers: [
+      {
+        '@type': 'Offer',
+        url: window.location.href,
+        price: price.toFixed(2),
+        priceCurrency: currency,
+        availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        itemCondition: 'https://schema.org/NewCondition',
+        priceValidUntil: new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0],
+        shippingDetails: {
+          '@type': 'OfferShippingDetails',
+          shippingRate: {
+            '@type': 'MonetaryAmount',
+            value: '0',
+            currency: 'PKR',
           },
-          transitTime: {
-            '@type': 'QuantitativeValue',
-            minValue: 2,
-            maxValue: 5,
-            unitCode: 'DAY',
+          shippingDestination: {
+            '@type': 'DefinedRegion',
+            addressCountry: 'PK',
+          },
+          deliveryTime: {
+            '@type': 'ShippingDeliveryTime',
+            handlingTime: {
+              '@type': 'QuantitativeValue',
+              minValue: 0,
+              maxValue: 1,
+              unitCode: 'DAY',
+            },
+            transitTime: {
+              '@type': 'QuantitativeValue',
+              minValue: 2,
+              maxValue: 5,
+              unitCode: 'DAY',
+            },
           },
         },
       },
-    },
+      {
+        '@type': 'Offer',
+        url: window.location.href,
+        price: (price / 280).toFixed(2),
+        priceCurrency: 'USD',
+        availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        itemCondition: 'https://schema.org/NewCondition',
+        priceValidUntil: new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0],
+      },
+    ],
   };
 
   if (category) data.category = category;
