@@ -23,8 +23,6 @@ const ensureAbsoluteUrl = (path: string) => {
   return `${BASE_URL}${path.startsWith('/') ? '' : '/'}${path}`;
 };
 
-}
-
 export const ProductJsonLd = ({
   name,
   description,
@@ -41,28 +39,14 @@ export const ProductJsonLd = ({
   itemCondition = 'https://schema.org/NewCondition',
 }: ProductJsonLdProps) => {
   const absoluteImage = ensureAbsoluteUrl(image);
-  const absoluteUrl = url ? ensureAbsoluteUrl(url) : undefined;
+  const absoluteUrl = url ? ensureAbsoluteUrl(url) : (typeof window !== 'undefined' ? window.location.href : undefined);
 
-  category
-}: ProductJsonLdProps) => {
   const data: any = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name,
     description,
     image: absoluteImage,
-    brand: {
-      '@type': 'Brand',
-      name: brand,
-    },
-    offers: {
-      '@type': 'Offer',
-      price: price.toFixed(2),
-      priceCurrency: currency,
-      availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-      url: absoluteUrl,
-      itemCondition: itemCondition,
-    image,
     sku: sku || name.toLowerCase().replace(/\s+/g, '-'),
     brand: {
       '@type': 'Brand',
@@ -71,11 +55,11 @@ export const ProductJsonLd = ({
     offers: [
       {
         '@type': 'Offer',
-        url: window.location.href,
+        url: absoluteUrl,
         price: price.toFixed(2),
         priceCurrency: currency,
         availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        itemCondition: 'https://schema.org/NewCondition',
+        itemCondition: itemCondition,
         priceValidUntil: new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0],
         shippingDetails: {
           '@type': 'OfferShippingDetails',
@@ -107,11 +91,11 @@ export const ProductJsonLd = ({
       },
       {
         '@type': 'Offer',
-        url: window.location.href,
+        url: absoluteUrl,
         price: (price / 280).toFixed(2),
         priceCurrency: 'USD',
         availability: inStock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-        itemCondition: 'https://schema.org/NewCondition',
+        itemCondition: itemCondition,
         priceValidUntil: new Date(new Date().getFullYear() + 1, 0, 1).toISOString().split('T')[0],
       },
     ],
@@ -144,7 +128,6 @@ export const OrganizationJsonLd = () => (
       '@type': 'Organization',
       name: 'Khilafat Books',
       url: BASE_URL,
-      url: 'https://khilafatbooks.vercel.app',
       description: 'Premium Islamic books, courses, and ethically sourced products.',
       sameAs: [
         'https://facebook.com/KhilafatBooks',
@@ -161,9 +144,9 @@ export const LocalBusinessJsonLd = () => (
       '@context': 'https://schema.org',
       '@type': 'LocalBusiness',
       name: 'Khilafat Books',
-      image: 'https://khilafatbooks.vercel.app/favicon.png',
-      '@id': 'https://khilafatbooks.vercel.app',
-      url: 'https://khilafatbooks.vercel.app',
+      image: `${BASE_URL}/favicon.png`,
+      '@id': BASE_URL,
+      url: BASE_URL,
       telephone: '+92 345 2867726',
       email: 'support@khilafatbooks.com',
       priceRange: 'PKR',
