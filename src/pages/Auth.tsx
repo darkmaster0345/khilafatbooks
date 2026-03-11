@@ -62,7 +62,7 @@ const Auth = () => {
         logSecurityEvent('signup', email, false, { error: error.message });
       } else {
         toast({ title: 'Account created!', description: 'Please check your email to verify your account.' });
-        logSecurityEvent('login_attempt', email, true, { type: 'signup' });
+        logSecurityEvent('signup', email, true, {});
       }
     } else {
       const { error } = await signIn(email, password);
