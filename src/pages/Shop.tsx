@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
 import ProductQuickView from '@/components/ProductQuickView';
 import { supabase } from '@/integrations/supabase/client';
+import { PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
 import { toLegacyProduct, LegacyProduct, Product, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 
 const PAGE_SIZE = 12;
