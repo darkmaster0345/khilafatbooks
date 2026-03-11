@@ -56,7 +56,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       if (products.length < limit && category) {
         const { data } = await supabase
           .from('products')
-          .select('*')
+          .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('category', category)
           .eq('in_stock', true)
           .neq('id', excludeId || '')
