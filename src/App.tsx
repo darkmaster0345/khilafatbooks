@@ -35,6 +35,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const BookRequests = lazy(() => import("./pages/BookRequests"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const OrderConfirmed = lazy(() => import("./pages/OrderConfirmed"));
+const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
+const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 
 const queryClient = new QueryClient();
 
@@ -70,6 +72,8 @@ const AppLayout = () => {
               <Route path="/book-requests" element={<PageTransition><BookRequests /></PageTransition>} />
               <Route path="/faq" element={<PageTransition><FAQ /></PageTransition>} />
               <Route path="/order-confirmed/:id" element={<PageTransition><OrderConfirmed /></PageTransition>} />
+              <Route path="/shipping-policy" element={<PageTransition><ShippingPolicy /></PageTransition>} />
+              <Route path="/return-policy" element={<PageTransition><ReturnPolicy /></PageTransition>} />
               <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
             </Routes>
           </Suspense>

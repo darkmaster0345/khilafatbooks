@@ -4,7 +4,7 @@
 
 A full-featured e-commerce platform built for the Pakistani Muslim market, offering premium Islamic books, digital courses, fragrances, and ethically sourced halal products. Payments via EasyPaisa with Pakistan-wide delivery.
 
-🌐 **Live:** [khilafatbooks.lovable.app](https://khilafatbooks.lovable.app)
+🌐 **Live:** [khilafatbooks.vercel.app](https://khilafatbooks.vercel.app)
 
 ---
 

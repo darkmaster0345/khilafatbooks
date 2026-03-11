@@ -52,6 +52,8 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
         <img
           src={product.image}
           alt={product.name}
+          width="400"
+          height="500"
           className="h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-[0.92]"
           loading="lazy"
         />
@@ -77,6 +79,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             asChild
             size="sm"
             variant="secondary"
+            aria-label={`View details for ${product.name}`}
             className="h-10 w-10 p-0 rounded-xl backdrop-blur-md bg-background/90 hover:bg-background shadow-lg"
           >
             <Link to={`/product/${product.id}`}>
@@ -86,6 +89,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
           <Button
             size="sm"
             variant="secondary"
+            aria-label={`Add ${product.name} as a gift`}
             className="h-10 w-10 p-0 rounded-xl backdrop-blur-md bg-background/90 hover:bg-background shadow-lg"
             onClick={(e) => {
               e.preventDefault();
@@ -131,6 +135,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             e.stopPropagation();
             toggleWishlist(product);
           }}
+          aria-label={isWishlisted ? `Remove ${product.name} from wishlist` : `Add ${product.name} to wishlist`}
           className={`absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-md transition-all duration-300 ${
             isWishlisted
               ? 'bg-destructive text-destructive-foreground shadow-lg scale-110'
