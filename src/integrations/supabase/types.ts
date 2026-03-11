@@ -1055,6 +1055,29 @@ export type Database = {
             }
             Returns: string
           }
+        | {
+            Args: {
+              p_customer_email?: string
+              p_customer_name: string
+              p_customer_phone: string
+              p_delivery_address?: string
+              p_delivery_city?: string
+              p_discount_code?: string
+              p_gift_message?: string
+              p_gift_recipient_name?: string
+              p_gift_wrap?: boolean
+              p_is_gift?: boolean
+              p_items: Json
+              p_payment_screenshot_url?: string
+              p_recovery_discount?: number
+              p_referral_code_id?: string
+              p_referral_discount?: number
+              p_referred_reward_type?: string
+              p_transaction_id?: string
+              p_zakat_enabled?: boolean
+            }
+            Returns: string
+          }
       get_digital_download_url: {
         Args: { p_product_id: string }
         Returns: string
