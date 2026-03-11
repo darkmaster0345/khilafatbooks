@@ -24,7 +24,7 @@ const CartBundleSuggestion = ({ cartItems }: Props) => {
       // Fetch cart products with series info
       const { data: cartProducts } = await supabase
         .from('products')
-        .select('*')
+        .select(PRODUCT_PUBLIC_COLUMNS)
         .in('id', cartIds)
         .not('series', 'is', null);
 
