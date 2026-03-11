@@ -195,6 +195,8 @@ const Checkout = () => {
       p_gift_recipient_name: isGift ? giftRecipientName || null : null,
       p_gift_message: isGift ? giftMessage || null : null,
       p_gift_wrap: isGift && giftWrap,
+      p_referral_code_id: referralValidation?.valid ? referralValidation.code_id : null,
+      p_referred_reward_type: referralRewardType || null,
     } as any);
 
     const orderId = orderData as unknown as string;
