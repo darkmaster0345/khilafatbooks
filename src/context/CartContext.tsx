@@ -197,7 +197,10 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const subtotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
-  const shipping = items.reduce((sum, i) => sum + (i.product.shipping_cost || 0) * i.quantity, 0);
+  const hasPhysical = items.some(i => i.product.type === 'physical');
+  const shipping = hasPhysical
+    ? items.reduce((sum, i) => sum + (i.product.shipping_cost || 0) * i.quantity, 0)
+    : 0;
   
   // Calculate loyalty discount
   const loyaltyDiscount = loyaltyInfo && loyaltyInfo.discountPercent > 0
