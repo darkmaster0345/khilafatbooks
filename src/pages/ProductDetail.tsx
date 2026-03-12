@@ -248,7 +248,7 @@ const ProductDetail = () => {
               {product.type === 'physical' ? (
                 <><Truck className="h-5 w-5 text-muted-foreground shrink-0" /><span className="text-sm text-muted-foreground">Free shipping on orders over Rs. 5,000</span></>
               ) : (
-                <><Download className="h-5 w-5 text-muted-foreground shrink-0" /><span className="text-sm text-muted-foreground">Instant digital delivery after payment approval</span></>
+                <><Download className="h-5 w-5 text-primary shrink-0" /><span className="text-sm text-foreground font-medium">✨ Free Instant Delivery — delivered to your email & Library</span></>
               )}
             </div>
           </div>
