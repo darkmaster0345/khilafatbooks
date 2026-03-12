@@ -208,12 +208,15 @@ const Checkout = () => {
 
     // Referral is now created server-side in create_verified_order
 
-    // Send order confirmation email (non-blocking)
+    // Send order email (non-blocking)
     if (orderId && email) {
-      // For free orders, send the 'approved' email immediately since they are auto-approved
-      const initialEmailStatus = grandTotal === 0 ? 'approved' : 'pending';
+      // Free digital-only orders are auto-delivered by DB trigger, send "delivered" email
+      const isAllDigital = items.every(i => i.product.type === 'digital');
+      const isFreeOrder = grandTotal === 0;
+      const emailStatus = (isFreeOrder && isAllDigital) ? 'delivered' : 'pending';
+      
       supabase.functions.invoke('send-order-email', {
-        body: { orderId: orderId as string, newStatus: initialEmailStatus },
+        body: { orderId: orderId as string, newStatus: emailStatus },
       }).catch(() => {}); // Don't block on email failure
     }
 
