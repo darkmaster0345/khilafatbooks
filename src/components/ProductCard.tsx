@@ -193,6 +193,13 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             <ShoppingCart className="h-3.5 w-3.5" />
             Add
           </Button>
+          </div>
+          {product.type === 'digital' && (
+            <div className="flex items-center gap-1 mt-2 text-[10px] text-primary font-medium">
+              <Truck className="h-3 w-3" />
+              <span>Free Instant Delivery</span>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
