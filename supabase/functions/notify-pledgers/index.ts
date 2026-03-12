@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
         </div>
         ${priceSection}
         <div style="text-align:center;margin-top:24px">
-          <a href="https://khilafatbooks.vercel.app/shop" style="display:inline-block;padding:12px 32px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px">
+          <a href="${Deno.env.get('SITE_URL') || 'https://khilafatbooks.vercel.app'}/shop" style="display:inline-block;padding:12px 32px;background:#059669;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;font-size:15px">
             Complete Your Purchase →
           </a>
         </div>

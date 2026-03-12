@@ -71,7 +71,6 @@ export function toLegacyProduct(p: Product): LegacyProduct {
     rating: p.rating,
     reviews: p.reviews,
     inStock: p.in_stock,
-    shipping_cost: p.shipping_cost || 0,
   };
 }
 

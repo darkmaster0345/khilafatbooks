@@ -280,7 +280,7 @@ const ProductDetail = () => {
             </button>
             <button
               onClick={() => {
-                const url = `https://khilafatbooks.vercel.app/product/${product.slug}`;
+                const url = `${window.location.origin}/product/${product.slug}`;
                 navigator.clipboard.writeText(url);
                 toast({ title: 'Link copied!', description: 'Product link copied to clipboard.' });
               }}
