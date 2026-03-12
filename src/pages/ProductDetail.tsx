@@ -269,7 +269,7 @@ const ProductDetail = () => {
             <span className="text-xs text-muted-foreground">Share:</span>
             <button
               onClick={() => {
-                const url = `https://khilafatbooks.vercel.app/product/${product.slug}`;
+                const url = `${window.location.origin}/product/${product.slug}`;
                 const text = `Check out "${product.name}" on Khilafat Books! ${formatPKR(product.price)}\n${url}`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
               }}
