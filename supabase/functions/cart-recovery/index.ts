@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("status", "active")
       .lt("last_activity_at", twentyFourHoursAgo.toISOString())
-      .eq("reminder_count", 0);
+      .eq("reminder_count", 0) as { data: any[] | null; error: any };
 
     if (fetchError) throw new Error(`Failed to fetch abandoned carts: ${fetchError.message}`);
 
