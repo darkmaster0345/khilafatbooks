@@ -14,7 +14,7 @@ import SmartSuggest from '@/components/SmartSuggest';
 import { ProductJsonLd } from '@/components/JsonLd';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 
-const BASE_URL = 'https://khilafatbooks.vercel.app';
+const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://khilafatbooks.vercel.app';
 import { useCart } from '@/context/CartContext';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { formatPKR } from '@/lib/currency';
