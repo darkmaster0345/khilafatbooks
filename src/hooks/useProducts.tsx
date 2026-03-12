@@ -51,7 +51,6 @@ export interface LegacyProduct {
   rating: number;
   reviews: number;
   inStock: boolean;
-  shipping_cost: number;
 }
 
 export function toLegacyProduct(p: Product): LegacyProduct {
