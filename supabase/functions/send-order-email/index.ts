@@ -87,9 +87,9 @@ Deno.serve(async (req) => {
 
     if (orderError || !order) throw new Error(`Order not found: ${orderError?.message}`);
 
-    // For pending status, verify the caller owns the order
-    if (newStatus === "pending" && order.user_id !== user.id) {
-      return new Response(JSON.stringify({ error: "Forbidden: you can only send confirmation for your own orders" }), {
+    // For pending status or non-admin delivered/approved, verify the caller owns the order
+    if ((newStatus === "pending" || (req as any).__requireOwnership) && order.user_id !== user.id) {
+      return new Response(JSON.stringify({ error: "Forbidden: you can only send emails for your own orders" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
