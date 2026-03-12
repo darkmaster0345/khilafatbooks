@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye, Gift } from 'lucide-react';
+import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye, Gift, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
