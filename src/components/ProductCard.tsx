@@ -174,13 +174,16 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
           </div>
           <span className="text-[10px] text-muted-foreground">({product.reviews})</span>
         </div>
-        <div className="mt-auto flex items-center justify-between pt-3 border-t border-border/50 mt-3">
-          <div className="flex items-baseline gap-2">
-            <span className="font-display text-lg font-bold text-foreground">{formatPKR(product.price)}</span>
-            {product.originalPrice && (
-              <span className="text-[11px] text-muted-foreground line-through">{formatPKR(product.originalPrice)}</span>
-            )}
-          </div>
+        <div className="mt-auto pt-3 border-t border-border/50 mt-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-lg font-bold text-foreground">
+                {product.price === 0 ? 'Free' : formatPKR(product.price)}
+              </span>
+              {product.originalPrice && product.price > 0 && (
+                <span className="text-[11px] text-muted-foreground line-through">{formatPKR(product.originalPrice)}</span>
+              )}
+            </div>
           {/* Mobile-only add button (hover overlay hidden on touch) */}
           <Button
             size="sm"
