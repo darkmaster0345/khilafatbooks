@@ -50,9 +50,9 @@ Deno.serve(async (req) => {
 
     // Run purchase check and product lookup in parallel
     const [ordersRes, productRes] = await Promise.all([
-      db.from("orders").select("items").eq("user_id", user.id).eq("status", "approved"),
-      db.from("products").select("digital_file_url, name").eq("id", productId).single(),
-    ]);
+      db.from("orders").select("items").eq("user_id", user.id).eq("status", "approved") as any,
+      db.from("products").select("digital_file_url, name").eq("id", productId).single() as any,
+    ]) as [any, any];
 
     if (ordersRes.error) {
       return new Response(JSON.stringify({ error: "Failed to verify purchase" }), {
