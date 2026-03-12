@@ -54,20 +54,18 @@ Deno.serve(async (req) => {
       });
     }
 
+    let isAdminUser = false;
+    let requireOwnership = false;
+
     if (newStatus === "pending") {
-      // For order confirmation emails, verify the caller owns the order (checked below)
+      requireOwnership = true;
     } else if (newStatus === "delivered" || newStatus === "approved") {
-      // Allow if caller owns the order (for free auto-delivered orders) OR is admin
-      // Ownership is verified below after fetching the order
-      const { data: isAdmin } = await userClient.rpc("is_admin");
-      if (!isAdmin) {
-        // Not admin — will verify ownership below
-        (req as any).__requireOwnership = true;
-      }
+      const { data: adminCheck } = await userClient.rpc("is_admin");
+      isAdminUser = !!adminCheck;
+      if (!isAdminUser) requireOwnership = true;
     } else {
-      // For other status changes (rejected/shipped), require admin
-      const { data: isAdmin } = await userClient.rpc("is_admin");
-      if (!isAdmin) {
+      const { data: adminCheck } = await userClient.rpc("is_admin");
+      if (!adminCheck) {
         return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -77,7 +75,6 @@ Deno.serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
 
-    // Use service role for DB access
     const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const { data: order, error: orderError } = await db
       .from("orders")
@@ -87,8 +84,7 @@ Deno.serve(async (req) => {
 
     if (orderError || !order) throw new Error(`Order not found: ${orderError?.message}`);
 
-    // For pending status or non-admin delivered/approved, verify the caller owns the order
-    if ((newStatus === "pending" || (req as any).__requireOwnership) && order.user_id !== user.id) {
+    if (requireOwnership && order.user_id !== user.id) {
       return new Response(JSON.stringify({ error: "Forbidden: you can only send emails for your own orders" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
