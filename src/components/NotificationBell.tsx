@@ -46,7 +46,7 @@ const NotificationBell = () => {
             <div className="flex items-center justify-between p-3 border-b border-border">
               <h3 className="font-display text-sm font-semibold text-foreground">Notifications</h3>
               {unreadCount > 0 && (
-                <button onClick={markAllRead} className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                <button onClick={() => markAllRead()} className="text-[10px] text-primary hover:underline flex items-center gap-1">
                   <Check className="h-3 w-3" /> Mark all read
                 </button>
               )}
