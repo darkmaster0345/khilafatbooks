@@ -55,9 +55,17 @@ Deno.serve(async (req) => {
     }
 
     if (newStatus === "pending") {
-      // For order confirmation emails, verify the caller owns the order
+      // For order confirmation emails, verify the caller owns the order (checked below)
+    } else if (newStatus === "delivered" || newStatus === "approved") {
+      // Allow if caller owns the order (for free auto-delivered orders) OR is admin
+      // Ownership is verified below after fetching the order
+      const { data: isAdmin } = await userClient.rpc("is_admin");
+      if (!isAdmin) {
+        // Not admin — will verify ownership below
+        (req as any).__requireOwnership = true;
+      }
     } else {
-      // For status change emails, require admin
+      // For other status changes (rejected/shipped), require admin
       const { data: isAdmin } = await userClient.rpc("is_admin");
       if (!isAdmin) {
         return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
