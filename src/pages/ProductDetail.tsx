@@ -14,7 +14,7 @@ import SmartSuggest from '@/components/SmartSuggest';
 import { ProductJsonLd } from '@/components/JsonLd';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 
-const BASE_URL = 'https://khilafatbooks.vercel.app';
+const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://khilafatbooks.vercel.app';
 import { useCart } from '@/context/CartContext';
 import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
 import { formatPKR } from '@/lib/currency';
@@ -269,7 +269,7 @@ const ProductDetail = () => {
             <span className="text-xs text-muted-foreground">Share:</span>
             <button
               onClick={() => {
-                const url = `https://khilafatbooks.vercel.app/product/${product.slug}`;
+                const url = `${window.location.origin}/product/${product.slug}`;
                 const text = `Check out "${product.name}" on Khilafat Books! ${formatPKR(product.price)}\n${url}`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
               }}
@@ -280,7 +280,7 @@ const ProductDetail = () => {
             </button>
             <button
               onClick={() => {
-                const url = `https://khilafatbooks.vercel.app/product/${product.slug}`;
+                const url = `${window.location.origin}/product/${product.slug}`;
                 navigator.clipboard.writeText(url);
                 toast({ title: 'Link copied!', description: 'Product link copied to clipboard.' });
               }}

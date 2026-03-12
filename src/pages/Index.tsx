@@ -58,7 +58,7 @@ const Index = () => {
         <meta property="og:description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products. Shop with EasyPaisa and enjoy Pakistan-wide delivery." />
         <meta property="og:url" content="https://khilafatbooks.vercel.app/" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://khilafatbooks.vercel.app/favicon.png" />
+        <meta property="og:image" content="/favicon.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Khilafat Books — Islamic Books, Courses & Halal Products" />
         <meta name="twitter:description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products." />

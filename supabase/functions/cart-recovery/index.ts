@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       .select("*")
       .eq("status", "active")
       .lt("last_activity_at", twentyFourHoursAgo.toISOString())
-      .eq("reminder_count", 0);
+      .eq("reminder_count", 0) as { data: any[] | null; error: any };
 
     if (fetchError) throw new Error(`Failed to fetch abandoned carts: ${fetchError.message}`);
 
@@ -194,7 +194,7 @@ Deno.serve(async (req) => {
         }
 
         // Update cart record with recovery code and reminder status
-        await db
+        await (db
           .from("abandoned_carts")
           .update({
             status: "reminded",
@@ -203,8 +203,8 @@ Deno.serve(async (req) => {
             recovery_code: recoveryCode,
             recovery_code_expires_at: expiresAt.toISOString(),
             updated_at: now.toISOString(),
-          })
-          .eq("id", cart.id);
+          } as any)
+          .eq("id", cart.id) as any);
 
         results.emailsSent++;
         results.processed++;
@@ -214,11 +214,11 @@ Deno.serve(async (req) => {
     }
 
     // Also expire old recovery codes
-    await db
+    await (db
       .from("abandoned_carts")
-      .update({ status: "expired", updated_at: now.toISOString() })
+      .update({ status: "expired", updated_at: now.toISOString() } as any)
       .eq("status", "reminded")
-      .lt("recovery_code_expires_at", now.toISOString());
+      .lt("recovery_code_expires_at", now.toISOString()) as any);
 
     return new Response(
       JSON.stringify({

@@ -20,13 +20,18 @@ export interface Product {
   rating: number;
   reviews: number;
   in_stock: boolean;
-  shipping_cost: number;
+  stock_quantity: number;
+  low_stock_threshold: number;
+  series: string | null;
+  series_order: number | null;
+  bundle_discount: number | null;
+  is_hidden: boolean;
   created_at: string;
   updated_at: string;
 }
 
 // Safe columns to select for public-facing product queries (excludes digital_file_url)
-export const PRODUCT_PUBLIC_COLUMNS = 'id, name, name_ar, description, price, original_price, image_url, category, type, is_new, is_halal, ethical_source, rating, reviews, in_stock, stock_quantity, low_stock_threshold, series, series_order, bundle_discount, is_hidden, shipping_cost, created_at, updated_at' as const;
+export const PRODUCT_PUBLIC_COLUMNS = 'id, name, name_ar, description, price, original_price, image_url, category, type, is_new, is_halal, ethical_source, rating, reviews, in_stock, stock_quantity, low_stock_threshold, series, series_order, bundle_discount, is_hidden, created_at, updated_at' as const;
 
 // Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
@@ -46,7 +51,6 @@ export interface LegacyProduct {
   rating: number;
   reviews: number;
   inStock: boolean;
-  shipping_cost: number;
 }
 
 export function toLegacyProduct(p: Product): LegacyProduct {
@@ -67,7 +71,6 @@ export function toLegacyProduct(p: Product): LegacyProduct {
     rating: p.rating,
     reviews: p.reviews,
     inStock: p.in_stock,
-    shipping_cost: p.shipping_cost || 0,
   };
 }
 
