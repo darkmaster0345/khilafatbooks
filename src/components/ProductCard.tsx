@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye, Gift } from 'lucide-react';
+import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye, Gift, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { LegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
@@ -174,13 +174,16 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
           </div>
           <span className="text-[10px] text-muted-foreground">({product.reviews})</span>
         </div>
-        <div className="mt-auto flex items-center justify-between pt-3 border-t border-border/50 mt-3">
-          <div className="flex items-baseline gap-2">
-            <span className="font-display text-lg font-bold text-foreground">{formatPKR(product.price)}</span>
-            {product.originalPrice && (
-              <span className="text-[11px] text-muted-foreground line-through">{formatPKR(product.originalPrice)}</span>
-            )}
-          </div>
+        <div className="mt-auto pt-3 border-t border-border/50 mt-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-baseline gap-2">
+              <span className="font-display text-lg font-bold text-foreground">
+                {product.price === 0 ? 'Free' : formatPKR(product.price)}
+              </span>
+              {product.originalPrice && product.price > 0 && (
+                <span className="text-[11px] text-muted-foreground line-through">{formatPKR(product.originalPrice)}</span>
+              )}
+            </div>
           {/* Mobile-only add button (hover overlay hidden on touch) */}
           <Button
             size="sm"
@@ -190,6 +193,13 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             <ShoppingCart className="h-3.5 w-3.5" />
             Add
           </Button>
+          </div>
+          {product.type === 'digital' && (
+            <div className="flex items-center gap-1 mt-2 text-[10px] text-primary font-medium">
+              <Truck className="h-3 w-3" />
+              <span>Free Instant Delivery</span>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
