@@ -1,4 +1,4 @@
-const CACHE_NAME = 'khilafat-books-v1';
+const CACHE_NAME = 'khilafat-books-v2';
 const STATIC_ASSETS = [
   '/',
   '/favicon.png',
