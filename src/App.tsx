@@ -67,6 +67,7 @@ const AppLayout = () => {
               <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
               <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
               <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />
+              <Route path="/auth/callback" element={<PageTransition><Auth /></PageTransition>} />
               <Route path="/wishlist" element={<PageTransition><Wishlist /></PageTransition>} />
               <Route path="/orders" element={<PageTransition><Orders /></PageTransition>} />
               <Route path="/order-details/:id" element={<PageTransition><OrderDetail /></PageTransition>} />
