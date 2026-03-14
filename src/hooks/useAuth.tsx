@@ -67,40 +67,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    const isLovableDomain =
-      window.location.hostname.includes('lovable.app') ||
-      window.location.hostname.includes('lovableproject.com');
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: true,
+      },
+    });
 
-    if (isLovableDomain) {
-      // Use Lovable auth bridge on Lovable domains
-      const { lovable } = await import('@/integrations/lovable/index');
-      const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
-      });
-      if (result.error) return { error: result.error };
-      return { error: null };
-    } else {
-      // Bypass Lovable bridge on custom/Vercel domains — use direct Supabase OAuth
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
-          skipBrowserRedirect: true,
-        },
-      });
+    if (error) return { error };
 
-      if (error) return { error };
-
-      if (data?.url) {
-        const oauthUrl = new URL(data.url);
-        const allowedHosts = ['accounts.google.com'];
-        if (!allowedHosts.some((host) => oauthUrl.hostname === host || oauthUrl.hostname.endsWith('.supabase.co'))) {
-          return { error: new Error('Invalid OAuth redirect URL') };
-        }
-        window.location.href = data.url;
+    if (data?.url) {
+      const oauthUrl = new URL(data.url);
+      const allowedHosts = ['accounts.google.com'];
+      if (!allowedHosts.some((host) => oauthUrl.hostname === host || oauthUrl.hostname.endsWith('.supabase.co'))) {
+        return { error: new Error('Invalid OAuth redirect URL') };
       }
-      return { error: null };
+      window.location.href = data.url;
     }
+    return { error: null };
   };
 
   const signOut = async () => {
