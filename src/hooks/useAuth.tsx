@@ -29,6 +29,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (window.location.hash.includes("access_token=")) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -67,25 +70,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signInWithGoogle = async () => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        skipBrowserRedirect: true,
+        redirectTo: `${window.location.origin}/auth`,
       },
     });
-
-    if (error) return { error };
-
-    if (data?.url) {
-      const oauthUrl = new URL(data.url);
-      const allowedHosts = ['accounts.google.com'];
-      if (!allowedHosts.some((host) => oauthUrl.hostname === host || oauthUrl.hostname.endsWith('.supabase.co'))) {
-        return { error: new Error('Invalid OAuth redirect URL') };
-      }
-      window.location.href = data.url;
-    }
-    return { error: null };
+    return { error };
   };
 
   const signOut = async () => {
