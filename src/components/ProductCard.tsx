@@ -164,7 +164,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
           </h3>
         </Link>
         {product.nameAr && (
-          <p className="font-arabic text-xs text-muted-foreground mt-1">{product.nameAr}</p>
+          <p className="font-amiri text-xs text-muted-foreground mt-1" dir="rtl">{product.nameAr}</p>
         )}
         <div className="mt-2 flex items-center gap-1.5">
           <div className="flex items-center gap-0.5">

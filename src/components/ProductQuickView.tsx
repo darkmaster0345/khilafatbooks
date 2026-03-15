@@ -34,7 +34,7 @@ const ProductQuickView = ({ product, open, onOpenChange }: Props) => {
           <div className="p-6 flex flex-col">
             <p className="text-[10px] uppercase tracking-[0.15em] text-primary font-semibold">{product.category}</p>
             <h2 className="mt-1.5 font-display text-xl font-bold text-foreground leading-snug">{product.name}</h2>
-            {product.nameAr && <p className="font-arabic text-sm text-muted-foreground mt-1">{product.nameAr}</p>}
+            {product.nameAr && <p className="font-amiri text-sm text-muted-foreground mt-1" dir="rtl">{product.nameAr}</p>}
 
             <div className="mt-3 flex items-center gap-1.5">
               {Array.from({ length: 5 }).map((_, i) => (

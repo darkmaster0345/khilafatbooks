@@ -46,7 +46,7 @@ const VerseOfTheDay = () => {
           </div>
         </div>
         <p className="section-heading mb-6">Verse of the Day</p>
-        <p className="font-arabic text-2xl md:text-3xl text-foreground leading-relaxed max-w-2xl mx-auto">
+        <p className="font-amiri text-2xl md:text-3xl text-foreground leading-loose max-w-2xl mx-auto" dir="rtl">
           {verse.verse_arabic}
         </p>
         <p className="mt-5 text-base md:text-lg text-muted-foreground italic max-w-xl mx-auto leading-relaxed">

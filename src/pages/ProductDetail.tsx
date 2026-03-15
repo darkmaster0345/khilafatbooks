@@ -155,7 +155,7 @@ const ProductDetail = () => {
           <p className="section-heading">{product.category}</p>
           <h1 className="mt-2 font-display text-3xl md:text-4xl font-bold text-foreground leading-tight">{product.name}</h1>
           {product.nameAr && (
-            <p className="font-arabic text-xl text-muted-foreground mt-1">{product.nameAr}</p>
+            <p className="font-amiri text-xl text-muted-foreground mt-1" dir="rtl">{product.nameAr}</p>
           )}
 
           <div className="mt-4 flex items-center gap-3">

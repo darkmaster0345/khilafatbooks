@@ -20,6 +20,7 @@ export default {
         sans: ['Inter', 'sans-serif'],
         display: ['Playfair Display', 'serif'],
         arabic: ['Amiri', 'serif'],
+        amiri: ['Amiri', 'serif'],
       },
       colors: {
         border: "hsl(var(--border))",
