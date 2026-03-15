@@ -113,7 +113,7 @@ const Index = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="font-arabic text-2xl text-gold-light/90 mb-5"
+              className="font-amiri text-2xl text-gold-light/90 mb-5" dir="rtl"
             >
               بسم الله الرحمن الرحيم
             </motion.p>
