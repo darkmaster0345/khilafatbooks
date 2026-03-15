@@ -29,6 +29,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (window.location.hash.includes("access_token=")) {
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {

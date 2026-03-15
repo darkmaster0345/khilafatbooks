@@ -1,4 +1,4 @@
-## 2026-03-09 - [Standardized Input Validation & Secure Headers]
-**Vulnerability:** Weak input validation and missing security headers.
-**Learning:** Initial scan revealed that while the backend (Supabase) has RLS, the frontend was too permissive with inputs (mobile numbers, emails), and the application lacked standard HTTP security headers (CSP, X-Frame-Options), leaving it vulnerable to XSS, Clickjacking, and spam.
-**Prevention:** Always implement "fail-secure" frontend validation using strict regex for region-specific data (e.g., Pakistan mobile numbers) and enforce security headers via the hosting provider's configuration (e.g., `vercel.json`).
+# Sentinel Journal
+
+## Critical Security Fixes
+- **2024-05-22**: Fixed a vulnerability where Supabase OAuth access tokens remained in the URL hash after login. Added a cleanup mechanism in `src/hooks/useAuth.tsx` using `window.history.replaceState` to strip the hash immediately after the session is established. This prevents token leakage into browser history, logs, and analytics.

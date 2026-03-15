@@ -1,0 +1,12 @@
+File: src/hooks/useAuth.tsx
+Change: Added URL cleanup logic to strip Supabase OAuth tokens from the hash.
+
+```typescript
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (window.location.hash.includes("access_token=")) {
+        window.history.history.replaceState({}, document.title, window.location.pathname);
+      }
+      // ...
+```
+Wait, I see a typo in my thought process "window.location.history.replaceState".
+Let me check the actual file content again.
