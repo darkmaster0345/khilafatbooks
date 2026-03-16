@@ -77,8 +77,10 @@ const Header = () => {
         {/* Desktop Nav & Search */}
         <div className="hidden md:flex flex-1 items-center justify-center px-8 gap-6">
           <form onSubmit={handleSearch} className="relative w-full max-w-sm">
+            <label htmlFor="desktop-search" className="sr-only">Search products</label>
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <input
+              id="desktop-search"
               type="text"
               placeholder="Search products..."
               value={searchQuery}
@@ -200,8 +202,10 @@ const Header = () => {
           >
             <div className="px-4 py-4 border-b border-border/30">
               <form onSubmit={handleSearch} className="relative">
+                <label htmlFor="mobile-search" className="sr-only">Search products</label>
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <input
+                  id="mobile-search"
                   type="text"
                   placeholder="Search products..."
                   value={searchQuery}
