@@ -1,0 +1,7 @@
+I have addressed the high Cumulative Layout Shift (CLS) of 0.29 by focusing on four key areas:
+1. New Arrivals section now renders a ProductSkeletonGrid while loading instead of returning null, which reserves ~500px of layout space.
+2. The Abandoned Cart Banner in src/pages/Index.tsx had its height animation removed to prevent content from jumping when the cart state is hydrated.
+3. Category images in src/pages/Index.tsx now have explicit width and height attributes (800x600) to reserve space during loading.
+4. Google Fonts in index.html are now preloaded to trigger early fetching and minimize font-swap-induced layout reflow.
+
+I also ensured that all existing tests pass and verified the visual stability with Playwright.
