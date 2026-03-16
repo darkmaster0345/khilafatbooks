@@ -20,8 +20,8 @@ const ProductSkeleton = () => (
   </div>
 );
 
-export const ProductSkeletonGrid = ({ count = 6 }: { count?: number }) => (
-  <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+export const ProductSkeletonGrid = ({ count = 6, className }: { count?: number; className?: string }) => (
+  <div className={className || "grid gap-6 sm:grid-cols-2 lg:grid-cols-3"}>
     {[...Array(count)].map((_, i) => (
       <ProductSkeleton key={i} />
     ))}

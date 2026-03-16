@@ -69,8 +69,8 @@ const Index = () => {
       {/* Abandoned Cart Banner */}
       {items.length > 0 && (
         <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="bg-accent/10 border-b border-accent/20 overflow-hidden"
         >
           <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -199,6 +199,8 @@ const Index = () => {
                 <img
                   src={cat.image}
                   alt={cat.name}
+                  width="800"
+                  height="600"
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
                 />

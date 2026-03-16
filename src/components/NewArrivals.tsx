@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import ProductCard from '@/components/ProductCard';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
+import { ProductSkeletonGrid } from '@/components/ProductSkeleton';
 
 const NewArrivals = () => {
   const { products, loading } = useProducts();
@@ -15,7 +16,7 @@ const NewArrivals = () => {
     .slice(0, 4)
     .map(toLegacyProduct);
 
-  if (loading || newProducts.length === 0) return null;
+  if (!loading && newProducts.length === 0) return null;
 
   return (
     <section className="container mx-auto px-4 py-20">
@@ -30,11 +31,15 @@ const NewArrivals = () => {
           View All <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {newProducts.map((product, i) => (
-          <ProductCard key={product.id} product={product} index={i} />
-        ))}
-      </div>
+      {loading ? (
+        <ProductSkeletonGrid count={4} className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4" />
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {newProducts.map((product, i) => (
+            <ProductCard key={product.id} product={product} index={i} />
+          ))}
+        </div>
+      )}
     </section>
   );
 };
