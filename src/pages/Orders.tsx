@@ -74,12 +74,14 @@ const Orders = () => {
   const handleDownload = async (productId: string, productName: string) => {
     setDownloading(productId);
     try {
-      const { data, error } = await supabase.rpc('get_digital_download_url', { p_product_id: productId });
+      const { data, error } = await supabase.functions.invoke('download-digital-product', {
+        body: { productId },
+      });
 
       if (error) throw error;
 
-      if (data) {
-        window.open(data, '_blank');
+      if (data?.url) {
+        window.open(data.url, '_blank');
         toast.success(`Opening download link for ${productName}`);
       } else {
         toast.error('Download link not available. Please ensure your order is approved.');
