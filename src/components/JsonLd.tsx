@@ -14,6 +14,9 @@ interface ProductJsonLdProps {
   category?: string;
   url?: string;
   itemCondition?: string;
+  isbn?: string;
+  inLanguage?: string;
+  publisher?: string;
 }
 
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://khilafatbooks.vercel.app';
@@ -37,13 +40,17 @@ export const ProductJsonLd = ({
   category,
   url,
   itemCondition = 'https://schema.org/NewCondition',
+  isbn,
+  inLanguage = 'en',
+  publisher = 'Khilafat Books',
 }: ProductJsonLdProps) => {
   const absoluteImage = ensureAbsoluteUrl(image);
   const absoluteUrl = url ? ensureAbsoluteUrl(url) : (typeof window !== 'undefined' ? window.location.href : undefined);
 
+  const isBook = category === 'Books & Quran';
   const data: any = {
     '@context': 'https://schema.org',
-    '@type': 'Product',
+    '@type': isBook ? 'Book' : 'Product',
     name,
     description,
     image: absoluteImage,
@@ -103,6 +110,9 @@ export const ProductJsonLd = ({
 
   if (category) data.category = category;
   if (sku) data.sku = sku;
+  if (isbn) data.isbn = isbn;
+  if (inLanguage) data.inLanguage = inLanguage;
+  if (publisher) data.publisher = { '@type': 'Organization', name: publisher };
 
   if (rating && reviewCount) {
     data.aggregateRating = {

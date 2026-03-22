@@ -48,7 +48,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-2"
     >
       {/* Image area */}
-      <Link to={`/product/${product.slug}`} className="relative aspect-[4/5] overflow-hidden bg-muted">
+      <Link to={`/books/${product.slug}`} className="relative aspect-[4/5] overflow-hidden bg-muted">
         <img
           src={product.image}
           alt={product.name}
@@ -82,7 +82,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             aria-label={`View details for ${product.name}`}
             className="h-10 w-10 p-0 rounded-xl backdrop-blur-md bg-background/90 hover:bg-background shadow-lg"
           >
-            <Link to={`/product/${product.slug}`}>
+            <Link to={`/books/${product.slug}`}>
               <Eye className="h-4 w-4" />
             </Link>
           </Button>
@@ -158,7 +158,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
       {/* Content */}
       <div className="flex flex-1 flex-col p-4">
         <p className="text-[10px] uppercase tracking-[0.15em] text-primary font-semibold">{product.category}</p>
-        <Link to={`/product/${product.slug}`}>
+        <Link to={`/books/${product.slug}`}>
           <h3 className="mt-1.5 font-display text-[15px] font-semibold text-foreground line-clamp-2 hover:text-primary transition-colors leading-snug">
             {product.name}
           </h3>

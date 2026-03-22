@@ -84,9 +84,12 @@ const Auth = () => {
   return (
     <main className="flex min-h-[75vh] items-center justify-center px-4 py-12">
       <Helmet>
-        <title>Sign In | Khilafat Books</title>
-        <meta name="description" content="Sign in or create your Khilafat Books account to track orders, save wishlists, and access digital products." />
+        {/* Optimized title and description for authentication page */}
+        <title>Sign In — Islamic Bookstore Account | Khilafat Books</title>
+        <meta name="description" content="Sign in or create your Khilafat Books account to track orders, save wishlists, and access digital products. Join our community for Islamic knowledge." />
         <meta name="robots" content="noindex, nofollow" />
+        <meta property="og:title" content="Sign In — Islamic Bookstore Account | Khilafat Books" />
+        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/auth-banner.jpg" />
       </Helmet>
       <motion.div
         initial={{ opacity: 0, y: 24 }}

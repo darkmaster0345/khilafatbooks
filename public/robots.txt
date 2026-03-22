@@ -1,16 +1,40 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /orders/
+Disallow: /order-details/
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /orders/
+Disallow: /order-details/
 
-User-agent: Twitterbot
-Allow: /
+User-agent: GPTBot
+Disallow: /
 
-User-agent: facebookexternalhit
-Allow: /
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: Claude-Web
+Disallow: /
+
+User-agent: PerplexityBot
+Disallow: /
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /orders/
+Disallow: /order-details/
 
 Sitemap: https://khilafatbooks.vercel.app/sitemap.xml

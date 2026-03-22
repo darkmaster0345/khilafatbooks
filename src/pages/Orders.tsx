@@ -110,9 +110,12 @@ const Orders = () => {
   return (
     <main className="container mx-auto px-4 py-10 max-w-4xl">
       <Helmet>
-        <title>My Orders | Khilafat Books</title>
-        <meta name="description" content="Track your orders, view order history, and manage your Khilafat Books purchases." />
+        {/* Optimized title and description for order history page */}
+        <title>My Orders — Islamic Bookstore Account | Khilafat Books</title>
+        <meta name="description" content="Track your orders, view order history, and manage your Khilafat Books purchases. Access your digital downloads and physical delivery status." />
         <meta name="robots" content="noindex, nofollow" />
+        <meta property="og:title" content="My Orders — Islamic Bookstore Account | Khilafat Books" />
+        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/orders-banner.jpg" />
       </Helmet>
       <div className="mb-8">
         <p className="section-heading">Your History</p>

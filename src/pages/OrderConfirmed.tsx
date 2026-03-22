@@ -54,8 +54,11 @@ const OrderConfirmed = () => {
   return (
     <main className="container mx-auto px-4 py-16 max-w-2xl">
       <Helmet>
-        <title>Order Confirmed | Khilafat Books</title>
+        {/* Optimized title for order confirmation page */}
+        <title>Order Confirmed — Islamic Bookstore | Khilafat Books</title>
         <meta name="robots" content="noindex, nofollow" />
+        <meta property="og:title" content="Order Confirmed — Islamic Bookstore | Khilafat Books" />
+        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/confirmation-banner.jpg" />
       </Helmet>
       
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200 }} className="text-center mb-10">

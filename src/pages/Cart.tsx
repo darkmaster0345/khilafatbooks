@@ -51,9 +51,12 @@ const Cart = () => {
   return (
     <main className="container mx-auto px-4 py-10">
       <Helmet>
-        <title>Your Cart | Khilafat Books</title>
-        <meta name="description" content="Review your cart and proceed to checkout. Free shipping on orders over Rs. 5,000." />
+        {/* Optimized title and description for cart page */}
+        <title>Your Cart — Islamic Books & Halal Products | Khilafat Books</title>
+        <meta name="description" content="Review your cart and proceed to checkout for Islamic books and halal products. Fast delivery across Pakistan with secure EasyPaisa payments." />
         <meta name="robots" content="noindex, nofollow" />
+        <meta property="og:title" content="Your Cart — Islamic Books & Halal Products | Khilafat Books" />
+        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/cart-banner.jpg" />
       </Helmet>
       <Link to="/shop" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-6 group">
         <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Continue Shopping
@@ -75,13 +78,13 @@ const Cart = () => {
                 exit={{ opacity: 0, x: -100 }}
                 className="flex gap-4 rounded-xl border border-border bg-card p-4 hover:shadow-sm transition-shadow"
               >
-                <Link to={`/product/${product.slug}`} className="shrink-0">
+                <Link to={`/books/${product.slug}`} className="shrink-0">
                   <img src={product.image} alt={product.name} className="h-24 w-24 rounded-lg object-cover" />
                 </Link>
                 <div className="flex flex-1 flex-col min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <Link to={`/product/${product.slug}`} className="font-display text-sm font-semibold text-foreground hover:text-primary transition-colors line-clamp-1">
+                      <Link to={`/books/${product.slug}`} className="font-display text-sm font-semibold text-foreground hover:text-primary transition-colors line-clamp-1">
                         {product.name}
                       </Link>
                       <p className="text-xs text-muted-foreground mt-0.5">{product.category} • {product.type === 'digital' ? 'Digital' : 'Physical'}</p>

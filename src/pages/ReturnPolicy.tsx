@@ -5,8 +5,21 @@ const ReturnPolicy = () => {
   return (
     <main className="container mx-auto px-4 py-16 max-w-4xl">
       <Helmet>
-        <title>Return & Refund Policy | Khilafat Books</title>
-        <meta name="description" content="Read about our 7-day return policy and how to request a refund." />
+        {/* Optimized title and description for returns policy */}
+        <title>Return Policy — Islamic Books & Halal Products | Khilafat Books</title>
+        <meta name="description" content="Read about our 7-day return policy for Islamic books and halal products. Easy refunds for customers across Pakistan. Shop with confidence at Khilafat Books." />
+        <link rel="canonical" href="https://khilafatbooks.vercel.app/return-policy" />
+        <link rel="alternate" hreflang="en" href="https://khilafatbooks.vercel.app/return-policy" />
+        <link rel="alternate" hreflang="ur" href="https://khilafatbooks.vercel.app/return-policy" />
+
+        {/* OG tags with optimized Cloudinary image for return policy */}
+        <meta property="og:title" content="Return Policy — Islamic Books & Halal Products | Khilafat Books" />
+        <meta property="og:description" content="Read about our 7-day return policy for Islamic books and halal products. Easy refunds for customers across Pakistan." />
+        <meta property="og:url" content="https://khilafatbooks.vercel.app/return-policy" />
+        <meta property="og:type" content="website" />
+        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/policy-banner.jpg" />
+
+        <meta name="twitter:card" content="summary_large_image" />
       </Helmet>
 
       <div className="text-center mb-12">
