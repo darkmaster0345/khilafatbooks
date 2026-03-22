@@ -13,6 +13,7 @@ import StickyAddToCart from '@/components/StickyAddToCart';
 import SmartSuggest from '@/components/SmartSuggest';
 import { ProductJsonLd } from '@/components/JsonLd';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
+import { truncateDescription } from '@/lib/seo';
 
 const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://khilafatbooks.vercel.app';
 import { useCart } from '@/context/CartContext';
@@ -84,21 +85,28 @@ const ProductDetail = () => {
     );
   }
 
-  const absoluteImageUrl = product.image.startsWith('http') ? product.image : `${BASE_URL}${product.image}`;
-  const absoluteProductUrl = `${BASE_URL}/product/${product.slug}`;
+  const cloudinaryOgImage = product.image.includes('cloudinary.com')
+    ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_1200,h_630,c_fill/')
+    : (product.image.startsWith('http') ? product.image : `${BASE_URL}${product.image}`);
+
+  const absoluteProductUrl = `${BASE_URL}/books/${product.slug}`;
 
   return (
     <main className="container mx-auto px-4 py-10">
       <Helmet>
-        <title>{product.name} | Khilafat Books</title>
-        <meta name="description" content={`${product.description.slice(0, 150)}${product.description.length > 150 ? '...' : ''}`} />
+        {/* Dynamic metadata for book detail page SEO using truncateDescription utility */}
+        <title>{product.name} — Islamic {product.category} | Khilafat Books</title>
+        <meta name="description" content={truncateDescription(`${product.name}: ${product.description}`)} />
         <link rel="canonical" href={absoluteProductUrl} />
+        <link rel="alternate" hreflang="en" href={absoluteProductUrl} />
+        <link rel="alternate" hreflang="ur" href={absoluteProductUrl} />
+
         <meta property="og:site_name" content="Khilafat Books" />
-        <meta property="og:title" content={`${product.name} | Khilafat Books`} />
-        <meta property="og:description" content={product.description.slice(0, 150)} />
+        <meta property="og:title" content={`${product.name} — Islamic ${product.category} | Khilafat Books`} />
+        <meta property="og:description" content={truncateDescription(product.description)} />
         <meta property="og:url" content={absoluteProductUrl} />
         <meta property="og:type" content="product" />
-        <meta property="og:image" content={absoluteImageUrl} />
+        <meta property="og:image" content={cloudinaryOgImage} />
 
         {/* Pinterest & Rich Pin specific tags */}
         <meta property="product:price:amount" content={String(product.price)} />
@@ -109,9 +117,9 @@ const ProductDetail = () => {
         <meta property="og:price:currency" content="PKR" />
 
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${product.name} | Khilafat Books`} />
-        <meta name="twitter:description" content={product.description.slice(0, 150)} />
-        <meta name="twitter:image" content={absoluteImageUrl} />
+        <meta name="twitter:title" content={`${product.name} — Islamic ${product.category} | Khilafat Books`} />
+        <meta name="twitter:description" content={truncateDescription(product.description)} />
+        <meta name="twitter:image" content={cloudinaryOgImage} />
       </Helmet>
       <ProductJsonLd
         name={product.name}
@@ -124,6 +132,9 @@ const ProductDetail = () => {
         sku={product.id}
         category={product.category}
         url={absoluteProductUrl}
+        isbn={(product as any).isbn}
+        inLanguage={(product as any).inLanguage || 'en'}
+        publisher="Khilafat Books"
       />
 
       <Link to="/shop" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-8 group">
@@ -269,7 +280,7 @@ const ProductDetail = () => {
             <span className="text-xs text-muted-foreground">Share:</span>
             <button
               onClick={() => {
-                const url = `${window.location.origin}/product/${product.slug}`;
+                const url = `${window.location.origin}/books/${product.slug}`;
                 const text = `Check out "${product.name}" on Khilafat Books! ${formatPKR(product.price)}\n${url}`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
               }}
@@ -280,7 +291,7 @@ const ProductDetail = () => {
             </button>
             <button
               onClick={() => {
-                const url = `${window.location.origin}/product/${product.slug}`;
+                const url = `${window.location.origin}/books/${product.slug}`;
                 navigator.clipboard.writeText(url);
                 toast({ title: 'Link copied!', description: 'Product link copied to clipboard.' });
               }}

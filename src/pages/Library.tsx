@@ -156,9 +156,12 @@ const Library = () => {
   return (
     <>
       <Helmet>
-        <title>My Library | Khilafat Books</title>
-        <meta name="description" content="Track your reading journey with Khilafat Books. Manage your digital books and set reading goals." />
+        {/* Optimized title and description for digital library page */}
+        <title>My Library — Your Islamic Reading Journey | Khilafat Books</title>
+        <meta name="description" content="Manage your Islamic digital books, track reading progress, and set personal goals. Your personal gateway to Islamic knowledge at Khilafat Books." />
         <meta name="robots" content="noindex, nofollow" />
+        <meta property="og:title" content="My Library — Your Islamic Reading Journey | Khilafat Books" />
+        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/library-banner.jpg" />
       </Helmet>
 
       <div className="min-h-screen bg-background">
@@ -279,7 +282,7 @@ const Library = () => {
                     className="rounded-xl border border-border bg-card overflow-hidden group"
                   >
                     {/* Book Image */}
-                    <Link to={`/product/${item.product ? slugify(item.product.name) : item.product_id}`} className="block aspect-[4/3] overflow-hidden bg-muted">
+                    <Link to={`/books/${item.product ? slugify(item.product.name) : item.product_id}`} className="block aspect-[4/3] overflow-hidden bg-muted">
                       {item.product?.image_url ? (
                         <img 
                           src={item.product.image_url} 

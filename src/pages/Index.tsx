@@ -51,17 +51,24 @@ const Index = () => {
   return (
     <main>
       <Helmet>
-        <title>Khilafat Books — Islamic Books, Courses & Halal Products</title>
-        <meta name="description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products. Shop with EasyPaisa and enjoy Pakistan-wide delivery." />
+        {/* Optimized title and description for Islamic books online Pakistan */}
+        <title>Home — Islamic Bookstore & Halal Products | Khilafat Books</title>
+        <meta name="description" content="Shop premium Islamic books online in Pakistan. Discover digital courses, prophetic medicine, and halal products with EasyPaisa and fast Pakistan-wide delivery." />
         <link rel="canonical" href="https://khilafatbooks.vercel.app/" />
-        <meta property="og:title" content="Khilafat Books — Islamic Books, Courses & Halal Products" />
-        <meta property="og:description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products. Shop with EasyPaisa and enjoy Pakistan-wide delivery." />
+        <link rel="alternate" hreflang="en" href="https://khilafatbooks.vercel.app/" />
+        <link rel="alternate" hreflang="ur" href="https://khilafatbooks.vercel.app/" />
+
+        {/* Dynamic OG tags with optimized Cloudinary image */}
+        <meta property="og:title" content="Home — Islamic Bookstore & Halal Products | Khilafat Books" />
+        <meta property="og:description" content="Shop premium Islamic books online in Pakistan. Discover digital courses, prophetic medicine, and halal products with EasyPaisa and fast Pakistan-wide delivery." />
         <meta property="og:url" content="https://khilafatbooks.vercel.app/" />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="/favicon.png" />
+        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/hero-bg-new.jpg" />
+
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Khilafat Books — Islamic Books, Courses & Halal Products" />
-        <meta name="twitter:description" content="Discover premium Islamic books, digital courses, and ethically sourced halal products." />
+        <meta name="twitter:title" content="Home — Islamic Bookstore & Halal Products | Khilafat Books" />
+        <meta name="twitter:description" content="Shop premium Islamic books online in Pakistan. Discover digital courses, prophetic medicine, and halal products." />
+        <meta name="twitter:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/hero-bg-new.jpg" />
       </Helmet>
       <OrganizationJsonLd />
       <LocalBusinessJsonLd />
@@ -88,14 +95,18 @@ const Index = () => {
       {/* Hero with Parallax */}
       <section ref={heroRef} className="relative overflow-hidden min-h-[80vh] md:min-h-[90vh] flex items-center">
         <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
+          {/* Optimized hero image with Cloudinary primary source and local fallback */}
           <img
-            src={heroBg}
-            alt=""
+            src="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto:good,w_1200,h_630,c_fill/hero-bg-new.jpg"
+            onError={(e) => { (e.target as HTMLImageElement).src = heroBg }}
+            alt="Khilafat Books — Premium Islamic Books Pakistan"
             role="presentation"
-            width="1920"
-            height="1080"
+            width="1200"
+            height="630"
             className="h-[120%] w-full object-cover"
             fetchPriority="high"
+            loading="eager"
+            decoding="sync"
           />
           <motion.div
             className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/20"

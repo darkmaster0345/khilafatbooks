@@ -73,7 +73,7 @@ const NotificationBell = () => {
                     </div>
                     {n.product_id && (
                       <Link
-                        to={`/product/${n.product_id}`}
+                        to={`/books/${n.product_id}`}
                         onClick={e => e.stopPropagation()}
                         className="shrink-0 self-center"
                       >

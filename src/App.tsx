@@ -1,4 +1,6 @@
 import { Suspense, lazy } from "react";
+import Index from "./pages/Index";
+import ProductDetail from "./pages/ProductDetail";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,9 +23,7 @@ import PageTransition from "@/components/PageTransition";
 import { usePluginSettings } from "@/hooks/usePluginSettings";
 
 // Lazy-loaded routes
-const Index = lazy(() => import("./pages/Index"));
 const Shop = lazy(() => import("./pages/Shop"));
-const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Cart = lazy(() => import("./pages/Cart"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const Auth = lazy(() => import("./pages/Auth"));
@@ -63,7 +63,7 @@ const AppLayout = () => {
             <Routes location={location}>
               <Route path="/" element={<PageTransition><Index /></PageTransition>} />
               <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />
-              <Route path="/product/:slug" element={<PageTransition><ProductDetail /></PageTransition>} />
+              <Route path="/books/:slug" element={<PageTransition><ProductDetail /></PageTransition>} />
               <Route path="/cart" element={<PageTransition><Cart /></PageTransition>} />
               <Route path="/checkout" element={<PageTransition><Checkout /></PageTransition>} />
               <Route path="/auth" element={<PageTransition><Auth /></PageTransition>} />

@@ -62,14 +62,21 @@ const FAQ = () => {
   return (
     <main className="container mx-auto px-4 py-10 max-w-3xl">
       <Helmet>
-        <title>Frequently Asked Questions | Khilafat Books</title>
-        <meta name="description" content="Find answers to common questions about ordering, shipping, payments, returns, and our loyalty program at Khilafat Books." />
+        {/* Optimized title and description for Islamic books support */}
+        <title>FAQ — Islamic Bookstore Support | Khilafat Books</title>
+        <meta name="description" content="Find answers to common questions about ordering Islamic books, shipping rates in Pakistan, EasyPaisa payments, and our Zakat donation flow at Khilafat Books." />
         <link rel="canonical" href="https://khilafatbooks.vercel.app/faq" />
-        <meta property="og:title" content="FAQ | Khilafat Books" />
-        <meta property="og:description" content="Find answers to common questions about ordering, shipping, payments, and returns." />
+        <link rel="alternate" hreflang="en" href="https://khilafatbooks.vercel.app/faq" />
+        <link rel="alternate" hreflang="ur" href="https://khilafatbooks.vercel.app/faq" />
+
+        {/* OG tags with optimized Cloudinary image for FAQ page */}
+        <meta property="og:title" content="FAQ — Islamic Bookstore Support | Khilafat Books" />
+        <meta property="og:description" content="Find answers to common questions about ordering Islamic books, shipping rates in Pakistan, and EasyPaisa payments." />
         <meta property="og:url" content="https://khilafatbooks.vercel.app/faq" />
         <meta property="og:type" content="website" />
-        <meta name="twitter:card" content="summary" />
+        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/faq-banner.jpg" />
+
+        <meta name="twitter:card" content="summary_large_image" />
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
 
