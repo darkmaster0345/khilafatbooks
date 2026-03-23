@@ -23,7 +23,12 @@ const OrderConfirmed = () => {
   useEffect(() => {
     if (!id || !user) return;
     supabase.from('orders').select('*').eq('id', id).eq('user_id', user.id).single()
-      .then(({ data }) => setOrder(data));
+      .then(({ data }) => {
+        setOrder(data);
+        if (data) {
+          import('@/lib/analytics').then(m => m.trackPurchase(data));
+        }
+      });
   }, [id, user]);
 
   useEffect(() => {

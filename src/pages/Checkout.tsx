@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Upload, CheckCircle2, Copy, Phone, ShieldCheck, Gift, Package } from 'lucide-react';
@@ -20,6 +20,10 @@ import ReferralRewardModal from '@/components/ReferralRewardModal';
 const EASYPAISA_ACCOUNT = '03352706540';
 
 const Checkout = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    import('@/lib/analytics').then(m => m.trackBeginCheckout(total, items.map(i => i.product)));
+  }, []);
   const { items, subtotal, shipping, zakatEnabled, zakatAmount, total, clearCart } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -315,16 +319,16 @@ const Checkout = () => {
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label className="text-sm font-medium text-foreground">Full Name *</label>
-                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Muhammad Ali" className="mt-1.5 h-11 rounded-xl" maxLength={100} />
+                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Muhammad Ali" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
                   </div>
                   <div>
                     <label className="text-sm font-medium text-foreground">Phone (WhatsApp) *</label>
-                    <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="03XX-XXXXXXX" className="mt-1.5 h-11 rounded-xl" maxLength={20} />
+                    <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="03XX-XXXXXXX" className="mt-1.5 h-11 rounded-xl text-base" maxLength={20} />
                   </div>
                 </div>
                 <div className="mt-4">
                   <label className="text-sm font-medium text-foreground">Email</label>
-                  <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="mt-1.5 h-11 rounded-xl" maxLength={100} />
+                  <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
                 </div>
               </div>
 
@@ -334,11 +338,11 @@ const Checkout = () => {
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
                       <label className="text-sm font-medium text-foreground">Address *</label>
-                      <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="House/Street/Area" className="mt-1.5 h-11 rounded-xl" maxLength={200} />
+                      <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="House/Street/Area" className="mt-1.5 h-11 rounded-xl text-base" maxLength={200} />
                     </div>
                     <div>
                       <label className="text-sm font-medium text-foreground">City *</label>
-                      <Input value={city} onChange={e => setCity(e.target.value)} placeholder="Karachi" className="mt-1.5 h-11 rounded-xl" maxLength={50} />
+                      <Input value={city} onChange={e => setCity(e.target.value)} placeholder="Karachi" className="mt-1.5 h-11 rounded-xl text-base" maxLength={50} />
                     </div>
                   </div>
                 </div>
@@ -368,7 +372,7 @@ const Checkout = () => {
                             value={giftRecipientName}
                             onChange={e => setGiftRecipientName(e.target.value)}
                             placeholder="Who is this gift for?"
-                            className="mt-1.5 h-11 rounded-xl"
+                            className="mt-1.5 h-11 rounded-xl text-base"
                             maxLength={100}
                           />
                         </div>
@@ -465,19 +469,40 @@ const Checkout = () => {
 
               {grandTotal > 0 && isPluginEnabled('easypaisa_payments') && (
                 <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
-                  <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
+                  <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-4">
                     <Phone className="h-5 w-5 text-primary" /> EasyPaisa Payment
                   </h2>
-                  <p className="mt-3 text-sm text-foreground">
-                    Please send <span className="font-bold text-primary text-base">{formatPKR(grandTotal)}</span> to:
-                  </p>
-                  <div className="mt-3 flex items-center gap-3 rounded-xl bg-background border border-border px-5 py-3.5">
-                    <span className="font-mono text-xl font-bold text-foreground tracking-wider">{EASYPAISA_ACCOUNT}</span>
-                    <button onClick={copyAccount} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/10">
-                      <Copy className="h-4 w-4" />
-                    </button>
+
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white mt-0.5">1</div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-foreground">Send {formatPKR(grandTotal)} to:</p>
+                        <div className="mt-2 flex items-center gap-3 rounded-xl bg-background border border-border px-4 py-2.5 w-fit">
+                          <span className="font-mono text-lg font-bold text-foreground tracking-wider">{EASYPAISA_ACCOUNT}</span>
+                          <button onClick={copyAccount} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/10">
+                            <Copy className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <p className="mt-1 text-[11px] text-muted-foreground">Account Title: <span className="font-medium text-foreground">Khilafat Books</span></p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white mt-0.5">2</div>
+                      <p className="text-sm font-medium text-foreground">Screenshot the payment confirmation</p>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white mt-0.5">3</div>
+                      <p className="text-sm font-medium text-foreground">Upload the screenshot below</p>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white mt-0.5">4</div>
+                      <p className="text-sm font-medium text-foreground">Submit — we verify within 24 hours</p>
+                    </div>
                   </div>
-                  <p className="mt-2 text-xs text-muted-foreground">Account Title: Khilafat Books</p>
                 </div>
               )}
 
@@ -495,8 +520,9 @@ const Checkout = () => {
                       <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
                         <Upload className="h-6 w-6 text-muted-foreground" />
                       </div>
-                      <span className="text-sm text-muted-foreground">Click to upload screenshot</span>
-                      <span className="text-[10px] text-muted-foreground/60">PNG, JPG up to 5MB</span>
+                      <span className="text-sm font-semibold text-foreground">Click to upload screenshot</span>
+                      <span className="text-xs text-muted-foreground mt-1">PNG, JPG or JPEG (Max 5MB)</span>
+                      <span className="text-[10px] text-primary font-medium mt-1 italic">Please ensure Transaction ID is visible</span>
                       <input type="file" accept="image/*" onChange={handleScreenshot} className="hidden" />
                     </label>
                   )}
@@ -507,7 +533,7 @@ const Checkout = () => {
               {grandTotal > 0 && (
                 <div className="rounded-xl border border-border bg-card p-6">
                   <label className="text-sm font-medium text-foreground">Transaction ID (optional)</label>
-                  <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1.5 h-11 rounded-xl" maxLength={50} />
+                  <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1.5 h-11 rounded-xl text-base" maxLength={50} />
                 </div>
               )}
 

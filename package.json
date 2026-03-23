@@ -11,7 +11,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "bun run build && npx wrangler pages deploy dist"
+    "deploy": "bun run build && npx wrangler pages deploy dist",
+    "ga4:funnel": "node scripts/ga4-funnel.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
