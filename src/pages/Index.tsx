@@ -66,7 +66,6 @@ const Index = () => {
         <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/hero-bg-new.jpg" />
 
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Home — Islamic Bookstore & Halal Products | Khilafat Books" />
         <meta name="twitter:description" content="Shop premium Islamic books online in Pakistan. Discover digital courses, prophetic medicine, and halal products." />
         <meta name="twitter:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/hero-bg-new.jpg" />
       </Helmet>

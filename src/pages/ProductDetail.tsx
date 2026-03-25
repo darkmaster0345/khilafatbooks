@@ -117,7 +117,6 @@ const ProductDetail = () => {
         <meta property="og:price:currency" content="PKR" />
 
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${product.name} — Islamic ${product.category} | Khilafat Books`} />
         <meta name="twitter:description" content={truncateDescription(product.description)} />
         <meta name="twitter:image" content={cloudinaryOgImage} />
       </Helmet>
