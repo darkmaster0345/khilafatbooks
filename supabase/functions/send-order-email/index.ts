@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
 
-const ALLOWED_ORIGIN = "https://khilafatbooks.vercel.app";
+const ALLOWED_ORIGINS = ["https://khilafatbooks.vercel.app", "https://khilafatbooks.lovable.app", "http://localhost:8080", "http://localhost:5173"];
 
 const getCorsHeaders = (origin: string | null) => {
   const headers = {
@@ -9,8 +9,8 @@ const getCorsHeaders = (origin: string | null) => {
     "Vary": "Origin",
   };
 
-  if (origin === ALLOWED_ORIGIN) {
-    return { ...headers, "Access-Control-Allow-Origin": ALLOWED_ORIGIN };
+  if (origin && (ALLOWED_ORIGINS.includes(origin) || origin.endsWith(".vercel.app") || origin.endsWith(".lovable.app"))) {
+    return { ...headers, "Access-Control-Allow-Origin": origin };
   }
 
   return headers;
@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   // Critical CORS check
-  if (origin && origin !== ALLOWED_ORIGIN) {
+  if (origin && !(ALLOWED_ORIGINS.includes(origin) || origin.endsWith(".vercel.app") || origin.endsWith(".lovable.app"))) {
     return new Response(JSON.stringify({ error: "Forbidden: Invalid Origin" }), {
       status: 403,
       headers: { "Content-Type": "application/json" },
