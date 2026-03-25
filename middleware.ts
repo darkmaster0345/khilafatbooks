@@ -1,20 +1,15 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+// Standard Web API based middleware for Vercel Edge
+// This avoids dependency on 'next' package
 
-// Rate limiting configuration
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 10;
-
-// Simple in-memory cache for rate limiting
-// Note: In a real Vercel environment, this cache is per-isolate.
-// For robust multi-region rate limiting, Vercel KV is recommended.
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+export default function middleware(request: Request) {
+  const url = new URL(request.url);
+  const pathname = url.pathname;
 
   // Only apply rate limiting to sensitive routes
-  // We include /api/login and /api/search as requested, plus auth-related paths
   const isSensitiveRoute =
     pathname.startsWith('/api/login') ||
     pathname.startsWith('/api/search') ||
@@ -22,23 +17,20 @@ export function middleware(request: NextRequest) {
     pathname.includes('/functions/v1/');
 
   if (isSensitiveRoute) {
-    const ip = request.ip || 'anonymous';
+    const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
     const now = Date.now();
 
     const rateLimit = rateLimitMap.get(ip);
 
     if (!rateLimit || now > rateLimit.resetAt) {
-      // New window or first request
       rateLimitMap.set(ip, {
         count: 1,
         resetAt: now + RATE_LIMIT_WINDOW
       });
     } else {
-      // Increment count
       rateLimit.count++;
-
       if (rateLimit.count > MAX_REQUESTS) {
-        return new NextResponse(
+        return new Response(
           JSON.stringify({ error: 'Too many requests. Please try again in a minute.' }),
           {
             status: 429,
@@ -52,10 +44,14 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  // Pass-through
+  return new Response(null, {
+    headers: {
+      'x-middleware-next': '1',
+    },
+  });
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
   matcher: [
     '/api/:path*',
