@@ -94,6 +94,53 @@ interface GeminiContent {
   parts: GeminiPart[];
 }
 
+function buildGroqMessages(
+  systemPrompt: string,
+  messages: Array<{ role: string; content: unknown }>,
+  maxTurns = 20,
+): any[] {
+  const filtered = messages
+    .filter((m) => m.role !== "system")
+    .map((m) => ({
+      role: m.role === "model" ? "assistant" : m.role,
+      content: contentToText(m.content),
+    }))
+    .slice(-maxTurns);
+
+  return [
+    { role: "system", content: systemPrompt },
+    ...filtered,
+  ];
+}
+
+function getSSEResponse(assistantText: string, corsHeaders: any): Response {
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const chunk = {
+        choices: [
+          {
+            delta: { content: assistantText },
+            finish_reason: null,
+          },
+        ],
+      };
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
+      controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+      controller.close();
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    },
+  });
+}
+
 function buildGeminiContents(
   messages: Array<{ role: string; content: unknown }>,
   maxTurns = 20,
@@ -188,6 +235,7 @@ Deno.serve(async (req) => {
     const { messages } = await req.json();
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -208,72 +256,116 @@ Deno.serve(async (req) => {
     const systemPrompt = SYSTEM_PROMPT_TEMPLATE(catalog);
     const contents = buildGeminiContents(messages);
 
-    // Call Gemini using the non-streaming generateContent endpoint as requested
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [{ text: systemPrompt }],
-          },
-          contents,
-          generationConfig: {
-            temperature: 0.7,
-            topP: 0.8,
-            topK: 40,
-            maxOutputTokens: 2048,
-          },
-        }),
-      },
-    );
+    let assistantText = "";
+    let useFallback = false;
 
-    if (!geminiRes.ok) {
-      const errorData = await geminiRes.json().catch(() => ({}));
-      console.error("Gemini API error:", errorData);
-      return new Response(
-        JSON.stringify({
-          error: "Gemini API Error",
-          details: errorData.error?.message || "Internal service error",
-          status: geminiRes.status
-        }),
+    try {
+      // Call Gemini using the non-streaming generateContent endpoint as requested
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
-          status: geminiRes.status === 401 ? 401 : 502,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            system_instruction: {
+              parts: [{ text: systemPrompt }],
+            },
+            contents,
+            generationConfig: {
+              temperature: 0.7,
+              topP: 0.8,
+              topK: 40,
+              maxOutputTokens: 2048,
+            },
+          }),
         },
       );
+
+      if (!geminiRes.ok) {
+        const errorData = await geminiRes.json().catch(() => ({}));
+        console.error("Gemini API error:", errorData);
+
+        // Check for rate limit or server errors to trigger fallback
+        if ([429, 500, 502, 503, 504].includes(geminiRes.status) && GROQ_API_KEY) {
+          console.log("Gemini failed, attempting Groq fallback...");
+          useFallback = true;
+        } else {
+          return new Response(
+            JSON.stringify({
+              error: "Gemini API Error",
+              details: errorData.error?.message || "Internal service error",
+              status: geminiRes.status
+            }),
+            {
+              status: geminiRes.status === 401 ? 401 : 502,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
+            },
+          );
+        }
+      } else {
+        const data = await geminiRes.json();
+        assistantText = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
+      }
+    } catch (err) {
+      console.error("Gemini fetch error:", err);
+      if (GROQ_API_KEY) {
+        useFallback = true;
+      } else {
+        throw err;
+      }
     }
 
-    const data = await geminiRes.json();
-    const assistantText = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm sorry, I couldn't generate a response.";
+    if (useFallback && GROQ_API_KEY) {
+      try {
+        const groqMessages = buildGroqMessages(systemPrompt, messages);
+        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${GROQ_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: groqMessages,
+            temperature: 0.7,
+            max_tokens: 2048,
+          }),
+        });
 
-    // We wrap the single response in an SSE format so the frontend doesn't need to change
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream({
-      async start(controller) {
-        const chunk = {
-          choices: [
+        if (!groqRes.ok) {
+          const errorData = await groqRes.json().catch(() => ({}));
+          console.error("Groq API error:", errorData);
+          return new Response(
+            JSON.stringify({
+              error: "AI Service Error",
+              details: "Both primary and fallback AI services failed.",
+              status: groqRes.status
+            }),
             {
-              delta: { content: assistantText },
-              finish_reason: null,
+              status: 502,
+              headers: { ...corsHeaders, "Content-Type": "application/json" },
             },
-          ],
-        };
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(chunk)}\n\n`));
-        controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
-        controller.close();
-      },
-    });
+          );
+        }
 
-    return new Response(stream, {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
-    });
+        const data = await groqRes.json();
+        assistantText = data.choices?.[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+      } catch (err) {
+        console.error("Groq fallback error:", err);
+        return new Response(
+          JSON.stringify({
+            error: "AI Service Error",
+            details: "An error occurred while calling the fallback service.",
+          }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+
+    return getSSEResponse(assistantText, corsHeaders);
   } catch (err) {
     console.error("chat error:", err);
     return new Response(
