@@ -195,7 +195,10 @@ export default function BookDiscoveryQuiz() {
     if (step < activeQuestions.length - 1) {
       setTimeout(() => setStep(step + 1), 300);
     } else {
-      setTimeout(() => setShowResult(true), 400);
+      setTimeout(() => {
+        setShowResult(true);
+        import('@/lib/analytics').then(m => m.trackQuizComplete(answers));
+      }, 400);
     }
   };
 

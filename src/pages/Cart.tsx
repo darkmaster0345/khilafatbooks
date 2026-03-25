@@ -33,15 +33,20 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
-      <main className="container mx-auto px-4 py-20 text-center">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-muted mx-auto mb-5">
-            <ShoppingBag className="h-10 w-10 text-muted-foreground/40" />
+      <main className="container mx-auto px-4 py-24 text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto">
+          <div className="relative inline-flex mb-8">
+            <div className="absolute -inset-4 bg-primary/5 rounded-full blur-xl animate-pulse" />
+            <div className="relative flex h-24 w-24 items-center justify-center rounded-3xl bg-muted/50 border border-border/50 shadow-sm">
+              <ShoppingBag className="h-12 w-12 text-muted-foreground/40" />
+            </div>
           </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Your cart is empty</h1>
-          <p className="mt-2 text-muted-foreground">Discover our curated collection of halal-certified products</p>
-          <Button asChild className="mt-6 h-11 px-6">
-            <Link to="/shop">Browse Products</Link>
+          <h1 className="font-display text-3xl font-bold text-foreground mb-3 italic">Your cart is empty</h1>
+          <p className="text-muted-foreground text-base leading-relaxed mb-10">
+            Discover a world of knowledge and barakah. Explore our curated collection of Islamic literature and digital courses.
+          </p>
+          <Button asChild size="lg" className="gold-gradient border-0 text-foreground font-bold rounded-2xl h-14 px-10 shadow-lg hover:shadow-xl transition-all active:scale-95 w-full sm:w-auto">
+            <Link to="/shop">Browse Islamic Books</Link>
           </Button>
         </motion.div>
       </main>
