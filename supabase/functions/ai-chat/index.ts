@@ -286,7 +286,13 @@ Deno.serve(async (req) => {
         console.error("Gemini API error:", errorData);
 
         // Check for rate limit or server errors to trigger fallback
-        if ([429, 500, 502, 503, 504].includes(geminiRes.status) && GROQ_API_KEY) {
+        const isQuotaError = geminiRes.status === 429 ||
+                            errorData.error?.message?.includes("quota") ||
+                            errorData.error?.message?.includes("rate limit");
+
+        const isServerError = [500, 502, 503, 504].includes(geminiRes.status);
+
+        if ((isQuotaError || isServerError) && GROQ_API_KEY) {
           console.log("Gemini failed, attempting Groq fallback...");
           useFallback = true;
         } else {
