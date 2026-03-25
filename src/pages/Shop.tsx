@@ -105,7 +105,6 @@ const Shop = () => {
         <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/shop-banner.jpg" />
 
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Shop — Islamic Books & Digital Courses | Khilafat Books" />
         <meta name="twitter:description" content="Buy Islamic books online in Pakistan. Browse Quran tafsir, prophetic medicine, and digital courses." />
         <meta name="twitter:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/shop-banner.jpg" />
       </Helmet>

@@ -118,6 +118,7 @@ function buildGeminiContents(
 }
 
 // ---------------------------------------------------------------------------
+// Security Audit (2026): Strictly validates user JWT before processing.
 // Entry point
 // ---------------------------------------------------------------------------
 
