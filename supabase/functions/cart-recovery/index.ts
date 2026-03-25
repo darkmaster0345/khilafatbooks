@@ -1,52 +1,64 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+const ALLOWED_ORIGIN = "https://khilafatbooks.vercel.app";
+
+const getCorsHeaders = (origin: string | null) => {
+  const headers = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+
+  if (origin === ALLOWED_ORIGIN) {
+    return { ...headers, "Access-Control-Allow-Origin": ALLOWED_ORIGIN };
+  }
+
+  return headers;
 };
 
-function formatPKR(amount: number) {
-  return `PKR ${amount.toLocaleString("en-PK")}`;
-}
-
-function generateRecoveryCode(): string {
-  return `RECOVER-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-}
-
-// Pre-initialize Supabase client
-let supabase: ReturnType<typeof createClient> | null = null;
-function getSupabase() {
-  if (!supabase) {
-    supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-  }
-  return supabase;
-}
+const formatPKR = (amount: number) => "Rs. " + amount.toLocaleString();
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Critical CORS check
+  if (origin && origin !== ALLOWED_ORIGIN) {
+    return new Response(JSON.stringify({ error: "Forbidden: Invalid Origin" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!authHeader || authHeader !== `Bearer ${serviceRoleKey}`) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const db = createClient(Deno.env.get("SUPABASE_URL")!, serviceRoleKey!);
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY is not configured");
 
-    const db = getSupabase();
+    if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
+
     const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 1 * 60 * 60 * 1000);
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
-    // Find abandoned carts: active carts with no activity in 24h and not yet reminded
-    const { data: abandonedCarts, error: fetchError } = await db
+    // Fetch abandoned carts from the last 24 hours that haven't been reminded
+    const { data: carts, error: cartsError } = await db
       .from("abandoned_carts")
       .select("*")
-      .eq("status", "active")
-      .lt("last_activity_at", oneHourAgo.toISOString())
-      .eq("reminder_count", 0) as { data: any[] | null; error: any };
+      .eq("status", "abandoned")
+      .lte("created_at", twentyFourHoursAgo.toISOString())
+      .limit(50) as any;
 
-    if (fetchError) throw new Error(`Failed to fetch abandoned carts: ${fetchError.message}`);
+    if (cartsError) throw cartsError;
 
     const results = {
       processed: 0,
@@ -54,26 +66,23 @@ Deno.serve(async (req) => {
       errors: [] as string[],
     };
 
-    for (const cart of abandonedCarts || []) {
+    for (const cart of carts || []) {
       try {
-        // Generate a unique recovery code with 12h expiry
-        const recoveryCode = generateRecoveryCode();
-        const expiresAt = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+        if (!cart.user_email) continue;
 
-        // Parse cart items
-        const items = Array.isArray(cart.cart_items) ? cart.cart_items : [];
-        if (items.length === 0) continue;
+        // Generate a 10% discount code for recovery
+        const recoveryCode = "COMEBACK10-" + Math.random().toString(36).substring(2, 7).toUpperCase();
+        const expiresAt = new Date(now.getTime() + 12 * 60 * 60 * 1000); // 12 hours
 
-        // Create recovery discount (Rs. 50 off)
-        const discountAmount = 50;
-        const newTotal = Math.max(0, cart.cart_total - discountAmount);
+        const discountAmount = Math.floor(cart.cart_total * 0.1);
+        const newTotal = cart.cart_total - discountAmount;
 
-        // Generate items HTML for email
+        const items = Array.isArray(cart.items) ? cart.items : [];
         const itemsHtml = items.map((item: any) =>
           `<tr>
             <td style="padding:12px;border-bottom:1px solid #f0f0f0">
               <div style="display:flex;align-items:center;gap:12px">
-                ${item.image_url ? `<img src="${item.image_url}" alt="${item.name}" style="width:50px;height:50px;object-fit:cover;border-radius:8px"/>` : ''}
+                ${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:50px;height:50px;object-fit:cover;border-radius:8px"/>` : ''}
                 <span style="font-size:14px;color:#374151">${item.name}</span>
               </div>
             </td>
@@ -82,11 +91,9 @@ Deno.serve(async (req) => {
           </tr>`
         ).join("");
 
-        // Build recovery link - points to cart page with recovery code
         const baseUrl = Deno.env.get("SITE_URL") || "https://khilafatbooks.vercel.app";
         const recoveryLink = `${baseUrl}/cart?recover=${recoveryCode}`;
 
-        // Build email HTML
         const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -96,22 +103,16 @@ Deno.serve(async (req) => {
 <body style="margin:0;padding:0;background:#f9fafb;font-family:'Segoe UI',sans-serif">
   <div style="max-width:600px;margin:0 auto;padding:20px">
     <div style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
-      
-      <!-- Header -->
       <div style="background:linear-gradient(135deg,#059669 0%,#047857 100%);padding:32px;text-align:center">
         <h1 style="margin:0;color:#fff;font-size:24px">Khilafat Books</h1>
         <p style="margin:6px 0 0;color:rgba(255,255,255,0.9);font-size:14px">You left something behind...</p>
       </div>
-      
-      <!-- Content -->
       <div style="padding:32px">
         <h2 style="margin:0 0 8px;font-size:22px;color:#111827">🛒 Your Cart Misses You!</h2>
         <p style="margin:0 0 24px;font-size:15px;color:#6b7280;line-height:1.6">
           Asalam-o-Alaikum <strong style="color:#111827">${cart.user_name || 'valued customer'}</strong>,<br/><br/>
           We noticed you left some items in your cart. Don't worry – they're still waiting for you!
         </p>
-        
-        <!-- Cart Items -->
         <div style="background:#f9fafb;border-radius:12px;padding:16px;margin-bottom:24px">
           <p style="margin:0 0 12px;font-size:13px;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;font-weight:600">Your Cart Items</p>
           <table style="width:100%;border-collapse:collapse">
@@ -122,11 +123,8 @@ Deno.serve(async (req) => {
                 <th style="padding:8px 12px;text-align:right;font-size:12px;color:#6b7280">Price</th>
               </tr>
             </thead>
-            <tbody>
-              ${itemsHtml}
-            </tbody>
+            <tbody>${itemsHtml}</tbody>
           </table>
-          
           <div style="margin-top:16px;padding-top:16px;border-top:2px solid #e5e7eb">
             <div style="display:flex;justify-content:space-between;align-items:center">
               <span style="font-size:14px;color:#6b7280">Subtotal:</span>
@@ -142,27 +140,20 @@ Deno.serve(async (req) => {
             </div>
           </div>
         </div>
-        
-        <!-- Offer Banner -->
         <div style="background:linear-gradient(135deg,#fef3c7 0%,#fde68a 100%);border-radius:12px;padding:20px;margin-bottom:24px;text-align:center;border:2px solid #f59e0b">
           <p style="margin:0 0 4px;font-size:18px;font-weight:700;color:#92400e">🎁 EXCLUSIVE OFFER</p>
           <p style="margin:0 0 8px;font-size:24px;font-weight:700;color:#78350f">${formatPKR(discountAmount)} OFF</p>
           <p style="margin:0;font-size:13px;color:#92400e">Complete your order in the next <strong>12 hours</strong></p>
         </div>
-        
-        <!-- CTA Button -->
         <div style="text-align:center;margin-bottom:24px">
           <a href="${recoveryLink}" style="display:inline-block;background:linear-gradient(135deg,#059669 0%,#047857 100%);color:#fff;text-decoration:none;padding:16px 40px;border-radius:12px;font-size:16px;font-weight:600;box-shadow:0 4px 14px rgba(5,150,105,0.35)">
             Complete My Order →
           </a>
         </div>
-        
         <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center">
           Use code <strong style="color:#059669">${recoveryCode}</strong> at checkout if the discount isn't auto-applied.
         </p>
       </div>
-      
-      <!-- Footer -->
       <div style="padding:20px 32px;background:#f9fafb;border-top:1px solid #e5e7eb;text-align:center">
         <p style="margin:0 0 8px;font-size:13px;color:#6b7280">Need help? WhatsApp us at <strong>03352706540</strong></p>
         <p style="margin:0;font-size:11px;color:#9ca3af">© Khilafat Books — Knowledge with Barakah</p>
@@ -172,7 +163,6 @@ Deno.serve(async (req) => {
 </body>
 </html>`;
 
-        // Send email via Resend
         const resendRes = await fetch("https://api.resend.com/emails", {
           method: "POST",
           headers: {
@@ -193,7 +183,6 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Update cart record with recovery code and reminder status
         await (db
           .from("abandoned_carts")
           .update({
@@ -213,7 +202,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Also expire old recovery codes
     await (db
       .from("abandoned_carts")
       .update({ status: "expired", updated_at: now.toISOString() } as any)

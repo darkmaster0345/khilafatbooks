@@ -1,13 +1,34 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+const ALLOWED_ORIGIN = "https://khilafatbooks.vercel.app";
+
+const getCorsHeaders = (origin: string | null) => {
+  const headers = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+
+  if (origin === ALLOWED_ORIGIN) {
+    return { ...headers, "Access-Control-Allow-Origin": ALLOWED_ORIGIN };
+  }
+
+  return headers;
 };
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Critical CORS check
+  if (origin && origin !== ALLOWED_ORIGIN) {
+    return new Response(JSON.stringify({ error: "Forbidden: Invalid Origin" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
   try {
     // --- AUTH CHECK ---
@@ -25,9 +46,8 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -35,8 +55,7 @@ Deno.serve(async (req) => {
     }
 
     // Only allow admins to upload images
-    const userId = claimsData.claims.sub as string;
-    const { data: roleData } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
+    const { data: roleData } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
     if (!roleData) {
       return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
         status: 403,
