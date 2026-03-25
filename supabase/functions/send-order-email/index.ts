@@ -1,67 +1,90 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+const ALLOWED_ORIGIN = "https://khilafatbooks.vercel.app";
+
+const getCorsHeaders = (origin: string | null) => {
+  const headers = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+
+  if (origin === ALLOWED_ORIGIN) {
+    return { ...headers, "Access-Control-Allow-Origin": ALLOWED_ORIGIN };
+  }
+
+  return headers;
 };
 
-function formatPKR(amount: number) {
-  return `PKR ${amount.toLocaleString("en-PK")}`;
-}
+const formatPKR = (amount: number) => "Rs. " + amount.toLocaleString();
 
-const STATUS_CONFIG: Record<string, { title: string; emoji: string; color: string; message: string }> = {
-  pending: { title: "Order Received 📋", emoji: "🎉", color: "#059669", message: "Thank you for your order! We've received your payment proof and will verify it shortly. You'll receive another email once your payment is confirmed." },
-  approved: { title: "Payment Verified ✅", emoji: "🎉", color: "#059669", message: "Great news! Your payment has been verified and your order is now being processed." },
-  rejected: { title: "Payment Issue ❌", emoji: "⚠️", color: "#dc2626", message: "Unfortunately, we could not verify your payment. Please contact us on WhatsApp for assistance." },
-  shipped: { title: "Order Shipped 🚚", emoji: "📦", color: "#2563eb", message: "Your order has been shipped and is on its way to you!" },
-  delivered: { title: "Order Delivered 🎊", emoji: "✅", color: "#059669", message: "Your order has been delivered. We hope you enjoy your purchase!" },
+const STATUS_CONFIG: Record<string, any> = {
+  pending: {
+    title: "Order Received",
+    emoji: "📋",
+    color: "#2563eb",
+    message: "We've received your order! If you've uploaded your payment proof, our team will verify it soon. If not, please upload it via the order tracking page."
+  },
+  approved: {
+    title: "Payment Verified",
+    emoji: "✅",
+    color: "#059669",
+    message: "Great news! Your payment has been verified. We're now preparing your items for shipment."
+  },
+  shipped: {
+    title: "On the Way",
+    emoji: "🚚",
+    color: "#d97706",
+    message: "Your order is on its way! You can track your package using the tracking number below."
+  },
+  delivered: {
+    title: "Order Delivered",
+    emoji: "🏠",
+    color: "#059669",
+    message: "Your order has been delivered! We hope you enjoy your new books. Don't forget to leave a review!"
+  },
+  rejected: {
+    title: "Payment Issue",
+    emoji: "⚠️",
+    color: "#dc2626",
+    message: "There was an issue verifying your payment proof. Please contact us on WhatsApp with your Order ID and transaction details."
+  }
 };
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  try {
-    // Require Authorization header for all requests
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+  // Critical CORS check
+  if (origin && origin !== ALLOWED_ORIGIN) {
+    return new Response(JSON.stringify({ error: "Forbidden: Invalid Origin" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
+  try {
     const { orderId, newStatus } = await req.json();
     if (!orderId || !newStatus) throw new Error("orderId and newStatus are required");
 
-    // Validate newStatus against allowed values
-    const allowedStatuses = ["pending", "approved", "rejected", "shipped", "delivered"];
-    if (!allowedStatuses.includes(newStatus)) {
-      throw new Error("Invalid status value");
-    }
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("Authorization header required");
 
-    // Create authenticated client to verify the caller
     const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
+      Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    // Verify the caller is authenticated
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+    if (authError || !user) throw new Error("Unauthorized");
 
-    let isAdminUser = false;
     let requireOwnership = false;
-
-    if (newStatus === "pending") {
-      requireOwnership = true;
-    } else if (newStatus === "delivered" || newStatus === "approved") {
+    if (newStatus === 'pending') {
       const { data: adminCheck } = await userClient.rpc("is_admin");
-      isAdminUser = !!adminCheck;
+      const isAdminUser = !!adminCheck;
       if (!isAdminUser) requireOwnership = true;
     } else {
       const { data: adminCheck } = await userClient.rpc("is_admin");

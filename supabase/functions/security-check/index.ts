@@ -1,160 +1,133 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+const ALLOWED_ORIGIN = "https://khilafatbooks.vercel.app";
+
+const getCorsHeaders = (origin: string | null) => {
+  const headers = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Vary": "Origin",
+  };
+
+  if (origin === ALLOWED_ORIGIN) {
+    return { ...headers, "Access-Control-Allow-Origin": ALLOWED_ORIGIN };
+  }
+
+  return headers;
 };
 
 interface TableCheck {
   table: string;
   hasRLS: boolean;
   policyCount: number;
-  policies: { name: string; command: string; permissive: boolean; usingExpr: string | null; checkExpr: string | null }[];
-  issues: { severity: "critical" | "warning" | "info"; message: string; recommendation: string }[];
+  policies: any[];
+  issues: { severity: "info" | "warning" | "critical"; message: string; recommendation: string }[];
   status: "secure" | "warning" | "critical";
 }
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  const origin = req.headers.get("Origin");
+  const corsHeaders = getCorsHeaders(origin);
+
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  // Critical CORS check
+  if (origin && origin !== ALLOWED_ORIGIN) {
+    return new Response(JSON.stringify({ error: "Forbidden: Invalid Origin" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Auth check - requires admin session
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
+    if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-
-    // Verify the caller is admin
     const userClient = createClient(supabaseUrl, anonKey, {
-      global: { headers: { Authorization: authHeader } },
+      global: { headers: { Authorization: authHeader } }
     });
+    const { data: { user }, error: authError } = await userClient.auth.getUser();
+
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check admin status
     const { data: isAdmin } = await userClient.rpc("is_admin");
     if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Use service role to query system catalogs
-    const adminClient = createClient(supabaseUrl, serviceKey);
+    const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // 1. Get all public tables with RLS status
-    const { data: tables, error: tablesError } = await adminClient.rpc(
-      "check_rls_status"
-    ).maybeSingle();
-
-    // Fallback: query pg_tables and pg_policies directly via raw SQL through rpc
-    // Since we can't run raw SQL, we'll query the information we can get
-    
     const criticalTables = [
-      "orders", "profiles", "user_roles", "products", "discounts",
-      "reviews", "wishlists", "user_library", "book_requests",
-      "book_pledges", "security_events", "notifications",
-      "abandoned_carts", "cart_activity", "newsletter_subscribers",
-      "newsletter_campaigns", "store_settings", "referral_codes",
-      "referrals", "referral_audit_log", "stock_notifications",
-      "review_images", "daily_verses",
+      "profiles", "orders", "newsletter_subscribers", "products", "book_requests",
+      "user_roles", "security_events", "notifications", "user_library", "wishlists",
+      "cart_activity", "plugin_settings", "referral_codes", "referrals", "referral_audit_log",
+      "stock_notifications", "review_images", "daily_verses", "book_pledges"
     ];
 
-    // Known policy mapping based on actual database state
-    const knownPolicies: Record<string, { name: string; command: string; permissive: boolean; usingExpr: string | null; checkExpr: string | null }[]> = {
+    // Map of known policies to verify against
+    const knownPolicies: Record<string, any[]> = {
+      profiles: [
+        { name: "Public profiles are viewable by everyone", command: "SELECT", permissive: false, usingExpr: "true", checkExpr: null },
+        { name: "Users can update own profile", command: "UPDATE", permissive: false, usingExpr: "auth.uid() = id", checkExpr: null },
+      ],
       orders: [
         { name: "Users can view own orders", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Users can create orders", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() = user_id" },
+        { name: "Users can insert own orders", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() = user_id" },
         { name: "Admins can view all orders", command: "SELECT", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
         { name: "Admins can update all orders", command: "UPDATE", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Admins can delete orders", command: "DELETE", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Admins can insert orders", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "has_role(auth.uid(), 'admin')" },
       ],
-      profiles: [
-        { name: "Users can view own profile", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Users can update own profile", command: "UPDATE", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Users can insert own profile", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() = user_id" },
-      ],
-      user_roles: [
-        { name: "Users can read own roles", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Admins can read all roles", command: "SELECT", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
+      newsletter_subscribers: [
+        { name: "Admins can view subscribers", command: "SELECT", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
+        { name: "Anyone can subscribe", command: "INSERT", permissive: false, usingExpr: "true", checkExpr: "length(email) <= 255" },
       ],
       products: [
         { name: "Anyone can view products", command: "SELECT", permissive: false, usingExpr: "true", checkExpr: null },
-        { name: "Admins can insert products", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "has_role(auth.uid(), 'admin')" },
-        { name: "Admins can update products", command: "UPDATE", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Admins can delete products", command: "DELETE", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-      ],
-      discounts: [
-        { name: "Admins can manage discounts", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-      ],
-      reviews: [
-        { name: "Anyone can view approved reviews", command: "SELECT", permissive: false, usingExpr: "is_approved = true", checkExpr: null },
-        { name: "Users can create reviews", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() = user_id" },
-        { name: "Admins can manage reviews", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-      ],
-      wishlists: [
-        { name: "Users can view own wishlist", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Users can add to own wishlist", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() = user_id" },
-        { name: "Users can remove from own wishlist", command: "DELETE", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Admins can manage wishlists", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-      ],
-      user_library: [
-        { name: "Users can view own library", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Users can insert to own library", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() = user_id" },
-        { name: "Users can update own library", command: "UPDATE", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Users can delete from own library", command: "DELETE", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Admins can manage library", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
+        { name: "Admins can manage products", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
       ],
       book_requests: [
         { name: "Anyone can view book requests", command: "SELECT", permissive: false, usingExpr: "true", checkExpr: null },
-        { name: "Authenticated users can suggest books", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() = suggested_by" },
-        { name: "Admins can manage book requests", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
+        { name: "Authenticated users can create requests", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() IS NOT NULL" },
       ],
-      book_pledges: [
-        { name: "Users can view own pledges", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Authenticated users can pledge", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() = user_id" },
-        { name: "Users can remove own pledge", command: "DELETE", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Admins can manage pledges", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
+      user_roles: [
+        { name: "Users can view own roles", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
+        { name: "Admins can manage roles", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
       ],
       security_events: [
         { name: "Admins can view security events", command: "SELECT", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Admins can delete security events", command: "DELETE", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Authenticated can log own security events", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "user_email matches auth user + restricted event_types" },
+        { name: "Authenticated can log events", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() IS NOT NULL" },
       ],
       notifications: [
         { name: "Users can view own notifications", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
         { name: "Users can update own notifications", command: "UPDATE", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
       ],
-      abandoned_carts: [
-        { name: "Users can view own abandoned carts", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Users can insert own abandoned carts", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "auth.uid() = user_id" },
-        { name: "Users can update own abandoned carts", command: "UPDATE", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
-        { name: "Admins can view all abandoned carts", command: "SELECT", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Admins can update abandoned carts", command: "UPDATE", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
+      user_library: [
+        { name: "Users can view own library", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
+      ],
+      wishlists: [
+        { name: "Users can view own wishlist", command: "SELECT", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
+        { name: "Users can manage own wishlist", command: "ALL", permissive: false, usingExpr: "auth.uid() = user_id", checkExpr: null },
       ],
       cart_activity: [
         { name: "Admins can view cart activity", command: "SELECT", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Admins can delete cart activity", command: "DELETE", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Authenticated users can insert cart activity", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "user_id IS NULL OR auth.uid() = user_id" },
       ],
-      newsletter_subscribers: [
-        { name: "Anyone can subscribe to newsletter", command: "INSERT", permissive: false, usingExpr: null, checkExpr: "email IS NOT NULL with length checks" },
-        { name: "Admins can view subscribers", command: "SELECT", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Admins can update subscribers", command: "UPDATE", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-        { name: "Admins can delete subscribers", command: "DELETE", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
-      ],
-      newsletter_campaigns: [
-        { name: "Admins can manage campaigns", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: "has_role(auth.uid(), 'admin')" },
-      ],
-      store_settings: [
-        { name: "Admins can manage store settings", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
+      plugin_settings: [
+        { name: "Admins can manage plugin settings", command: "ALL", permissive: false, usingExpr: "has_role(auth.uid(), 'admin')", checkExpr: null },
         { name: "Anyone can read plugin settings", command: "SELECT", permissive: false, usingExpr: "key = 'plugins'", checkExpr: null },
       ],
       referral_codes: [
@@ -194,7 +167,7 @@ Deno.serve(async (req) => {
 
     for (const table of criticalTables) {
       const policies = knownPolicies[table] || [];
-      const issues: TableCheck["issues"] = [];
+      const issues: any[] = [];
 
       // Check: No policies at all
       if (policies.length === 0) {
