@@ -216,6 +216,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [items, subtotal]);
 
   const addItem = useCallback((product: LegacyProduct) => {
+    import('@/lib/analytics').then(m => m.trackAddToCart(product));
     setItems(prev => {
       const newItems = prev.find(i => i.product.id === product.id)
         ? prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)

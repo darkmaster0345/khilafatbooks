@@ -55,7 +55,7 @@ const AppLayout = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       <Header />
       <div className="flex-1">
         <AnimatePresence mode="wait">

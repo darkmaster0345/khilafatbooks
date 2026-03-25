@@ -36,14 +36,14 @@ Deno.serve(async (req) => {
 
     const db = getSupabase();
     const now = new Date();
-    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const oneHourAgo = new Date(now.getTime() - 1 * 60 * 60 * 1000);
 
     // Find abandoned carts: active carts with no activity in 24h and not yet reminded
     const { data: abandonedCarts, error: fetchError } = await db
       .from("abandoned_carts")
       .select("*")
       .eq("status", "active")
-      .lt("last_activity_at", twentyFourHoursAgo.toISOString())
+      .lt("last_activity_at", oneHourAgo.toISOString())
       .eq("reminder_count", 0) as { data: any[] | null; error: any };
 
     if (fetchError) throw new Error(`Failed to fetch abandoned carts: ${fetchError.message}`);
