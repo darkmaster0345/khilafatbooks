@@ -15,6 +15,7 @@ const STATIC_ASSETS = [
 // Security & Performance Audit (2026):
 // Implements skipWaiting and immediate activation for PWA consistency.
 // Enhanced SWR strategy with origin-based security checks.
+// Network-First for root to prevent stale asset hashes.
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -44,8 +45,13 @@ self.addEventListener('message', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests
+  // Only intercept GET requests
   if (event.request.method !== 'GET') {
+    return;
+  }
+
+  // Only intercept http/https requests (fixes chrome-extension error)
+  if (!event.request.url.startsWith('http')) {
     return;
   }
 
@@ -69,6 +75,22 @@ self.addEventListener('fetch', (event) => {
     url.hostname.includes('googletagmanager.com') ||
     url.hostname.includes('5gvci.com')
   ) {
+    return;
+  }
+
+  // Network-First for index.html/root to avoid stale asset hashes after deployment
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const clone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request))
+    );
     return;
   }
 
