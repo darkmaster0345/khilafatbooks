@@ -1,6 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { CheckCircle2, Gift, Clock, ShoppingCart, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,13 +57,6 @@ const OrderConfirmed = () => {
 
   return (
     <main className="container mx-auto px-4 py-16 max-w-2xl">
-      <Helmet>
-        {/* Optimized title for order confirmation page */}
-        <title>Order Confirmed — Islamic Bookstore | Khilafat Books</title>
-        <meta name="robots" content="noindex, nofollow" />
-        <meta property="og:title" content="Order Confirmed — Islamic Bookstore | Khilafat Books" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/confirmation-banner.jpg" />
-      </Helmet>
       
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200 }} className="text-center mb-10">
         <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 mx-auto">

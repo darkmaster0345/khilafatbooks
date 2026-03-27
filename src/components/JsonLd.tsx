@@ -1,5 +1,3 @@
-import { Helmet } from 'react-helmet-async';
-
 interface ProductJsonLdProps {
   name: string;
   description: string;
@@ -125,14 +123,11 @@ export const ProductJsonLd = ({
   }
 
   return (
-    <Helmet>
-      <script type="application/ld+json">{JSON.stringify(data)}</script>
-    </Helmet>
+    <script type="application/ld+json">{JSON.stringify(data)}</script>
   );
 };
 
 export const OrganizationJsonLd = () => (
-  <Helmet>
     <script type="application/ld+json">{JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'Organization',
@@ -145,11 +140,9 @@ export const OrganizationJsonLd = () => (
         'https://twitter.com/KhilafatBooks'
       ],
     })}</script>
-  </Helmet>
 );
 
 export const LocalBusinessJsonLd = () => (
-  <Helmet>
     <script type="application/ld+json">{JSON.stringify({
       '@context': 'https://schema.org',
       '@type': 'LocalBusiness',
@@ -187,5 +180,4 @@ export const LocalBusinessJsonLd = () => (
         closes: '20:00'
       }
     })}</script>
-  </Helmet>
 );

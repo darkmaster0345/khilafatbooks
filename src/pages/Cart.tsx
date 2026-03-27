@@ -1,6 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ArrowRight, Gift, Award } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -55,14 +54,6 @@ const Cart = () => {
 
   return (
     <main className="container mx-auto px-4 py-10">
-      <Helmet>
-        {/* Optimized title and description for cart page */}
-        <title>Your Cart — Islamic Books & Halal Products | Khilafat Books</title>
-        <meta name="description" content="Review your cart and proceed to checkout for Islamic books and halal products. Fast delivery across Pakistan with secure EasyPaisa payments." />
-        <meta name="robots" content="noindex, nofollow" />
-        <meta property="og:title" content="Your Cart — Islamic Books & Halal Products | Khilafat Books" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/cart-banner.jpg" />
-      </Helmet>
       <Link to="/shop" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-6 group">
         <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Continue Shopping
       </Link>

@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { Heart, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useWishlist } from '@/context/WishlistContext';
@@ -11,14 +10,6 @@ const Wishlist = () => {
 
   return (
     <main className="container mx-auto px-4 py-10">
-      <Helmet>
-        {/* Optimized title and description for wishlist page */}
-        <title>Wishlist — Saved Islamic Books & Products | Khilafat Books</title>
-        <meta name="description" content="Your saved Islamic books and products at Khilafat Books. Come back anytime to complete your purchase of Quran, courses, and halal items." />
-        <meta name="robots" content="noindex, nofollow" />
-        <meta property="og:title" content="Wishlist — Saved Islamic Books & Products | Khilafat Books" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/wishlist-banner.jpg" />
-      </Helmet>
       <div className="mb-8">
         <p className="section-heading">Your Collection</p>
         <h1 className="section-title">Wishlist</h1>

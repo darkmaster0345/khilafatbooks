@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, Navigate } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, Download, ExternalLink, Clock, Package, ShieldCheck, MapPin, Phone, Mail } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
@@ -109,13 +108,6 @@ const OrderDetail = () => {
 
   return (
     <main className="container mx-auto px-4 py-10 max-w-4xl">
-      <Helmet>
-        {/* Optimized title for order details page */}
-        <title>Order #{order.id.slice(0, 8).toUpperCase()} — My Account | Khilafat Books</title>
-        <meta name="robots" content="noindex, nofollow" />
-        <meta property="og:title" content={`Order #${order.id.slice(0, 8).toUpperCase()} — My Account | Khilafat Books`} />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/orders-banner.jpg" />
-      </Helmet>
 
       <Link to="/orders" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-6 group">
         <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back to My Orders

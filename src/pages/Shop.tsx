@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { Search, SlidersHorizontal, X, Eye, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/input';
@@ -89,25 +88,6 @@ const Shop = () => {
 
   return (
     <main className="container mx-auto px-4 py-10">
-      <Helmet>
-        {/* Optimized title and description for buy Islamic books */}
-        <title>Shop — Islamic Books & Digital Courses | Khilafat Books</title>
-        <meta name="description" content="Buy Islamic books online in Pakistan. Browse Quran tafsir, prophetic medicine, and digital courses. Quality Halal products with fast delivery across Pakistan." />
-        <link rel="canonical" href="https://khilafatbooks.vercel.app/shop" />
-        <link rel="alternate" hreflang="en" href="https://khilafatbooks.vercel.app/shop" />
-        <link rel="alternate" hreflang="ur" href="https://khilafatbooks.vercel.app/shop" />
-
-        {/* OG tags with Cloudinary optimization for the shop banner */}
-        <meta property="og:title" content="Shop — Islamic Books & Digital Courses | Khilafat Books" />
-        <meta property="og:description" content="Buy Islamic books online in Pakistan. Browse Quran tafsir, prophetic medicine, and digital courses." />
-        <meta property="og:url" content="https://khilafatbooks.vercel.app/shop" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/shop-banner.jpg" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:description" content="Buy Islamic books online in Pakistan. Browse Quran tafsir, prophetic medicine, and digital courses." />
-        <meta name="twitter:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/shop-banner.jpg" />
-      </Helmet>
 
       {/* Header */}
       <div className="mb-8">
