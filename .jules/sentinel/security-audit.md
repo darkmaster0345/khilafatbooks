@@ -24,11 +24,15 @@
 - **Rating:** **SECURE**
 - **Finding 3.2:** `SECURITY DEFINER` functions (`is_admin`, `has_role`, etc.) are hardened with `SET search_path = public, pg_catalog`.
 - **Rating:** **SECURE**
-- **Finding 3.3:** Unauthenticated Edge Functions.
-- **Rating:** **MEDIUM**
-- **Location:** `supabase/functions/ai-chat/index.ts`, `supabase/functions/privacy-cleanup/index.ts`
-- **Impact:** `ai-chat` can be abused for resource exhaustion (AI credits). `privacy-cleanup` can be triggered by anyone if the URL is discovered.
-- **Recommendation:** Implement `auth.getUser()` checks in `ai-chat`. Secure `privacy-cleanup` with a secret header or restrict it to service role calls.
+- **Finding 3.3:** High-risk Edge Function authorization gaps.
+- **Rating:** **HIGH**
+- **Location:** `supabase/functions/ai-chat/index.ts`, `supabase/functions/privacy-cleanup/index.ts`, `supabase/functions/cart-recovery/index.ts`, `supabase/functions/notify-pledgers/index.ts`, `supabase/config.toml`, `src/components/admin/AdminBookRequests.tsx`
+- **Impact:**
+  - `ai-chat` can be abused for resource exhaustion (AI credits).
+  - `privacy-cleanup` can be triggered by anyone if the URL is discovered.
+  - `cart-recovery` is deployed with `verify_jwt = false` and uses service-role + Resend credentials without request authentication, allowing anonymous callers to trigger recovery-email workflows and mutate `abandoned_carts`.
+  - `notify-pledgers` accepts client input, uses service-role privileges, emails all pledgers, and marks requests as fulfilled without an `is_admin`/ownership check; because the admin UI invokes it from the browser, any authenticated user can call the endpoint directly.
+- **Recommendation:** Implement `auth.getUser()` + explicit role/ownership checks for privileged functions (especially `notify-pledgers`), and require signed authorization (JWT or shared secret) for automation functions like `privacy-cleanup` and `cart-recovery`. Keep `verify_jwt = false` only for endpoints that still perform robust in-function authentication/authorization checks.
 - **Finding 3.4:** Storage buckets `payment-proofs` and `digital-products` are correctly set to private.
 - **Rating:** **SECURE**
 
