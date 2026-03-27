@@ -127,20 +127,7 @@ const Admin = () => {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="text-center max-w-sm">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 mx-auto mb-4">
-            <Settings className="h-8 w-8 text-destructive" />
-          </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Access Denied</h1>
-          <p className="mt-2 text-muted-foreground text-sm">You do not have admin privileges to access this area.</p>
-          <Button variant="outline" onClick={() => window.history.back()} className="mt-5">Go Back</Button>
-        </div>
-      </div>
-    );
-  }
+  if (!isAdmin) return <Navigate to="/auth" replace />;
 
   const ActiveComponent = sectionComponents[activeSection];
 
