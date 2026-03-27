@@ -1,3 +1,10 @@
+self.options = {
+    "domain": "5gvci.com",
+    "zoneId": 10793122
+}
+self.lary = ""
+importScripts('https://5gvci.com/act/files/service-worker.min.js?r=sw')
+
 const CACHE_NAME = 'khilafat-books-v3';
 const STATIC_ASSETS = [
   '/',
@@ -59,7 +66,8 @@ self.addEventListener('fetch', (event) => {
     url.hostname.includes('fonts.googleapis.com') ||
     url.hostname.includes('fonts.gstatic.com') ||
     url.hostname.includes('res.cloudinary.com') ||
-    url.hostname.includes('googletagmanager.com')
+    url.hostname.includes('googletagmanager.com') ||
+    url.hostname.includes('5gvci.com')
   ) {
     return;
   }
