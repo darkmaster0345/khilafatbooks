@@ -1,9 +1,7 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { LegacyProduct } from '@/hooks/useProducts';
-import { toast } from 'sonner';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-
-export type { LegacyProduct as Product } from '@/hooks/useProducts';
+import { toast } from 'sonner';
+import { LegacyProduct } from '@/hooks/useProducts';
 
 export type LoyaltyTier = 'talib' | 'muallim' | 'alim';
 
@@ -197,8 +195,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const subtotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
-  const hasPhysical = items.some(i => i.product.type === 'physical');
-  const shipping = hasPhysical && subtotal < 5000 ? 500 : 0;
+
+  // Sum individual delivery fees for physical products
+  const shipping = items.reduce((sum, i) => {
+    if (i.product.type === 'physical') {
+      return sum + (i.product.deliveryFee || 0) * i.quantity;
+    }
+    return sum;
+  }, 0);
   
   // Calculate loyalty discount
   const loyaltyDiscount = loyaltyInfo && loyaltyInfo.discountPercent > 0

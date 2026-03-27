@@ -20,6 +20,7 @@ import BackToTop from "@/components/BackToTop";
 import ExitIntentDialog from "@/components/ExitIntentDialog";
 import BrandedLoader from "@/components/BrandedLoader";
 import PageTransition from "@/components/PageTransition";
+import MaintenanceModal from "@/components/MaintenanceModal";
 import { usePluginSettings } from "@/hooks/usePluginSettings";
 
 // Lazy-loaded routes
@@ -57,6 +58,7 @@ const AppLayout = () => {
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden">
       <Header />
+      <MaintenanceModal />
       <div className="flex-1">
         <AnimatePresence mode="wait">
           <Suspense fallback={<BrandedLoader />} key={location.pathname}>

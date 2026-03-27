@@ -16,6 +16,7 @@ import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
 import WelcomeBanner from '@/components/WelcomeBanner';
 import NewsletterSignup from '@/components/NewsletterSignup';
+import NewsletterModal from '@/components/NewsletterModal';
 import heroBg from '@/assets/hero-bg-new.jpg';
 import productQuran from '@/assets/product-quran.jpg';
 import productOud from '@/assets/product-oud.jpg';
@@ -48,93 +49,107 @@ const Index = () => {
   const heroContentY = useTransform(scrollYProgress, [0, 1], [0, 60]);
 
   return (
-    <main>
+    <main className="flex min-h-screen flex-col">
       <OrganizationJsonLd />
       <LocalBusinessJsonLd />
+      <NewsletterModal />
 
-      {/* Abandoned Cart Banner */}
-      {items.length > 0 && (
+      {/* Hero Section */}
+      <section ref={heroRef} className="relative h-[85vh] md:h-[95vh] w-full overflow-hidden bg-foreground flex items-center justify-center">
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="bg-accent/10 border-b border-accent/20 overflow-hidden"
+          style={{ y: heroImageY }}
+          className="absolute inset-0 z-0"
         >
-          <div className="container mx-auto px-4 py-3 flex items-center justify-between">
-            <p className="text-sm text-foreground flex items-center gap-2">
-              <ShoppingCart className="h-4 w-4 text-accent" />
-              You have <strong>{items.length} item{items.length > 1 ? 's' : ''}</strong> in your cart
-            </p>
-            <Button asChild size="sm" variant="outline" className="h-8 text-xs rounded-lg">
-              <Link to="/cart">View Cart <ArrowRight className="ml-1 h-3 w-3" /></Link>
-            </Button>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Hero with Parallax */}
-      <section ref={heroRef} className="relative overflow-hidden min-h-[80vh] md:min-h-[90vh] flex items-center">
-        <motion.div className="absolute inset-0" style={{ y: heroImageY }}>
-          {/* Optimized hero image with Cloudinary primary source and local fallback */}
           <img
-            src="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto:good,w_1200,h_630,c_fill/hero-bg-new.jpg"
-            onError={(e) => { (e.target as HTMLImageElement).src = heroBg }}
-            alt="Khilafat Books — Premium Islamic Books Pakistan"
-            role="presentation"
-            width="1200"
-            height="630"
-            className="h-[120%] w-full object-cover"
+            src={heroBg}
+            alt="Islamic books and prayer essentials"
+            className="h-full w-full object-cover"
             fetchPriority="high"
             loading="eager"
             decoding="sync"
-          />
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-foreground/80 via-foreground/60 to-foreground/20"
-            style={{ opacity: heroOverlayOpacity }}
+            width="1200"
+            height="630"
           />
         </motion.div>
-        <motion.div className="relative container mx-auto px-4 py-16 md:py-24" style={{ y: heroContentY }}>
+        <motion.div
+          style={{ opacity: heroOverlayOpacity }}
+          className="absolute inset-0 z-10 bg-gradient-to-b from-foreground/80 via-foreground/40 to-foreground/90"
+        />
+
+        <div className="absolute inset-0 z-11 geometric-pattern opacity-30" />
+
+        <motion.div
+          style={{ y: heroContentY }}
+          className="container relative z-20 mx-auto px-4 text-center"
+        >
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-2xl"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-4xl mx-auto"
           >
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="font-amiri text-2xl text-gold-light/90 mb-5" dir="rtl"
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
+              className="inline-flex items-center gap-2 rounded-full bg-primary/20 backdrop-blur-md px-5 py-2.5 text-sm font-bold text-primary mb-8 border border-primary/30 shadow-lg"
             >
-              بسم الله الرحمن الرحيم
+              <Sparkles className="h-4 w-4" />
+              <span>Premium Islamic Marketplace</span>
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
+              className="font-display text-5xl md:text-8xl font-black text-primary-foreground leading-[1.1] tracking-tight"
+            >
+              Knowledge with <br />
+              <span className="text-gold-gradient drop-shadow-sm">Barakah</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+              className="mx-auto mt-8 max-w-2xl text-lg md:text-xl text-primary-foreground/80 leading-relaxed font-medium"
+            >
+              Discover authentic Islamic books, fragrances, and digital courses curated for the Pakistani Ummah. Trusted by thousands across the country.
             </motion.p>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-7xl font-bold text-primary-foreground leading-[1.08]">
-              Knowledge with{' '}
-              <span className="text-gold-gradient">Barakah</span>
-            </h1>
-            <p className="mt-6 text-lg md:text-xl text-primary-foreground/80 max-w-lg leading-relaxed">
-              Discover premium Islamic books, courses, and ethically sourced products — all rooted in authentic Islamic values.
-            </p>
-            <div className="mt-10 flex flex-wrap gap-4">
-              <Button asChild size="lg" className="gold-gradient border-0 text-foreground font-semibold h-13 px-10 text-base shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]">
-                <Link to="/shop">Shop Collection <ArrowRight className="ml-2 h-4 w-4" /></Link>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.8 }}
+              className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5"
+            >
+              <Button asChild size="lg" className="gold-gradient h-15 px-10 text-lg font-bold text-foreground border-0 shadow-xl hover:shadow-gold/20 transition-all hover:scale-105 rounded-2xl active:scale-95">
+                <Link to="/shop">Shop Collection</Link>
               </Button>
-              <Button asChild variant="outline" size="lg" className="border-gold-light/50 text-gold-light hover:bg-gold-light/15 hover:text-gold-light h-13 px-8 text-base backdrop-blur-sm">
-                <Link to="/shop?type=digital">
-                  <Download className="mr-2 h-4 w-4" /> Digital Products
+              <Button asChild size="lg" variant="outline" className="h-15 px-10 text-lg font-bold text-primary-foreground border-white/20 hover:bg-white/10 backdrop-blur-sm rounded-2xl transition-all hover:border-white/40 active:scale-95">
+                <Link to="/shop?type=digital" className="flex items-center gap-2">
+                  <Download className="h-5 w-5" /> Digital Courses
                 </Link>
               </Button>
-            </div>
+            </motion.div>
+
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.6 }}
-              className="mt-14 flex items-center gap-6 text-primary-foreground/50"
+              transition={{ delay: 1.2, duration: 1 }}
+              className="mt-16 flex items-center justify-center gap-8"
             >
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-accent text-accent" />
-                  ))}
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-12 w-12 rounded-full border-2 border-foreground bg-muted overflow-hidden">
+                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="User" />
+                  </div>
+                ))}
+              </div>
+              <div className="text-left flex flex-col justify-center">
+                <div className="flex items-center gap-1 text-gold-light">
+                  {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="h-4 w-4 fill-gold-light" />)}
+                  <span className="ml-1 text-sm font-bold text-primary-foreground">4.9/5</span>
                 </div>
                 <span className="text-sm text-primary-foreground/70">Trusted by 1000+ customers</span>
               </div>

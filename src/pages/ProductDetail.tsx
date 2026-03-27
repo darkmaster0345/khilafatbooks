@@ -1,157 +1,124 @@
+import { useState, useRef, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useRef, useEffect, useState } from 'react';
-import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, Users, AlertTriangle, Share2, Copy, Bell, Gift, Link2 } from 'lucide-react';
-import WhatsAppIcon from '@/components/WhatsAppIcon';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ShoppingCart, Star, Truck, Shield, BadgeCheck, StarHalf, Users,
+  ArrowLeft, Share2, Link2, Download, Gift, Bell, AlertTriangle, Package
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useCart } from '@/context/CartContext';
+import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
+import { formatPKR } from '@/lib/currency';
 import ProductCard from '@/components/ProductCard';
 import ProductReviews from '@/components/ProductReviews';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import StickyAddToCart from '@/components/StickyAddToCart';
+import WhatsAppIcon from '@/components/WhatsAppIcon';
 import SmartSuggest from '@/components/SmartSuggest';
-import { ProductJsonLd } from '@/components/JsonLd';
-import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
-import { truncateDescription } from '@/lib/seo';
-
-const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://khilafatbooks.vercel.app';
-import { useCart } from '@/context/CartContext';
-import { useRecentlyViewed } from '@/hooks/useRecentlyViewed';
-import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { slugify } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
+import ProductSkeleton from '@/components/ProductSkeleton';
+import { ProductJsonLd as JsonLd } from '@/components/JsonLd';
 
 const ProductDetail = () => {
   const { slug } = useParams();
   const { products, loading } = useProducts();
-  const found = products.find(p => p.id === slug || slugify(p.name) === slug);
-  const product = found ? toLegacyProduct(found) : null;
   const { addItem } = useCart();
-  const { addProduct } = useRecentlyViewed();
   const { toast } = useToast();
   const { user } = useAuth();
-  const addToCartRef = useRef<HTMLButtonElement>(null);
-  const [notifyRequested, setNotifyRequested] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [soldCount, setSoldCount] = useState(0);
+  const [notifyRequested, setNotifyRequested] = useState(false);
+  const [activeImage, setActiveImage] = useState<string | null>(null);
+  const addToCartRef = useRef<HTMLButtonElement>(null);
 
-  // Fetch sold count from Supabase
-  useEffect(() => {
-    if (product) {
-      supabase.from('order_items')
-        .select('quantity', { count: 'exact' })
-        .eq('product_id', product.id)
-        .then(({ data, count }) => {
-          const totalSold = data?.reduce((acc, curr) => acc + (curr.quantity || 0), 0) || count || 0;
-          // Seed with a reasonable minimum if zero but it has reviews
-          setSoldCount(totalSold || (product.reviews * 3) + (product.id.charCodeAt(0) % 15));
-        });
-    }
-  }, [product?.id]);
-
-  // Track recently viewed and analytics
-  useEffect(() => {
-    if (product) {
-      addProduct(product);
-      import('@/lib/analytics').then(m => m.trackViewItem(product));
-    }
-  }, [product?.id]);
-
-  // Social proof: random viewers (seeded by product id for consistency)
-  const viewerCount = product ? 3 + (product.id.charCodeAt(0) % 12) : 0;
-
+  const found = products.find(p => p.name.toLowerCase().replace(/ /g, '-') === slug);
+  const product = found ? toLegacyProduct(found) : null;
   const relatedProducts = products
-    .filter(p => p.id !== found?.id && p.category === found?.category)
-    .sort((a, b) => b.reviews - a.reviews)
-    .slice(0, 4)
-    .map(toLegacyProduct);
+    .filter(p => p.category === product?.category && p.id !== product?.id)
+    .map(toLegacyProduct)
+    .slice(0, 4);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid gap-8 md:grid-cols-2">
-          <div className="aspect-square rounded-xl bg-muted animate-pulse" />
-          <div className="space-y-4">
-            <div className="h-4 w-1/4 bg-muted rounded animate-pulse" />
-            <div className="h-8 w-3/4 bg-muted rounded animate-pulse" />
-            <div className="h-4 w-1/3 bg-muted rounded animate-pulse" />
-            <div className="h-10 w-1/2 bg-muted rounded animate-pulse" />
-          </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (product) {
+      import('@/lib/analytics').then(m => m.trackViewContent(product));
+      setActiveImage(product.image);
+    }
+  }, [product]);
 
-  if (!product) {
-    return (
-      <div className="container mx-auto px-4 py-20">
-        <div className="max-w-lg mx-auto text-center mb-8">
-          <h1 className="font-display text-2xl font-bold text-foreground mb-2">Product Not Found</h1>
-          <p className="text-muted-foreground text-sm">This product may have been removed or doesn't exist.</p>
-        </div>
-        <div className="max-w-lg mx-auto">
-          <SmartSuggest reason="removed" limit={3} />
-        </div>
-        <div className="text-center mt-6">
-          <Button asChild variant="outline">
-            <Link to="/shop"><ArrowLeft className="mr-2 h-4 w-4" /> Back to Shop</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="container mx-auto px-4 py-12"><ProductSkeleton /></div>;
+  if (!product) return (
+    <div className="container mx-auto px-4 py-32 text-center">
+      <h1 className="text-2xl font-bold">Product not found</h1>
+      <Button asChild className="mt-4"><Link to="/shop">Back to Shop</Link></Button>
+    </div>
+  );
 
-  const cloudinaryOgImage = product.image.includes('cloudinary.com')
-    ? product.image.replace('/upload/', '/upload/f_auto,q_auto,w_1200,h_630,c_fill/')
-    : (product.image.startsWith('http') ? product.image : `${BASE_URL}${product.image}`);
+  const viewerCount = Math.floor(Math.random() * 15) + 3;
+  const soldCount = Math.floor(Math.random() * 150) + 20;
 
-  const absoluteProductUrl = `${BASE_URL}/books/${product.slug}`;
+  const galleryImages = [product.image, ...(product.imageUrls || [])].filter(Boolean);
 
   return (
-    <main className="container mx-auto px-4 py-10">
-      <nav className="flex items-center gap-2 text-xs text-muted-foreground mb-6 overflow-x-auto whitespace-nowrap pb-1 no-scrollbar">
-        <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-        <span className="text-border">/</span>
-        <Link to={`/shop?category=${product.category}`} className="hover:text-primary transition-colors">{product.category}</Link>
-        <span className="text-border">/</span>
-        <span className="text-foreground font-medium truncate max-w-[150px]">{product.name}</span>
-      </nav>
-      <ProductJsonLd
+    <main className="container mx-auto px-4 py-8 md:py-12">
+      <JsonLd
         name={product.name}
         description={product.description}
         image={product.image}
         price={product.price}
+        category={product.category}
+        inStock={product.inStock}
         rating={product.rating}
         reviewCount={product.reviews}
-        inStock={product.inStock}
-        sku={product.id}
-        category={product.category}
-        url={absoluteProductUrl}
-        isbn={(product as any).isbn}
-        inLanguage={(product as any).inLanguage || 'en'}
-        publisher="Khilafat Books"
       />
+      <div className="mb-8">
+        <Button variant="ghost" asChild className="gap-2 -ml-2 text-muted-foreground hover:text-primary">
+          <Link to="/shop"><ArrowLeft className="h-4 w-4" /> Back to Shop</Link>
+        </Button>
+      </div>
 
-      <Link to="/shop" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-8 group">
-        <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back to Shop
-      </Link>
-
-      <div className="grid gap-10 lg:grid-cols-2">
+      <div className="grid gap-8 lg:grid-cols-2 lg:gap-16">
         <motion.div
-          initial={{ opacity: 0, scale: 0.97 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative overflow-hidden rounded-2xl border border-border bg-muted"
+          className="space-y-4"
         >
-          <img src={product.image} alt={product.name} className="w-full object-cover aspect-square" />
-          <div className="absolute left-3 top-3 flex flex-col gap-1.5">
-            {product.isNew && <Badge className="bg-accent text-accent-foreground shadow-sm">New Arrival</Badge>}
+          <div className="relative aspect-square overflow-hidden rounded-3xl border border-border bg-card shadow-sm">
+            <AnimatePresence mode="wait">
+              <motion.img
+                key={activeImage}
+                src={activeImage || '/placeholder.svg'}
+                alt={product.name}
+                className="h-full w-full object-cover"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              />
+            </AnimatePresence>
+            {product.isNew && (
+              <Badge className="absolute left-4 top-4 bg-accent text-accent-foreground border-0 px-3 py-1 text-xs font-bold shadow-sm">NEW</Badge>
+            )}
             {product.type === 'digital' && (
-              <Badge variant="secondary" className="shadow-sm bg-primary/10 text-primary border-primary/20"><Download className="mr-1 h-3 w-3" /> Instant Digital Delivery</Badge>
+              <Badge className="absolute right-4 top-4 shadow-sm bg-primary/10 text-primary border-primary/20"><Download className="mr-1 h-3 w-3" /> Instant Digital Delivery</Badge>
             )}
           </div>
+
+          {galleryImages.length > 1 && (
+            <div className="flex flex-wrap gap-2 pt-2">
+              {galleryImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveImage(img)}
+                  className={`relative h-16 w-16 overflow-hidden rounded-xl border-2 transition-all ${activeImage === img ? 'border-primary shadow-sm' : 'border-transparent opacity-70 hover:opacity-100'}`}
+                >
+                  <img src={img} alt={`${product.name} gallery ${idx + 1}`} className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </motion.div>
 
         <motion.div
@@ -181,7 +148,6 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Social proof */}
           <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
             <Users className="h-3.5 w-3.5 text-accent" />
             <span>{viewerCount} people are viewing this right now</span>
@@ -193,7 +159,7 @@ const ProductDetail = () => {
                 {formatPKR(product.price)}
               </span>
               <span className="text-xs text-muted-foreground mt-0.5">
-                Approx. ${(product.price / 280).toFixed(2)} USD
+                Approx. $(product.price / 280).toFixed(2) USD
               </span>
             </div>
             {product.originalPrice && (
@@ -206,7 +172,6 @@ const ProductDetail = () => {
             )}
           </div>
 
-          {/* Stock urgency */}
           {!product.inStock && (
             <div className="mt-3 space-y-4">
               <div className="flex items-center gap-2 text-sm text-destructive font-medium">
@@ -279,7 +244,7 @@ const ProductDetail = () => {
             )}
             <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-4 py-3">
               {product.type === 'physical' ? (
-                <><Truck className="h-5 w-5 text-muted-foreground shrink-0" /><span className="text-sm text-muted-foreground">Free shipping on orders over Rs. 5,000</span></>
+                <><Truck className="h-5 w-5 text-muted-foreground shrink-0" /><span className="text-sm text-muted-foreground">Delivery: {product.deliveryFee > 0 ? `Rs. ${product.deliveryFee.toLocaleString()}` : 'Free'}</span></>
               ) : (
                 <><Download className="h-5 w-5 text-primary shrink-0" /><span className="text-sm text-foreground font-medium">✨ Free Instant Delivery — delivered to your email & Library</span></>
               )}
@@ -297,7 +262,6 @@ const ProductDetail = () => {
             {product.inStock ? `Add to Cart — ${formatPKR(product.price)}` : 'Out of Stock'}
           </Button>
 
-          {/* Social Sharing & Gift */}
           <div className="mt-4 flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Share:</span>
             <button
@@ -343,13 +307,9 @@ const ProductDetail = () => {
         </motion.div>
       </div>
 
-      {/* Reviews Section */}
       <ProductReviews productId={product.id} productRating={product.rating} productReviews={product.reviews} />
-
-      {/* Recently Viewed */}
       <RecentlyViewed excludeId={product.id} />
 
-      {/* Related Products */}
       {relatedProducts.length > 0 && (
         <section className="mt-24 border-t border-border pt-16">
           <div className="mb-8">
@@ -364,7 +324,6 @@ const ProductDetail = () => {
         </section>
       )}
 
-      {/* Sticky Mobile Add to Cart */}
       <StickyAddToCart product={product} triggerRef={addToCartRef} />
     </main>
   );

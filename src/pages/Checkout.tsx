@@ -1,38 +1,48 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, CheckCircle2, Copy, Phone, ShieldCheck, Gift, Package } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowLeft, ShoppingCart, Truck, ShieldCheck, MapPin,
+  Phone, Mail, User, PhoneCall, Copy, Upload, CheckCircle2,
+  Gift, Package, AlertCircle
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import DiscountCodeInput, { AppliedDiscount } from '@/components/DiscountCodeInput';
-import { usePluginSettings } from '@/hooks/usePluginSettings';
 import ReferralRewardModal from '@/components/ReferralRewardModal';
+import { usePluginSettings } from '@/hooks/usePluginSettings';
 
 const EASYPAISA_ACCOUNT = '03352706540';
 
 const Checkout = () => {
-  useEffect(() => {
-    window.scrollTo(0, 0);
-    import('@/lib/analytics').then(m => m.trackBeginCheckout(total, items.map(i => i.product)));
-  }, []);
-  const { items, subtotal, shipping, zakatEnabled, zakatAmount, total, clearCart } = useCart();
+  const navigate = useNavigate();
+  const { items, subtotal, shipping, total, clearCart, zakatEnabled, zakatAmount } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
-  const [step, setStep] = useState<'details' | 'payment' | 'done'>('details');
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
+  const [step, setStep] = useState<'details' | 'payment'>('details');
+
+  // Gifter/Customer state
+  const [name, setName] = useState(user?.user_metadata?.full_name || '');
+  const [phone, setPhone] = useState(user?.user_metadata?.phone || '');
   const [email, setEmail] = useState(user?.email || '');
+
+  // Recipient/Shipping state
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
+  const [isGift, setIsGift] = useState(false);
+  const [giftRecipientName, setGiftRecipientName] = useState('');
+  const [giftMessage, setGiftMessage] = useState('');
+  const [giftWrap, setGiftWrap] = useState(false);
+
+  // Payment state
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState('');
@@ -40,11 +50,6 @@ const Checkout = () => {
   const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
   const { isPluginEnabled } = usePluginSettings();
 
-  // Gift state
-  const [isGift, setIsGift] = useState(false);
-  const [giftRecipientName, setGiftRecipientName] = useState('');
-  const [giftMessage, setGiftMessage] = useState('');
-  const [giftWrap, setGiftWrap] = useState(false);
   const GIFT_WRAP_FEE = 100;
 
   // Referral state
@@ -70,33 +75,37 @@ const Checkout = () => {
       p_code: referralCode.trim().toUpperCase(),
       p_user_id: user.id,
       p_order_total: subtotal,
-    });
+    } as any);
 
-    if (error || !data) {
-      toast({ title: 'Error', description: 'Could not validate referral code.', variant: 'destructive' });
-    } else if (!(data as any).valid) {
-      toast({ title: 'Invalid Code', description: (data as any).error, variant: 'destructive' });
-      setReferralValidation(null);
+    if (error) {
+      toast({ title: 'Invalid code', description: error.message, variant: 'destructive' });
+      setReferralValidation({ valid: false });
     } else {
-      setReferralValidation(data);
-      setShowRewardModal(true);
+      const res = data as any;
+      setReferralValidation(res);
+      if (res.valid) {
+        setShowRewardModal(true);
+      } else {
+        toast({ title: 'Not eligible', description: res.message || 'Code is valid but you are not eligible.', variant: 'destructive' });
+      }
     }
     setReferralLoading(false);
   };
 
-  const handleRewardSelection = (rewardType: 'discount' | 'digital_pack') => {
-    setReferralRewardType(rewardType);
+  const handleRewardSelection = (type: 'discount' | 'digital_pack') => {
+    setReferralRewardType(type);
+    setShowRewardModal(false);
+    toast({
+      title: 'Reward Selected!',
+      description: type === 'discount' ? '5% discount applied to your order.' : 'Digital Scholar Pack will be added to your library.',
+    });
   };
 
   const handleScreenshot = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (!file.type.startsWith('image/')) {
-        toast({ title: 'Invalid file', description: 'Please upload an image file.', variant: 'destructive' });
-        return;
-      }
       if (file.size > 5 * 1024 * 1024) {
-        toast({ title: 'File too large', description: 'Screenshot must be less than 5MB.', variant: 'destructive' });
+        toast({ title: 'File too large', description: 'Maximum file size is 5MB.', variant: 'destructive' });
         return;
       }
       setScreenshotFile(file);
@@ -111,78 +120,39 @@ const Checkout = () => {
     toast({ title: 'Copied!', description: 'EasyPaisa account number copied to clipboard.' });
   };
 
-  const validateInputs = () => {
-    const trimmedName = name.trim();
-    const trimmedPhone = phone.trim().replace(/[-\s]/g, '');
-    const trimmedEmail = email.trim();
-
-    if (trimmedName.length < 3) {
-      toast({ title: 'Invalid Name', description: 'Please enter your full name (at least 3 characters).', variant: 'destructive' });
-      return false;
-    }
-
-    // Basic Pakistan mobile number validation: 03xxxxxxxxx or 923xxxxxxxxx
-    const phoneRegex = /^(03|923|\+923)\d{8,9}$/;
-    if (!phoneRegex.test(trimmedPhone)) {
-      toast({ title: 'Invalid Phone', description: 'Please enter a valid WhatsApp number (e.g., 03001234567).', variant: 'destructive' });
-      return false;
-    }
-
-    if (trimmedEmail && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(trimmedEmail)) {
-      toast({ title: 'Invalid Email', description: 'Please enter a valid email address.', variant: 'destructive' });
-      return false;
-    }
-
-    if (hasPhysical) {
-      if (address.trim().length < 10) {
-        toast({ title: 'Invalid Address', description: 'Please enter a complete delivery address.', variant: 'destructive' });
-        return false;
-      }
-      if (city.trim().length < 3) {
-        toast({ title: 'Invalid City', description: 'Please enter a valid city name.', variant: 'destructive' });
-        return false;
-      }
-    }
-
-    return true;
-  };
-
   const handleSubmitOrder = async () => {
-    if (!user) {
-      toast({ title: 'Please sign in', description: 'You need to be logged in to place an order.', variant: 'destructive' });
-      navigate('/auth');
+    if (grandTotal > 0 && !screenshotFile && isPluginEnabled('easypaisa_payments')) {
+      toast({ title: 'Missing proof', description: 'Please upload the payment screenshot.', variant: 'destructive' });
       return;
     }
 
-    if (!validateInputs()) return;
-
-    if (grandTotal > 0 && !screenshotFile && !transactionId) {
-      toast({ title: 'Payment proof required', description: 'Please upload a screenshot or enter a transaction ID.', variant: 'destructive' });
-      return;
-    }
     setSubmitting(true);
-
-    let screenshotPath: string | null = null;
+    let screenshotPath = null;
 
     if (screenshotFile) {
-      const ext = (screenshotFile.name.split('.').pop() || 'png').toLowerCase();
-      const filePath = `${user.id}/${Date.now()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from('payment-proofs')
-        .upload(filePath, screenshotFile);
-      if (uploadError) {
-        toast({ title: 'Upload failed', description: uploadError.message, variant: 'destructive' });
+      const ext = screenshotFile.name.split('.').pop();
+      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('payment-proofs').upload(path, screenshotFile);
+      if (upErr) {
+        toast({ title: 'Upload failed', description: 'Failed to upload screenshot. Please try again.', variant: 'destructive' });
         setSubmitting(false);
         return;
       }
-      screenshotPath = filePath;
+      const { data: { publicUrl } } = supabase.storage.from('payment-proofs').getPublicUrl(path);
+      screenshotPath = publicUrl;
     }
 
-    const orderItems = items.map(i => ({ id: i.product.id, quantity: i.quantity }));
+    const orderItems = items.map(i => ({
+      product_id: i.product.id,
+      quantity: i.quantity,
+      price: i.product.price,
+      name: i.product.name,
+      image_url: i.product.image,
+    }));
 
     const { data: orderData, error } = await supabase.rpc('create_verified_order', {
       p_items: orderItems,
-      p_customer_name: name,
+      p_customer_name: isGift ? giftRecipientName : name, // Use recipient name as primary name if gift? or just store separately
       p_customer_phone: phone,
       p_customer_email: email || null,
       p_delivery_address: address || null,
@@ -209,127 +179,95 @@ const Checkout = () => {
       return;
     }
 
-    // Referral is now created server-side in create_verified_order
-
-    // Send order email (non-blocking)
-    if (orderId && email) {
-      // Free digital-only orders are auto-delivered by DB trigger, send "delivered" email
-      const isAllDigital = items.every(i => i.product.type === 'digital');
-      const isFreeOrder = grandTotal === 0;
-      const emailStatus = (isFreeOrder && isAllDigital) ? 'delivered' : 'pending';
-      
-      supabase.functions.invoke('send-order-email', {
-        body: { orderId: orderId as string, newStatus: emailStatus },
-      }).catch(() => {}); // Don't block on email failure
-    }
-
+    toast({ title: 'Order successful!', description: 'JazakAllah! Your order has been placed.' });
     clearCart();
-    setSubmitting(false);
-    if (orderId) {
-      navigate(`/order-confirmed/${orderId}`);
-      return;
-    }
-    setStep('done');
+    navigate(`/order-confirmed/${orderId}`);
   };
 
-  if (items.length === 0 && step !== 'done') {
+  if (items.length === 0) {
     return (
-      <main className="container mx-auto px-4 py-20 text-center">
-        <h1 className="font-display text-2xl font-bold text-foreground">Nothing to checkout</h1>
-        <Button asChild className="mt-4"><Link to="/shop">Browse Products</Link></Button>
-      </main>
-    );
-  }
-
-  if (step === 'done') {
-    return (
-      <main className="container mx-auto px-4 py-20 text-center">
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 200 }}>
-          <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 mx-auto">
-            <CheckCircle2 className="h-14 w-14 text-primary" />
+      <div className="container mx-auto px-4 py-32 text-center">
+        <div className="flex justify-center mb-6">
+          <div className="p-6 rounded-full bg-muted">
+            <ShoppingCart className="h-12 w-12 text-muted-foreground" />
           </div>
-        </motion.div>
-        <h1 className="mt-6 font-display text-3xl font-bold text-foreground">Order Placed!</h1>
-        <p className="mt-3 text-muted-foreground max-w-md mx-auto leading-relaxed">
-          JazakAllah Khair! Your order is under review. We will verify your payment and notify you via WhatsApp/Email within 24 hours.
-        </p>
-        {referralRewardType === 'digital_pack' && (
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
-            <Gift className="h-4 w-4" />
-            Digital Scholar Pack will be available in your Library
-          </div>
-        )}
-        <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-accent/10 px-4 py-2 text-sm font-medium text-accent">
-          <span className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-          Payment Pending
         </div>
-        <div className="mt-6">
-          <Button asChild className="h-11 px-6"><Link to="/shop">Continue Shopping</Link></Button>
-        </div>
-      </main>
+        <h1 className="text-2xl font-bold font-display">Your cart is empty</h1>
+        <p className="mt-2 text-muted-foreground">Add some books to your cart to checkout.</p>
+        <Button asChild className="mt-6 h-11 px-8"><Link to="/shop">Browse Books</Link></Button>
+      </div>
     );
   }
 
   return (
-    <main className="container mx-auto px-4 py-10">
-      <Link to="/cart" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-6 group">
-        <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Back to Cart
-      </Link>
-
-      <h1 className="font-display text-3xl font-bold text-foreground mb-8">Checkout</h1>
-
-      {/* Steps indicator */}
-      <div className="flex items-center gap-3 mb-10">
-        {['Your Details', 'Payment'].map((label, i) => (
-          <div key={label} className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold transition-colors ${
-                (i === 0 && step === 'details') || (i === 1 && step === 'payment')
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : i === 0 && step === 'payment'
-                    ? 'bg-primary/15 text-primary'
-                    : 'bg-muted text-muted-foreground'
-              }`}>
-                {i + 1}
-              </div>
-              <span className={`text-sm font-medium ${
-                (i === 0 && step === 'details') || (i === 1 && step === 'payment')
-                  ? 'text-foreground' : 'text-muted-foreground'
-              }`}>{label}</span>
-            </div>
-            {i === 0 && <div className="h-px w-10 bg-border" />}
-          </div>
-        ))}
+    <main className="container mx-auto px-4 py-8 md:py-12 max-w-6xl">
+      <div className="mb-8 flex items-center justify-between">
+        <Button variant="ghost" onClick={() => navigate('/cart')} className="gap-2 -ml-2 text-muted-foreground hover:text-primary transition-colors">
+          <ArrowLeft className="h-4 w-4" /> Back to Cart
+        </Button>
+        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <span className={`px-2 py-1 rounded-full ${step === 'details' ? 'bg-primary/10 text-primary' : 'bg-muted'}`}>1. Details</span>
+          <div className="h-px w-4 bg-border" />
+          <span className={`px-2 py-1 rounded-full ${step === 'payment' ? 'bg-primary/10 text-primary' : 'bg-muted'}`}>2. Payment</span>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-6">
           {step === 'details' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-              <div className="rounded-xl border border-border bg-card p-6">
-                <h2 className="font-display text-base font-semibold text-foreground mb-4">Contact Information</h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label className="text-sm font-medium text-foreground">Full Name *</label>
-                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="Muhammad Ali" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+              {/* Gift Toggle */}
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Gift className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-foreground">Phone (WhatsApp) *</label>
-                    <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="03XX-XXXXXXX" className="mt-1.5 h-11 rounded-xl text-base" maxLength={20} />
+                    <h2 className="font-display text-base font-bold text-foreground">Sending this as a Gift?</h2>
+                    <p className="text-xs text-muted-foreground">We'll hide prices and include a message.</p>
                   </div>
                 </div>
-                <div className="mt-4">
-                  <label className="text-sm font-medium text-foreground">Email</label>
-                  <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="your@email.com" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
+                <Switch checked={isGift} onCheckedChange={setIsGift} />
+              </div>
+
+              {/* Contact Information (Gifter) */}
+              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <h2 className="font-display text-lg font-bold text-foreground mb-5 flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" /> {isGift ? 'Your Details (For Receipt)' : 'Contact Information'}
+                </h2>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {!isGift && (
+                    <div className="sm:col-span-2">
+                      <label className="text-sm font-medium text-foreground">Full Name *</label>
+                      <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Ahmad Hassan" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
+                    </div>
+                  )}
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Phone Number *</label>
+                    <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="03XXXXXXXXX" className="mt-1.5 h-11 rounded-xl text-base" maxLength={15} />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Email Address (optional)</label>
+                    <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="ahmad@example.com" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
+                  </div>
                 </div>
               </div>
 
+              {/* Shipping Information (Recipient) */}
               {hasPhysical && (
-                <div className="rounded-xl border border-border bg-card p-6">
-                  <h2 className="font-display text-base font-semibold text-foreground mb-4">Delivery Address</h2>
+                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                  <h2 className="font-display text-lg font-bold text-foreground mb-5 flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" /> {isGift ? 'Recipient Delivery Details' : 'Shipping Address'}
+                  </h2>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label className="text-sm font-medium text-foreground">Address *</label>
+                    {isGift && (
+                      <div className="sm:col-span-2">
+                        <label className="text-sm font-medium text-foreground">Recipient's Full Name *</label>
+                        <Input value={giftRecipientName} onChange={e => setGiftRecipientName(e.target.value)} placeholder="Who is this gift for?" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
+                      </div>
+                    )}
+                    <div className="sm:col-span-2">
+                      <label className="text-sm font-medium text-foreground">{isGift ? "Recipient's Full Address *" : "Street Address *"}</label>
                       <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="House/Street/Area" className="mt-1.5 h-11 rounded-xl text-base" maxLength={200} />
                     </div>
                     <div>
@@ -340,63 +278,47 @@ const Checkout = () => {
                 </div>
               )}
 
-              {/* Gift Section */}
-              <div className="rounded-xl border border-border bg-card p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Gift className="h-4 w-4 text-primary" />
-                    <h2 className="font-display text-base font-semibold text-foreground">Send as Gift</h2>
-                  </div>
-                  <Switch checked={isGift} onCheckedChange={setIsGift} />
-                </div>
-                <AnimatePresence>
-                  {isGift && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-4 space-y-4">
-                        <div>
-                          <label className="text-sm font-medium text-foreground">Recipient Name</label>
-                          <Input
-                            value={giftRecipientName}
-                            onChange={e => setGiftRecipientName(e.target.value)}
-                            placeholder="Who is this gift for?"
-                            className="mt-1.5 h-11 rounded-xl text-base"
-                            maxLength={100}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium text-foreground">Gift Message</label>
-                          <Textarea
-                            value={giftMessage}
-                            onChange={e => setGiftMessage(e.target.value)}
-                            placeholder="Write a personal message..."
-                            className="mt-1.5 rounded-xl resize-none"
-                            maxLength={300}
-                            rows={3}
-                          />
-                          <p className="text-xs text-muted-foreground mt-1 text-right">{giftMessage.length}/300</p>
-                        </div>
-                        <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
-                          <Checkbox
-                            id="gift-wrap"
-                            checked={giftWrap}
-                            onCheckedChange={(v) => setGiftWrap(!!v)}
-                          />
-                          <label htmlFor="gift-wrap" className="flex items-center gap-2 text-sm cursor-pointer flex-1">
-                            <Package className="h-4 w-4 text-primary" />
-                            <span className="text-foreground font-medium">Gift Wrapping</span>
-                            <span className="text-muted-foreground ml-auto">+{formatPKR(GIFT_WRAP_FEE)}</span>
-                          </label>
-                        </div>
+              {/* Gift Message & Wrapping */}
+              <AnimatePresence>
+                {isGift && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+                      <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+                        <Package className="h-4 w-4 text-primary" /> Gift Options
+                      </h2>
+                      <div>
+                        <label className="text-sm font-medium text-foreground">Gift Message (optional)</label>
+                        <Textarea
+                          value={giftMessage}
+                          onChange={e => setGiftMessage(e.target.value)}
+                          placeholder="Write a personal message to be included with the gift..."
+                          className="mt-1.5 rounded-xl resize-none"
+                          maxLength={300}
+                          rows={3}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1 text-right">{giftMessage.length}/300</p>
                       </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+                      <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
+                        <Checkbox
+                          id="gift-wrap"
+                          checked={giftWrap}
+                          onCheckedChange={(v) => setGiftWrap(!!v)}
+                        />
+                        <label htmlFor="gift-wrap" className="flex items-center gap-2 text-sm cursor-pointer flex-1">
+                          <Package className="h-4 w-4 text-primary" />
+                          <span className="text-foreground font-medium">Add Premium Gift Wrapping</span>
+                          <span className="text-muted-foreground ml-auto">+{formatPKR(GIFT_WRAP_FEE)}</span>
+                        </label>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* Referral Code Section */}
               <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6">
@@ -412,35 +334,30 @@ const Checkout = () => {
                     placeholder="e.g. KB-AHMAD"
                     className="h-11 rounded-xl font-mono uppercase"
                     maxLength={30}
-                    disabled={!!referralValidation?.valid}
                   />
                   <Button
                     onClick={validateReferralCode}
-                    disabled={!referralCode.trim() || referralLoading || !!referralValidation?.valid}
-                    variant={referralValidation?.valid ? "default" : "outline"}
-                    className="h-11 shrink-0"
+                    disabled={referralLoading || !referralCode.trim() || !user}
+                    variant="secondary"
+                    className="h-11 rounded-xl"
                   >
-                    {referralLoading ? 'Checking...' : referralValidation?.valid ? '✓ Applied' : 'Apply'}
+                    {referralLoading ? '...' : 'Apply'}
                   </Button>
                 </div>
-                {referralValidation?.valid && referralRewardType && (
-                  <div className="mt-3 flex items-center gap-2 text-xs text-primary font-medium">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    {referralRewardType === 'discount'
-                      ? `5% discount (${formatPKR(referralDiscount)}) applied!`
-                      : 'Digital Scholar Pack selected! It will be unlocked after delivery.'}
-                  </div>
-                )}
+                {!user && <p className="text-[10px] text-destructive mt-2">Please sign in to apply a referral code.</p>}
               </div>
 
               <Button
                 onClick={() => {
-                  if (validateInputs()) {
-                    setStep('payment');
+                  if (!phone || (hasPhysical && (!address || !city)) || (isGift && !giftRecipientName) || (!isGift && !name)) {
+                    toast({ title: 'Required fields', description: 'Please fill in all required fields marked with *', variant: 'destructive' });
+                    return;
                   }
+                  setStep('payment');
+                  window.scrollTo(0, 0);
                 }}
                 size="lg"
-                className="h-12 px-8 text-base"
+                className="h-12 px-8 text-base w-full sm:w-auto shadow-md"
               >
                 Continue to Payment
               </Button>
@@ -499,31 +416,31 @@ const Checkout = () => {
               )}
 
               {grandTotal > 0 && (
-                <div className="rounded-xl border border-border bg-card p-6">
+                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
                   <label className="text-sm font-medium text-foreground">Upload Payment Screenshot *</label>
-                <div className="mt-3 rounded-xl border-2 border-dashed border-border hover:border-primary/30 transition-colors p-8 text-center">
-                  {screenshotPreview ? (
-                    <div className="space-y-3">
-                      <img src={screenshotPreview} alt="Payment screenshot" className="mx-auto max-h-52 rounded-lg shadow-sm" />
-                      <button onClick={() => { setScreenshotPreview(null); setScreenshotFile(null); }} className="text-xs text-destructive hover:underline">Remove</button>
-                    </div>
-                  ) : (
-                    <label className="cursor-pointer flex flex-col items-center gap-2">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                        <Upload className="h-6 w-6 text-muted-foreground" />
+                  <div className="mt-3 rounded-xl border-2 border-dashed border-border hover:border-primary/30 transition-colors p-8 text-center">
+                    {screenshotPreview ? (
+                      <div className="space-y-3">
+                        <img src={screenshotPreview} alt="Payment screenshot" className="mx-auto max-h-52 rounded-lg shadow-sm" />
+                        <button onClick={() => { setScreenshotPreview(null); setScreenshotFile(null); }} className="text-xs text-destructive hover:underline">Remove</button>
                       </div>
-                      <span className="text-sm font-semibold text-foreground">Click to upload screenshot</span>
-                      <span className="text-xs text-muted-foreground mt-1">PNG, JPG or JPEG (Max 5MB)</span>
-                      <span className="text-[10px] text-primary font-medium mt-1 italic">Please ensure Transaction ID is visible</span>
-                      <input type="file" accept="image/*" onChange={handleScreenshot} className="hidden" />
-                    </label>
-                  )}
+                    ) : (
+                      <label className="cursor-pointer flex flex-col items-center gap-2">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                          <Upload className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <span className="text-sm font-semibold text-foreground">Click to upload screenshot</span>
+                        <span className="text-xs text-muted-foreground mt-1">PNG, JPG or JPEG (Max 5MB)</span>
+                        <span className="text-[10px] text-primary font-medium mt-1 italic">Please ensure Transaction ID is visible</span>
+                        <input type="file" accept="image/*" onChange={handleScreenshot} className="hidden" />
+                      </label>
+                    )}
+                  </div>
                 </div>
-              </div>
               )}
 
               {grandTotal > 0 && (
-                <div className="rounded-xl border border-border bg-card p-6">
+                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
                   <label className="text-sm font-medium text-foreground">Transaction ID (optional)</label>
                   <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1.5 h-11 rounded-xl text-base" maxLength={50} />
                 </div>
@@ -531,7 +448,7 @@ const Checkout = () => {
 
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setStep('details')} className="h-11">Back</Button>
-                <Button onClick={handleSubmitOrder} size="lg" disabled={submitting} className="gold-gradient border-0 text-foreground font-semibold h-12 px-8 text-base shadow-md">
+                <Button onClick={handleSubmitOrder} size="lg" disabled={submitting} className="gold-gradient border-0 text-foreground font-semibold h-12 px-8 text-base shadow-lg">
                   {submitting ? 'Submitting...' : 'Submit Order'}
                 </Button>
               </div>
@@ -540,7 +457,7 @@ const Checkout = () => {
         </div>
 
         {/* Order summary sidebar */}
-        <div className="rounded-xl border border-border bg-card p-6 h-fit lg:sticky lg:top-24 shadow-sm">
+        <div className="rounded-xl border border-border bg-card p-6 h-fit lg:sticky lg:top-24 shadow-md">
           <h2 className="font-display text-lg font-bold text-foreground mb-5">Order Summary</h2>
           <div className="space-y-2.5 text-sm">
             {items.map(({ product, quantity }) => (
@@ -601,7 +518,6 @@ const Checkout = () => {
         </div>
       </div>
 
-      {/* Referral Reward Modal */}
       <ReferralRewardModal
         open={showRewardModal}
         onClose={() => setShowRewardModal(false)}
