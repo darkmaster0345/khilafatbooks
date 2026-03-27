@@ -11,12 +11,15 @@ A full-featured e-commerce platform built for the Pakistani Muslim market, offer
 
 ### 🛒 Shopping Experience
 - **Product Catalog** — Physical & digital products with Halal certification badges, Arabic names, and ethical sourcing info.
+- **Multi-Image Support** — Support for up to 4 high-quality product images with interactive thumbnail gallery.
 - **Cultural Optimization** — Native RTL support with `font-amiri` for authentic Arabic typography and generous line-heights for Quranic readability.
 - **Server-Side Pagination** — Efficient browsing with "Load More" and URL-persistent state.
 - **Book Discovery Quiz** — Interactive experience to match readers with the perfect literature.
 - **New Arrivals** — Dynamic curation of the latest additions from the last 14 days.
 
 ### 💰 Cart & Checkout
+- **Per-Product Delivery Fees** — Flexible shipping calculation by summing individual product delivery fees.
+- **Simplified Gifting** — Dedicated "Is this a gift?" mode that hides unnecessary fields and focuses on recipient delivery.
 - **EasyPaisa Integration** — Seamless Pakistani payment flow with proof-of-payment uploads and transaction tracking.
 - **Zero-Price Automation** — Orders with Rs. 0 total bypass payment steps and are automatically approved for instant access.
 - **Discount Engine** — Support for percentage/fixed discounts, referral rewards, and expiry logic.
@@ -30,11 +33,13 @@ A full-featured e-commerce platform built for the Pakistani Muslim market, offer
 
 ### 🛡️ Security & Privacy
 - **PKCE Auth Flow** — Hardened Supabase authentication using Proof Key for Code Exchange to prevent token leakage.
+- **Maintenance Mode** — Global toggle to notify users during site updates or busy periods.
 - **Search Path Hardening** — Database functions secured against hijacking via explicit `search_path` configuration.
 - **Row-Level Security (RLS)** — Granular access control for all user data and administrative functions.
 - **Privacy Mode** — User-controlled option to automatically purge order history 30 days post-delivery.
 
 ### 🔍 Performance & SEO
+- **Newsletter Subscription Popup** — Delayed-entry newsletter modal with local storage intelligence to prevent over-frequency.
 - **CLS Optimization** — Minimal layout shift using custom skeleton loaders (`ProductSkeletonGrid`) during data fetching.
 - **Rich Snippets** — Advanced JSON-LD for Products (dual PKR/USD pricing for Pinterest Rich Pins) and Local Business.
 - **Font Strategy** — Preloaded Google Fonts and CSS-optimized font swapping to prevent reflow.
@@ -46,13 +51,13 @@ A full-featured e-commerce platform built for the Pakistani Muslim market, offer
 
 | Layer | Technology |
 |-------|-----------|
-| **Frontend** | React 18 + TypeScript + Vite |
+| **Frontend** | React 19 + TypeScript + Vite |
 | **Styling** | Tailwind CSS + shadcn/ui + Framer Motion |
 | **Backend** | Supabase (PostgreSQL, Auth, Storage, Edge Functions) |
 | **Hosting** | Vercel (Production) + Cloudflare (DNS) |
 | **Email** | Resend API |
 | **Images** | Cloudinary (Storage & Optimization) |
-| **Analytics** | Google Analytics 4 + Facebook Pixel |
+| **Analytics** | Groq AI + Microsoft Clarity + Contentsquare |
 
 ---
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { Package, Plus, Edit, Trash2, Search, Save, X, Upload, Download, Cloud, FileUp, Loader2, AlertTriangle } from 'lucide-react';
+import { Package, Plus, Edit, Trash2, Search, Save, X, Upload, Download, Cloud, FileUp, Loader2, AlertTriangle, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ type ProductForm = {
   description: string;
   price: string;
   original_price: string;
+  delivery_fee: string;
   category: string;
   type: string;
   is_new: boolean;
@@ -26,13 +27,14 @@ type ProductForm = {
   series: string;
   series_order: string;
   bundle_discount: string;
+  image_urls: string[];
 };
 
 const emptyForm: ProductForm = {
-  name: '', name_ar: '', description: '', price: '', original_price: '',
+  name: '', name_ar: '', description: '', price: '', original_price: '', delivery_fee: '0',
   category: 'Uncategorized', type: 'physical', is_new: false, is_halal: false,
   ethical_source: '', in_stock: true, rating: '0', reviews: '0',
-  series: '', series_order: '', bundle_discount: '100',
+  series: '', series_order: '', bundle_discount: '100', image_urls: ['', '', '', ''],
 };
 
 const formFromProduct = (p: Product): ProductForm => ({
@@ -41,6 +43,7 @@ const formFromProduct = (p: Product): ProductForm => ({
   description: p.description,
   price: String(p.price),
   original_price: p.original_price ? String(p.original_price) : '',
+  delivery_fee: String(p.delivery_fee || 0),
   category: p.category,
   type: p.type,
   is_new: p.is_new,
@@ -52,6 +55,9 @@ const formFromProduct = (p: Product): ProductForm => ({
   series: (p as any).series || '',
   series_order: (p as any).series_order ? String((p as any).series_order) : '',
   bundle_discount: (p as any).bundle_discount ? String((p as any).bundle_discount) : '100',
+  image_urls: (p as any).image_urls && (p as any).image_urls.length > 0
+    ? [...(p as any).image_urls, '', '', '', ''].slice(0, 4)
+    : ['', '', '', ''],
 });
 
 const AdminProducts = () => {
@@ -87,7 +93,6 @@ const AdminProducts = () => {
 
     for (const product of localImageProducts) {
       try {
-        // Fetch the local image as a blob
         const resolvedUrl = resolveProductImage(product.image_url);
         const response = await fetch(resolvedUrl);
         const blob = await response.blob();
@@ -106,7 +111,6 @@ const AdminProducts = () => {
           continue;
         }
 
-        // Update the product's image_url in the database
         await supabase.from('products').update({ image_url: uploadData.url } as any).eq('id', product.id);
         migrated++;
       } catch (err) {
@@ -173,7 +177,6 @@ const AdminProducts = () => {
     let image_url: string | undefined;
     let digital_file_url: string | undefined;
 
-    // Upload product image to Cloudinary
     if (imageFile) {
       const formData = new FormData();
       formData.append('file', imageFile);
@@ -191,7 +194,6 @@ const AdminProducts = () => {
       image_url = uploadData.url;
     }
 
-    // Upload digital file
     if (digitalFile) {
       const ext = digitalFile.name.split('.').pop();
       const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
@@ -201,286 +203,255 @@ const AdminProducts = () => {
         setSaving(false);
         return;
       }
-      digital_file_url = path;
+      const { data: { publicUrl } } = supabase.storage.from('digital-products').getPublicUrl(path);
+      digital_file_url = publicUrl;
     }
 
-    const payload: any = {
+    const payload = {
       name: form.name,
       name_ar: form.name_ar || null,
       description: form.description,
-      price: parseInt(form.price) || 0,
-      original_price: form.original_price ? parseInt(form.original_price) : null,
+      price: parseFloat(form.price),
+      original_price: form.original_price ? parseFloat(form.original_price) : null,
+      delivery_fee: parseFloat(form.delivery_fee || '0'),
       category: form.category,
       type: form.type,
       is_new: form.is_new,
       is_halal: form.is_halal,
       ethical_source: form.ethical_source || null,
       in_stock: form.in_stock,
-      rating: parseFloat(form.rating) || 0,
-      reviews: parseInt(form.reviews) || 0,
+      rating: parseFloat(form.rating || '0'),
+      reviews: parseInt(form.reviews || '0'),
       series: form.series || null,
       series_order: form.series_order ? parseInt(form.series_order) : null,
-      bundle_discount: form.bundle_discount ? parseInt(form.bundle_discount) : 100,
+      bundle_discount: form.bundle_discount ? parseInt(form.bundle_discount) : null,
+      image_urls: form.image_urls.filter(url => url.trim() !== ''),
+      ...(image_url && { image_url }),
+      ...(digital_file_url && { digital_file_url }),
     };
 
-    if (image_url) payload.image_url = image_url;
-    if (digital_file_url) payload.digital_file_url = digital_file_url;
+    const { error } = mode === 'add'
+      ? await supabase.from('products').insert(payload as any)
+      : await supabase.from('products').update(payload as any).eq('id', editingId!);
 
-    if (mode === 'edit' && editingId) {
-      const { error } = await supabase.from('products').update(payload).eq('id', editingId);
-      if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      } else {
-        toast({ title: 'Updated', description: 'Product updated successfully.' });
-        setMode('list');
-      }
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      if (!image_url) payload.image_url = '/placeholder.svg';
-      const { error } = await supabase.from('products').insert(payload);
-      if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      } else {
-        toast({ title: 'Added', description: 'Product added successfully.' });
-        setMode('list');
-      }
+      toast({ title: mode === 'add' ? 'Added' : 'Updated', description: `Product ${mode === 'add' ? 'added' : 'updated'} successfully.` });
+      setMode('list');
+      refetch();
     }
-
     setSaving(false);
-    refetch();
   };
 
   const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this product?')) return;
     setDeleting(id);
     const { error } = await supabase.from('products').delete().eq('id', id);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Deleted', description: 'Product removed successfully.' });
+      toast({ title: 'Deleted', description: 'Product deleted successfully.' });
       refetch();
     }
     setDeleting(null);
   };
 
-  const updateField = (key: keyof ProductForm, value: any) => {
-    setForm(prev => ({ ...prev, [key]: value }));
-  };
-
-  // CSV Import logic
-  const parseCSV = useCallback((text: string) => {
-    const lines = text.split('\n').filter(l => l.trim());
-    if (lines.length < 2) return { rows: [], errors: ['CSV must have a header row and at least one data row.'] };
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-    const required = ['name', 'price'];
-    const missingHeaders = required.filter(r => !headers.includes(r));
-    if (missingHeaders.length) return { rows: [], errors: [`Missing required columns: ${missingHeaders.join(', ')}`] };
-
-    const rows: any[] = [];
-    const errors: string[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      if (values.length !== headers.length) {
-        errors.push(`Row ${i}: column count mismatch (expected ${headers.length}, got ${values.length})`);
-        continue;
-      }
-      const row: any = {};
-      headers.forEach((h, j) => { row[h] = values[j]; });
-      if (!row.name) { errors.push(`Row ${i}: missing name`); continue; }
-      if (!row.price || isNaN(Number(row.price))) { errors.push(`Row ${i}: invalid price`); continue; }
-      rows.push({
-        name: row.name,
-        description: row.description || '',
-        price: parseInt(row.price),
-        original_price: row.original_price ? parseInt(row.original_price) : null,
-        category: PRODUCT_CATEGORIES.includes(row.category || '') ? row.category : 'Uncategorized',
-        type: ['physical', 'digital'].includes(row.type || '') ? row.type : 'physical',
-        is_new: row.is_new === 'true',
-        is_halal: row.is_halal === 'true',
-        in_stock: row.in_stock !== 'false',
-        rating: parseFloat(row.rating) || 0,
-        reviews: parseInt(row.reviews) || 0,
-        series: row.series || null,
-        image_url: row.image_url || '/placeholder.svg',
-      });
-    }
-    return { rows, errors };
-  }, []);
-
   const handleCSVFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const { rows, errors } = parseCSV(text);
-      setCsvPreview(rows);
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n');
+      const headers = lines[0].split(',');
+      const results = [];
+      const errors = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const values = line.split(',');
+        if (values.length < headers.length) {
+          errors.push(`Row ${i} is malformed`);
+          continue;
+        }
+        const obj: any = {};
+        headers.forEach((h, idx) => {
+          obj[h.trim()] = values[idx].trim();
+        });
+        results.push(obj);
+      }
+      setCsvPreview(results);
       setCsvErrors(errors);
     };
     reader.readAsText(file);
-    e.target.value = '';
   };
 
   const importCSV = async () => {
-    if (!csvPreview || csvPreview.length === 0) return;
+    if (!csvPreview) return;
     setCsvImporting(true);
-    const { error } = await supabase.from('products').insert(csvPreview);
+    const products = csvPreview.map(p => ({
+      name: p.name,
+      name_ar: p.name_ar || null,
+      description: p.description || '',
+      price: parseFloat(p.price || '0'),
+      original_price: p.original_price ? parseFloat(p.original_price) : null,
+      delivery_fee: parseFloat(p.delivery_fee || '0'),
+      category: p.category || 'Uncategorized',
+      type: p.type || 'physical',
+      in_stock: p.in_stock === 'true',
+      is_new: p.is_new === 'true',
+      is_halal: p.is_halal === 'true',
+      ethical_source: p.ethical_source || null,
+    }));
+
+    const { error } = await supabase.from('products').insert(products as any);
     if (error) {
-      toast({ title: 'Import failed', description: error.message, variant: 'destructive' });
+      toast({ title: 'CSV Import Failed', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: '✅ Import complete', description: `${csvPreview.length} products imported successfully.` });
+      toast({ title: 'Success', description: `Imported ${products.length} products successfully.` });
       setCsvPreview(null);
-      setCsvErrors([]);
       refetch();
     }
     setCsvImporting(false);
   };
 
-  // Product form view
-  if (mode !== 'list') {
+  if (mode === 'add' || mode === 'edit') {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-2xl font-bold text-foreground">
-            {mode === 'add' ? 'Add Product' : 'Edit Product'}
-          </h2>
-          <Button variant="ghost" onClick={() => setMode('list')}><X className="h-4 w-4 mr-1" /> Cancel</Button>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" onClick={() => setMode('list')}><X className="h-4 w-4" /></Button>
+          <h2 className="font-display text-2xl font-bold text-foreground">{mode === 'add' ? 'Add Product' : 'Edit Product'}</h2>
         </div>
 
-        <div className="rounded-lg border border-border bg-card p-5 space-y-5">
-          {/* Basic info */}
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-foreground">Product Name *</label>
-              <Input value={form.name} onChange={e => updateField('name', e.target.value)} className="mt-1" placeholder="e.g. Premium Tasbih" />
+              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="mt-1" />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Arabic Name</label>
-              <Input value={form.name_ar} onChange={e => updateField('name_ar', e.target.value)} className="mt-1 font-arabic" placeholder="الاسم بالعربية" dir="rtl" />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-foreground">Description</label>
-            <textarea
-              value={form.description}
-              onChange={e => updateField('description', e.target.value)}
-              className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground min-h-[100px]"
-              placeholder="Product description..."
-            />
-          </div>
-
-          {/* Price & Category */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label className="text-sm font-medium text-foreground">Price (PKR) *</label>
-              <Input value={form.price} onChange={e => updateField('price', e.target.value)} type="number" className="mt-1" placeholder="4999" />
+              <Input value={form.name_ar} onChange={e => setForm(p => ({ ...p, name_ar: e.target.value }))} className="mt-1 font-amiri text-right" dir="rtl" />
             </div>
             <div>
-              <label className="text-sm font-medium text-foreground">Original Price (for discount)</label>
-              <Input value={form.original_price} onChange={e => updateField('original_price', e.target.value)} type="number" className="mt-1" placeholder="6500" />
+              <label className="text-sm font-medium text-foreground">Description</label>
+              <textarea
+                value={form.description}
+                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[120px]"
+              />
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Category</label>
-              <select
-                value={form.category}
-                onChange={e => updateField('category', e.target.value)}
-                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-              >
-                {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-            </div>
-          </div>
-
-          {/* Type */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label className="text-sm font-medium text-foreground">Product Type</label>
-              <select
-                value={form.type}
-                onChange={e => updateField('type', e.target.value)}
-                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
-              >
-                <option value="physical">📦 Physical</option>
-                <option value="digital">💾 Digital</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Rating</label>
-              <Input value={form.rating} onChange={e => updateField('rating', e.target.value)} type="number" step="0.1" min="0" max="5" className="mt-1" />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Reviews Count</label>
-              <Input value={form.reviews} onChange={e => updateField('reviews', e.target.value)} type="number" className="mt-1" />
-            </div>
-          </div>
-
-          {/* Toggles */}
-          <div className="flex flex-wrap gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.in_stock} onChange={e => updateField('in_stock', e.target.checked)} className="rounded border-input" />
-              <span className="text-sm text-foreground">In Stock</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.is_new} onChange={e => updateField('is_new', e.target.checked)} className="rounded border-input" />
-              <span className="text-sm text-foreground">New Arrival</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" checked={form.is_halal} onChange={e => updateField('is_halal', e.target.checked)} className="rounded border-input" />
-              <span className="text-sm text-foreground">Halal Certified</span>
-            </label>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium text-foreground">Ethical Sourcing Note</label>
-            <Input value={form.ethical_source} onChange={e => updateField('ethical_source', e.target.value)} className="mt-1" placeholder="e.g. Fair-trade certified" />
-          </div>
-
-          {/* Series / Bundle fields */}
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <label className="text-sm font-medium text-foreground">Series Name</label>
-              <Input value={form.series} onChange={e => updateField('series', e.target.value)} className="mt-1" placeholder="e.g. Khilafat Series" />
-              <p className="text-[10px] text-muted-foreground mt-1">Group books into sets for "Complete the Set" upsell</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Series Order</label>
-              <Input value={form.series_order} onChange={e => updateField('series_order', e.target.value)} type="number" className="mt-1" placeholder="1, 2, 3..." />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Bundle Discount (PKR)</label>
-              <Input value={form.bundle_discount} onChange={e => updateField('bundle_discount', e.target.value)} type="number" className="mt-1" placeholder="100" />
-              <p className="text-[10px] text-muted-foreground mt-1">Discount per book when added via bundle</p>
-            </div>
-          </div>
-
-          {/* Image upload */}
-          <div>
-            <label className="text-sm font-medium text-foreground">Product Image</label>
-            <div className="mt-2 flex items-start gap-4">
-              {imagePreview && (
-                <img src={imagePreview} alt="Preview" className="h-24 w-24 rounded-md object-cover border border-border" />
-              )}
+            <div className="grid grid-cols-3 gap-3">
               <div>
-                <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
-                <Button type="button" variant="outline" size="sm" onClick={() => imageInputRef.current?.click()} className="gap-1">
-                  <Upload className="h-3 w-3" /> {imagePreview ? 'Change Image' : 'Upload Image'}
-                </Button>
+                <label className="text-sm font-medium text-foreground">Price (PKR) *</label>
+                <Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} className="mt-1" />
               </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">Original Price</label>
+                <Input type="number" value={form.original_price} onChange={e => setForm(p => ({ ...p, original_price: e.target.value }))} className="mt-1" />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">Delivery Fee (PKR)</label>
+                <Input type="number" value={form.delivery_fee} onChange={e => setForm(p => ({ ...p, delivery_fee: e.target.value }))} className="mt-1" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground">Category</label>
+                <select
+                  value={form.category}
+                  onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-foreground">Type</label>
+                <select
+                  value={form.type}
+                  onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <option value="physical">Physical Product</option>
+                  <option value="digital">Digital Product</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.is_new} onChange={e => setForm(p => ({ ...p, is_new: e.target.checked }))} className="rounded border-input" />
+                <span className="text-sm text-foreground">New Arrival</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.is_halal} onChange={e => setForm(p => ({ ...p, is_halal: e.target.checked }))} className="rounded border-input" />
+                <span className="text-sm text-foreground">Halal Certified</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.in_stock} onChange={e => setForm(p => ({ ...p, in_stock: e.target.checked }))} className="rounded border-input" />
+                <span className="text-sm text-foreground">In Stock</span>
+              </label>
             </div>
           </div>
 
-          {/* Digital file upload (only for digital products) */}
-          {form.type === 'digital' && (
+          <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground">Digital File (PDF, ZIP, etc.)</label>
-              <div className="mt-2">
-                <input ref={digitalInputRef} type="file" onChange={handleDigitalFileChange} className="hidden" />
-                <Button type="button" variant="outline" size="sm" onClick={() => digitalInputRef.current?.click()} className="gap-1">
-                  <Download className="h-3 w-3" /> {digitalFile ? digitalFile.name : 'Upload Digital File'}
-                </Button>
-                {digitalFile && <span className="ml-2 text-xs text-muted-foreground">{digitalFile.name}</span>}
+              <label className="text-sm font-medium text-foreground">Main Product Image</label>
+              <div className="mt-2 flex items-center gap-4">
+                <div className="h-32 w-32 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                  <img src={imagePreview || '/placeholder.svg'} alt="Preview" className="h-full w-full object-cover" />
+                </div>
+                <div>
+                  <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => imageInputRef.current?.click()} className="gap-1">
+                    <Upload className="h-3 w-3" /> {imagePreview ? 'Change Image' : 'Upload Image'}
+                  </Button>
+                </div>
               </div>
             </div>
-          )}
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" /> Gallery Images (Up to 4 URLs)
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                {form.image_urls.map((url, i) => (
+                  <div key={i} className="flex gap-2">
+                    <div className="flex-none flex items-center justify-center w-8 h-8 rounded-full bg-muted text-[10px] font-bold">
+                      {i + 1}
+                    </div>
+                    <Input
+                      placeholder="https://images.cloudinary.com/..."
+                      value={url}
+                      onChange={e => {
+                        const newUrls = [...form.image_urls];
+                        newUrls[i] = e.target.value;
+                        setForm(p => ({ ...p, image_urls: newUrls }));
+                      }}
+                      className="h-9 text-xs"
+                    />
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground italic">Add up to 4 additional image URLs for the product gallery.</p>
+            </div>
+
+            {form.type === 'digital' && (
+              <div>
+                <label className="text-sm font-medium text-foreground">Digital File (PDF, ZIP, etc.)</label>
+                <div className="mt-2">
+                  <input ref={digitalInputRef} type="file" onChange={handleDigitalFileChange} className="hidden" />
+                  <Button type="button" variant="outline" size="sm" onClick={() => digitalInputRef.current?.click()} className="gap-1">
+                    <Download className="h-3 w-3" /> {digitalFile ? digitalFile.name : 'Upload Digital File'}
+                  </Button>
+                  {digitalFile && <span className="ml-2 text-xs text-muted-foreground">{digitalFile.name}</span>}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="gap-1">
@@ -490,7 +461,6 @@ const AdminProducts = () => {
     );
   }
 
-  // List view
   const inStock = products.filter(p => p.in_stock).length;
   const digitalCount = products.filter(p => p.type === 'digital').length;
 
@@ -517,7 +487,6 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      {/* Stats */}
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         <div className="rounded-lg border border-border bg-card p-4 text-center">
           <p className="text-xl font-bold font-display text-foreground">{products.length}</p>
@@ -537,7 +506,6 @@ const AdminProducts = () => {
         </div>
       </div>
 
-      {/* CSV Preview */}
       {csvPreview && (
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-5 space-y-3">
           <div className="flex items-center justify-between">
@@ -591,7 +559,6 @@ const AdminProducts = () => {
         </div>
       )}
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

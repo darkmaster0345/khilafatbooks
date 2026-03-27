@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Settings, Save, Store, CreditCard, Truck, Shield } from 'lucide-react';
+import { Settings, Save, Store, CreditCard, Truck, Shield, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +21,7 @@ const AdminSettings = () => {
     zakat_enabled: true,
     zakat_rate: '2.5',
     order_prefix: 'KB',
+    maintenance_mode: false,
   });
 
   useEffect(() => {
@@ -52,6 +54,23 @@ const AdminSettings = () => {
       <div>
         <h2 className="font-display text-2xl font-bold text-foreground">Settings</h2>
         <p className="text-sm text-muted-foreground">Configure your store settings.</p>
+      </div>
+
+      {/* Maintenance Mode */}
+      <div className="rounded-lg border border-warning/30 bg-warning/5 p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-warning" />
+            <div>
+              <h3 className="font-display text-lg font-semibold text-foreground">Maintenance Mode</h3>
+              <p className="text-xs text-muted-foreground">Notify users that orders and contact may take time.</p>
+            </div>
+          </div>
+          <Switch
+            checked={settings.maintenance_mode}
+            onCheckedChange={(val) => setSettings(p => ({ ...p, maintenance_mode: val }))}
+          />
+        </div>
       </div>
 
       {/* Store Info */}
@@ -124,7 +143,7 @@ const AdminSettings = () => {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="text-sm font-medium text-foreground">Shipping Fee (PKR)</label>
+            <label className="text-sm font-medium text-foreground">Default Shipping Fee (PKR)</label>
             <Input type="number" value={settings.shipping_fee} onChange={e => setSettings(p => ({ ...p, shipping_fee: e.target.value }))} className="mt-1" />
           </div>
           <div>
@@ -132,7 +151,7 @@ const AdminSettings = () => {
             <Input type="number" value={settings.free_shipping_threshold} onChange={e => setSettings(p => ({ ...p, free_shipping_threshold: e.target.value }))} className="mt-1" />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground">Orders above the threshold will get free shipping.</p>
+        <p className="text-xs text-muted-foreground italic">Note: Individual per-product delivery fees set in Product catalog will override this or be added if applicable.</p>
       </div>
 
       {/* Admin Account */}

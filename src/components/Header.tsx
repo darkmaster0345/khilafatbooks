@@ -9,55 +9,50 @@ import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import NotificationBell from '@/components/NotificationBell';
 import logo from '@/assets/logo.png';
-
-/**
- * NOTE: The logo asset 'logo.png' is currently 800KB.
- * For production, it should be converted to WebP and resized to ~100x100px.
- */
+import MaintenanceBanner from './MaintenanceBanner';
 
 const navLinks = [
   { to: '/', label: 'Home' },
   { to: '/shop', label: 'Shop' },
   { to: '/book-requests', label: 'Request a Book' },
-  { to: '/cart', label: 'Cart' },
+  { to: '/faq', label: 'FAQ' },
 ];
 
 const Header = () => {
-  const { totalItems } = useCart();
-  const { wishlist } = useWishlist();
-  const { user, isAdmin, signOut } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { totalItems } = useCart();
+  const { wishlist } = useWishlist();
+  const { user, signOut } = useAuth();
+
+  const isAdmin = user?.email === 'admin@khilafatbooks.com';
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
-      setSearchQuery('');
+      navigate(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      setMobileMenuOpen(false);
     }
   };
 
   return (
-    <header
-      className={`sticky top-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? 'bg-background/70 backdrop-blur-xl shadow-[0_1px_20px_-6px_hsl(var(--foreground)/0.08)] border-b border-border/40'
-          : 'bg-background/95 backdrop-blur-md border-b border-border/50'
-      }`}
-    >
-      <div className="container mx-auto flex items-center justify-between px-4 h-16">
+    <header className={`sticky top-0 z-50 w-full transition-all duration-300 ${
+      scrolled ? 'bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm' : 'bg-background border-b border-transparent'
+    }`}>
+      <MaintenanceBanner />
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="relative h-9 w-9 rounded-xl bg-muted/50 overflow-hidden shadow-md transition-transform group-hover:scale-105">
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <div className="h-9 w-9 overflow-hidden rounded-xl bg-primary/10 p-1.5 transition-transform group-hover:scale-105">
             <img
               src={logo}
               alt="Khilafat Books"
