@@ -1,6 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
 import { useRef, useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { ArrowLeft, ShoppingCart, Star, BadgeCheck, Download, Truck, Shield, Users, AlertTriangle, Share2, Copy, Bell, Gift, Link2 } from 'lucide-react';
 import WhatsAppIcon from '@/components/WhatsAppIcon';
 import { motion } from 'framer-motion';
@@ -119,33 +118,6 @@ const ProductDetail = () => {
         <span className="text-border">/</span>
         <span className="text-foreground font-medium truncate max-w-[150px]">{product.name}</span>
       </nav>
-      <Helmet>
-        {/* Dynamic metadata for book detail page SEO using truncateDescription utility */}
-        <title>{product.name} — Islamic {product.category} | Khilafat Books</title>
-        <meta name="description" content={truncateDescription(`${product.name}: ${product.description}`)} />
-        <link rel="canonical" href={absoluteProductUrl} />
-        <link rel="alternate" hreflang="en" href={absoluteProductUrl} />
-        <link rel="alternate" hreflang="ur" href={absoluteProductUrl} />
-
-        <meta property="og:site_name" content="Khilafat Books" />
-        <meta property="og:title" content={`${product.name} — Islamic ${product.category} | Khilafat Books`} />
-        <meta property="og:description" content={truncateDescription(product.description)} />
-        <meta property="og:url" content={absoluteProductUrl} />
-        <meta property="og:type" content="product" />
-        <meta property="og:image" content={cloudinaryOgImage} />
-
-        {/* Pinterest & Rich Pin specific tags */}
-        <meta property="product:price:amount" content={String(product.price)} />
-        <meta property="product:price:currency" content="PKR" />
-        <meta property="product:availability" content={product.inStock ? 'instock' : 'out of stock'} />
-        <meta property="product:condition" content="new" />
-        <meta property="og:price:amount" content={String(product.price)} />
-        <meta property="og:price:currency" content="PKR" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:description" content={truncateDescription(product.description)} />
-        <meta name="twitter:image" content={cloudinaryOgImage} />
-      </Helmet>
       <ProductJsonLd
         name={product.name}
         description={product.description}

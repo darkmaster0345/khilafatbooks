@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ArrowRight, Gift, Download, ExternalLink } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -109,14 +108,6 @@ const Orders = () => {
 
   return (
     <main className="container mx-auto px-4 py-10 max-w-4xl">
-      <Helmet>
-        {/* Optimized title and description for order history page */}
-        <title>My Orders — Islamic Bookstore Account | Khilafat Books</title>
-        <meta name="description" content="Track your orders, view order history, and manage your Khilafat Books purchases. Access your digital downloads and physical delivery status." />
-        <meta name="robots" content="noindex, nofollow" />
-        <meta property="og:title" content="My Orders — Islamic Bookstore Account | Khilafat Books" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/orders-banner.jpg" />
-      </Helmet>
       <div className="mb-8">
         <p className="section-heading">Your History</p>
         <h1 className="section-title">My Orders</h1>

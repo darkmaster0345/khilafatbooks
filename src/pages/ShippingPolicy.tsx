@@ -1,26 +1,8 @@
-import { Helmet } from 'react-helmet-async';
 import { Truck, ShieldCheck, Clock, MapPin } from 'lucide-react';
 
 const ShippingPolicy = () => {
   return (
     <main className="container mx-auto px-4 py-16 max-w-4xl">
-      <Helmet>
-        {/* Optimized title and description for shipping policy */}
-        <title>Shipping Policy — Islamic Books Delivery Pakistan | Khilafat Books</title>
-        <meta name="description" content="Get fast and reliable delivery for Islamic books across Pakistan. Free shipping on orders over Rs. 5,000. Learn about our delivery times and tracking." />
-        <link rel="canonical" href="https://khilafatbooks.vercel.app/shipping-policy" />
-        <link rel="alternate" hreflang="en" href="https://khilafatbooks.vercel.app/shipping-policy" />
-        <link rel="alternate" hreflang="ur" href="https://khilafatbooks.vercel.app/shipping-policy" />
-
-        {/* OG tags with optimized Cloudinary image for shipping policy */}
-        <meta property="og:title" content="Shipping Policy — Islamic Books Delivery Pakistan | Khilafat Books" />
-        <meta property="og:description" content="Get fast and reliable delivery for Islamic books across Pakistan. Free shipping on orders over Rs. 5,000." />
-        <meta property="og:url" content="https://khilafatbooks.vercel.app/shipping-policy" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/shipping-banner.jpg" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-      </Helmet>
 
       <div className="text-center mb-12">
         <h1 className="font-display text-4xl font-bold text-foreground mb-4">Shipping Policy</h1>

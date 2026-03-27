@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 import { BookOpen, Users, Plus, Check, Sparkles, TrendingUp, ArrowRight, ShieldCheck, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -162,23 +161,6 @@ const BookRequests = () => {
 
   return (
     <main className="container mx-auto px-4 py-10 max-w-5xl">
-      <Helmet>
-        {/* Optimized title and description for book requests */}
-        <title>Request a Book — Community Islamic Imports | Khilafat Books</title>
-        <meta name="description" content="Vote on which Islamic books we should import next to Pakistan. Pledge a small security deposit and join the community to bring rare Islamic titles home." />
-        <link rel="canonical" href="https://khilafatbooks.vercel.app/book-requests" />
-        <link rel="alternate" hreflang="en" href="https://khilafatbooks.vercel.app/book-requests" />
-        <link rel="alternate" hreflang="ur" href="https://khilafatbooks.vercel.app/book-requests" />
-
-        {/* OG tags with optimized Cloudinary image for book requests */}
-        <meta property="og:title" content="Request a Book — Community Islamic Imports | Khilafat Books" />
-        <meta property="og:description" content="Vote on which Islamic books we should import next to Pakistan. Join the community and request rare titles." />
-        <meta property="og:url" content="https://khilafatbooks.vercel.app/book-requests" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/requests-banner.jpg" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-      </Helmet>
 
       {/* Hero */}
       <div className="mb-10">

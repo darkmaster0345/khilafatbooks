@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Helmet } from 'react-helmet-async';
 import { ArrowRight, ShieldCheck, Truck, Download, Heart, Star, BookOpen, Sparkles, ShoppingCart, Mail } from 'lucide-react';
 import VerseOfTheDay from '@/components/VerseOfTheDay';
 import Testimonials from '@/components/Testimonials';
@@ -50,25 +49,6 @@ const Index = () => {
 
   return (
     <main>
-      <Helmet>
-        {/* Optimized title and description for Islamic books online Pakistan */}
-        <title>Home — Islamic Bookstore & Halal Products | Khilafat Books</title>
-        <meta name="description" content="Shop premium Islamic books online in Pakistan. Discover digital courses, prophetic medicine, and halal products with EasyPaisa and fast Pakistan-wide delivery." />
-        <link rel="canonical" href="https://khilafatbooks.vercel.app/" />
-        <link rel="alternate" hreflang="en" href="https://khilafatbooks.vercel.app/" />
-        <link rel="alternate" hreflang="ur" href="https://khilafatbooks.vercel.app/" />
-
-        {/* Dynamic OG tags with optimized Cloudinary image */}
-        <meta property="og:title" content="Home — Islamic Bookstore & Halal Products | Khilafat Books" />
-        <meta property="og:description" content="Shop premium Islamic books online in Pakistan. Discover digital courses, prophetic medicine, and halal products with EasyPaisa and fast Pakistan-wide delivery." />
-        <meta property="og:url" content="https://khilafatbooks.vercel.app/" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/hero-bg-new.jpg" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:description" content="Shop premium Islamic books online in Pakistan. Discover digital courses, prophetic medicine, and halal products." />
-        <meta name="twitter:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/hero-bg-new.jpg" />
-      </Helmet>
       <OrganizationJsonLd />
       <LocalBusinessJsonLd />
 

@@ -1,4 +1,3 @@
-import { Helmet } from 'react-helmet-async';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { motion } from 'framer-motion';
 
@@ -61,24 +60,6 @@ const faqJsonLd = {
 const FAQ = () => {
   return (
     <main className="container mx-auto px-4 py-10 max-w-3xl">
-      <Helmet>
-        {/* Optimized title and description for Islamic books support */}
-        <title>FAQ — Islamic Bookstore Support | Khilafat Books</title>
-        <meta name="description" content="Find answers to common questions about ordering Islamic books, shipping rates in Pakistan, EasyPaisa payments, and our Zakat donation flow at Khilafat Books." />
-        <link rel="canonical" href="https://khilafatbooks.vercel.app/faq" />
-        <link rel="alternate" hreflang="en" href="https://khilafatbooks.vercel.app/faq" />
-        <link rel="alternate" hreflang="ur" href="https://khilafatbooks.vercel.app/faq" />
-
-        {/* OG tags with optimized Cloudinary image for FAQ page */}
-        <meta property="og:title" content="FAQ — Islamic Bookstore Support | Khilafat Books" />
-        <meta property="og:description" content="Find answers to common questions about ordering Islamic books, shipping rates in Pakistan, and EasyPaisa payments." />
-        <meta property="og:url" content="https://khilafatbooks.vercel.app/faq" />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/faq-banner.jpg" />
-
-        <meta name="twitter:card" content="summary_large_image" />
-        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
-      </Helmet>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <p className="section-heading">Support</p>

@@ -11,7 +11,6 @@ import { useProducts } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 import { slugify } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Helmet } from 'react-helmet-async';
 
 type ReadingStatus = 'want_to_read' | 'reading' | 'completed';
 
@@ -155,14 +154,6 @@ const Library = () => {
 
   return (
     <>
-      <Helmet>
-        {/* Optimized title and description for digital library page */}
-        <title>My Library — Your Islamic Reading Journey | Khilafat Books</title>
-        <meta name="description" content="Manage your Islamic digital books, track reading progress, and set personal goals. Your personal gateway to Islamic knowledge at Khilafat Books." />
-        <meta name="robots" content="noindex, nofollow" />
-        <meta property="og:title" content="My Library — Your Islamic Reading Journey | Khilafat Books" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/library-banner.jpg" />
-      </Helmet>
 
       <div className="min-h-screen bg-background">
         <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">

@@ -1,6 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { Helmet } from 'react-helmet-async';
 import { Search, Home, ShoppingBag, BookOpen, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
@@ -36,13 +35,6 @@ const NotFound = () => {
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center px-4">
-      <Helmet>
-        {/* Optimized title for 404 page */}
-        <title>Page Not Found — Islamic Bookstore | Khilafat Books</title>
-        <meta name="robots" content="noindex, nofollow" />
-        <meta property="og:title" content="Page Not Found — Islamic Bookstore | Khilafat Books" />
-        <meta property="og:image" content="https://res.cloudinary.com/dlnv8866e/image/upload/f_auto,q_auto,w_1200,h_630,c_fill/v1710500000/404-banner.jpg" />
-      </Helmet>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
