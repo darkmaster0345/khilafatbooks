@@ -4,6 +4,7 @@ import path from 'path'
 import fs from 'fs'
 import { fileURLToPath } from 'url'
 import dotenv from 'dotenv'
+import jsdom from 'jsdom'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -59,9 +60,23 @@ async function run() {
 
     console.log(`📄 Prerendering ${allRoutes.length} routes...`)
 
+    // Custom resource loader to skip stylesheets
+    class SkipStylesheetsResourceLoader extends jsdom.ResourceLoader {
+      fetch(url: string, options: any) {
+        if (url.endsWith('.css') || url.includes('fonts.googleapis.com')) {
+          return Promise.resolve(Buffer.from(''))
+        }
+        return super.fetch(url, options)
+      }
+    }
+
     const renderer = new JSDomRenderer({
       renderAfterTime: 2500, // Wait for JS execution
       inject: { __PRERENDER__: true },
+      jsdomOptions: {
+        resources: 'usable',
+        resourceLoader: new SkipStylesheetsResourceLoader(),
+      }
     })
 
     const prerenderer = new Prerenderer({
