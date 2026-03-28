@@ -10,7 +10,7 @@ const Footer = () => (
       <div className="grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-5">
         <div className="md:col-span-1">
           <div className="flex items-center gap-3 mb-4">
-            <img src={logo} alt="Khilafat Books" className="h-9 w-9 rounded-xl shadow-sm object-contain" />
+            <img src={logo} alt="Khilafat Books logo — Islamic Bookstore Pakistan" className="h-9 w-9 rounded-xl shadow-sm object-contain" />
             <span className="font-display text-lg font-bold text-foreground">Khilafat Books</span>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mb-6">

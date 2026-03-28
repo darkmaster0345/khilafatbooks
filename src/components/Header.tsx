@@ -55,7 +55,7 @@ const Header = () => {
           <div className="h-9 w-9 overflow-hidden rounded-xl bg-primary/10 p-1.5 transition-transform group-hover:scale-105">
             <img
               src={logo}
-              alt="Khilafat Books"
+              alt="Khilafat Books logo — Islamic Bookstore Pakistan"
               width="36"
               height="36"
               className="h-full w-full object-contain"

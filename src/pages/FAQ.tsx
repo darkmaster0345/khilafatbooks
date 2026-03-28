@@ -1,3 +1,4 @@
+import { SEOHead } from '@/components/SEOHead';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { motion } from 'framer-motion';
 
@@ -59,29 +60,31 @@ const faqJsonLd = {
 
 const FAQ = () => {
   return (
-    <main className="container mx-auto px-4 py-10 max-w-3xl">
+    <>
+      <SEOHead title="FAQ | Khilafat Books" description="Frequently asked questions about shipping, payments, and our products." canonical="/faq" jsonLd={faqJsonLd} />
+      <main className="container mx-auto px-4 py-10 max-w-3xl">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+          <p className="section-heading">Support</p>
+          <h1 className="section-title">Frequently Asked Questions</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Can't find your answer? Reach out via WhatsApp and we'll help you out.
+          </p>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <p className="section-heading">Support</p>
-        <h1 className="section-title">Frequently Asked Questions</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Can't find your answer? Reach out via WhatsApp and we'll help you out.
-        </p>
-
-        <Accordion type="single" collapsible className="mt-10">
-          {faqs.map((faq, i) => (
-            <AccordionItem key={i} value={`faq-${i}`}>
-              <AccordionTrigger className="text-left text-sm font-semibold text-foreground hover:no-underline">
-                {faq.q}
-              </AccordionTrigger>
-              <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
-                {faq.a}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </motion.div>
-    </main>
+          <Accordion type="single" collapsible className="mt-10">
+            {faqs.map((faq, i) => (
+              <AccordionItem key={i} value={`faq-${i}`}>
+                <AccordionTrigger className="text-left text-sm font-semibold text-foreground hover:no-underline">
+                  {faq.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
+                  {faq.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </motion.div>
+      </main>
+    </>
   );
 };
 

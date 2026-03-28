@@ -1,180 +1,133 @@
+import { SEOHead } from '@/components/SEOHead';
 import { useState } from 'react';
-import { Navigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { Navigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Mail, Lock, User, Phone, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import logo from '@/assets/logo.png';
 
-type Mode = 'signin' | 'signup' | 'forgot';
-
-// Log security event for tracking
-const logSecurityEvent = async (
-  eventType: string, 
-  email: string | null, 
-  success: boolean,
-  metadata: Record<string, any> = {}
-) => {
-  try {
-    await supabase.from('security_events').insert({
-      event_type: eventType,
-      user_email: email,
-      success,
-      metadata
-    });
-  } catch (e) {
-    console.error('Failed to log security event:', e);
-  }
-};
-
 const Auth = () => {
-  const { user, loading, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
-  const { toast } = useToast();
-  const [mode, setMode] = useState<Mode>('signin');
+  const { user, signIn, signUp, loading } = useAuth();
+  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [phone, setPhone] = useState('');
 
-  if (loading) return <div className="flex items-center justify-center min-h-[60vh]"><p className="text-muted-foreground">Loading...</p></div>;
   if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
-
-    if (mode === 'forgot') {
-      const { error } = await resetPassword(email);
-      if (error) toast({ title: 'Error', description: error.message, variant: 'destructive' });
-      else toast({ title: 'Check your email', description: 'We sent you a password reset link.' });
-      setSubmitting(false);
-      return;
-    }
-
-    if (mode === 'signup') {
-      const { error } = await signUp(email, password, fullName);
-      if (error) {
-        toast({ title: 'Error', description: error.message, variant: 'destructive' });
-        logSecurityEvent('signup', email, false, { error: error.message });
-      } else {
-        toast({ title: 'Account created!', description: 'Please check your email to verify your account.' });
-        logSecurityEvent('signup', email, true, {});
-      }
+    if (mode === 'signin') {
+      await signIn(email, password);
     } else {
-      const { error } = await signIn(email, password);
-      if (error) {
-        toast({ title: 'Sign in failed', description: error.message, variant: 'destructive' });
-        logSecurityEvent('login_failed', email, false, { error: error.message });
-      } else {
-        logSecurityEvent('login', email, true, {});
-      }
+      await signUp(email, password, { full_name: fullName, phone });
     }
-    setSubmitting(false);
-  };
-
-  const handleGoogleSignIn = async () => {
-    logSecurityEvent('login', null, true, { type: 'google_oauth_start' });
-    signInWithGoogle();
   };
 
   return (
-    <main className="flex min-h-[75vh] items-center justify-center px-4 py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-md"
-      >
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
-          <div className="flex flex-col items-center mb-8">
-            <img src={logo} alt="Khilafat Books" className="h-16 w-16 rounded-2xl mb-4 shadow-md object-contain" />
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              {mode === 'signin' && 'Welcome back'}
-              {mode === 'signup' && 'Create account'}
-              {mode === 'forgot' && 'Reset password'}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {mode === 'signin' && 'Sign in to your Khilafat Books account'}
-              {mode === 'signup' && 'Join the Khilafat Books community'}
-              {mode === 'forgot' && 'Enter your email to receive a reset link'}
+    <>
+      <SEOHead title="Sign In | Khilafat Books" description="Access your Khilafat Books account." canonical="/auth" noIndex={true} />
+      <main className="min-h-[90vh] flex items-center justify-center p-4 bg-muted/30">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md bg-card border border-border rounded-3xl p-8 shadow-xl"
+        >
+          <div className="text-center mb-10">
+            <Link to="/" className="inline-block mb-6">
+              <img src={logo} alt="Khilafat Books" className="h-16 w-16 rounded-2xl shadow-md mx-auto object-contain" />
+            </Link>
+            <h1 className="text-3xl font-bold font-display">{mode === 'signin' ? 'Welcome Back' : 'Join the Ummah'}</h1>
+            <p className="text-muted-foreground mt-2 text-sm">
+              {mode === 'signin' ? 'Access your library and track orders' : 'Start your journey of knowledge with us'}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {mode === 'signup' && (
-              <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Full Name" className="pl-10 h-11 rounded-xl" required />
-              </div>
-            )}
+            <AnimatePresence mode="wait">
+              {mode === 'signup' && (
+                <motion.div
+                  key="signup-fields"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-4 overflow-hidden"
+                >
+                  <div className="relative">
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Full Name"
+                      value={fullName}
+                      onChange={e => setFullName(e.target.value)}
+                      required
+                      className="pl-10 h-12 rounded-xl"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Phone Number"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      required
+                      className="pl-10 h-12 rounded-xl"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
             <div className="relative">
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" className="pl-10 h-11 rounded-xl" required />
+              <Input
+                type="email"
+                placeholder="Email Address"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+                className="pl-10 h-12 rounded-xl"
+              />
             </div>
-            {mode !== 'forgot' && (
-              <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" className="pl-10 h-11 rounded-xl" required minLength={6} />
-              </div>
-            )}
 
-            <Button type="submit" className="w-full h-11 text-base rounded-xl" disabled={submitting}>
-              {submitting ? 'Please wait...' : mode === 'signin' ? 'Sign In' : mode === 'signup' ? 'Create Account' : 'Send Reset Link'}
+            <div className="relative">
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                className="pl-10 h-12 rounded-xl"
+              />
+            </div>
+
+            <Button disabled={loading} className="w-full h-12 rounded-xl gold-gradient border-0 text-foreground font-bold shadow-lg mt-2">
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : mode === 'signin' ? 'Sign In' : 'Create Account'}
             </Button>
           </form>
 
-          {mode !== 'forgot' && (
-            <>
-              <div className="my-5 flex items-center gap-3">
-                <div className="h-px flex-1 bg-border" />
-                <span className="text-xs text-muted-foreground">or continue with</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-
-              <Button
-                variant="outline"
-                className="w-full gap-2.5 h-11 rounded-xl"
-                onClick={handleGoogleSignIn}
+          <div className="mt-8 text-center text-sm">
+            <p className="text-muted-foreground">
+              {mode === 'signin' ? "Don't have an account?" : "Already have an account?"}
+              <button
+                onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+                className="ml-1.5 text-primary font-bold hover:underline"
               >
-                <svg className="h-5 w-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                </svg>
-                Sign in with Google
-              </Button>
-            </>
-          )}
-
-          <div className="mt-6 text-center text-sm space-y-1.5">
-            {mode === 'signin' && (
-              <>
-                <button onClick={() => setMode('forgot')} className="text-primary hover:underline block mx-auto text-xs">Forgot password?</button>
-                <p className="text-muted-foreground">
-                  Don't have an account?{' '}
-                  <button onClick={() => setMode('signup')} className="text-primary font-medium hover:underline">Sign up</button>
-                </p>
-              </>
-            )}
-            {mode === 'signup' && (
-              <p className="text-muted-foreground">
-                Already have an account?{' '}
-                <button onClick={() => setMode('signin')} className="text-primary font-medium hover:underline">Sign in</button>
-              </p>
-            )}
-            {mode === 'forgot' && (
-              <button onClick={() => setMode('signin')} className="text-primary hover:underline flex items-center gap-1 mx-auto text-xs">
-                <ArrowLeft className="h-3 w-3" /> Back to sign in
+                {mode === 'signin' ? 'Sign Up' : 'Sign In'}
               </button>
-            )}
+            </p>
           </div>
-        </div>
-      </motion.div>
-    </main>
+
+          <div className="mt-8 pt-8 border-t border-border flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+            <ShieldCheck className="h-4 w-4 text-primary" />
+            Secure Authentication
+          </div>
+        </motion.div>
+      </main>
+    </>
   );
 };
 

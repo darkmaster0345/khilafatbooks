@@ -1,3 +1,4 @@
+import { SEOHead } from '@/components/SEOHead';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Users, Plus, Check, Sparkles, TrendingUp, ArrowRight, ShieldCheck, Info } from 'lucide-react';
@@ -50,13 +51,11 @@ const BookRequests = () => {
 
     if (!reqs) { setLoading(false); return; }
 
-    const requestIds = reqs.map((r: any) => r.id);
-
-    // Get pledge counts via secure RPC, and user's own pledges if logged in
+    const requestIds = reqs.map(r => r.id);
     const pledgeCounts = await Promise.all(
-      requestIds.map(async (id: string) => {
-        const { data: count } = await supabase.rpc('get_pledge_count', { p_request_id: id });
-        return { request_id: id, count: count || 0 };
+      requestIds.map(async id => {
+        const { data } = await supabase.rpc('get_pledge_count', { p_request_id: id });
+        return { request_id: id, count: Number(data) || 0 };
       })
     );
 
@@ -99,7 +98,6 @@ const BookRequests = () => {
   const handleSuggest = async () => {
     if (!user) { toast.error('Please sign in to suggest a book'); return; }
     if (!title.trim()) { toast.error('Book title is required'); return; }
-    if (title.length > 200) { toast.error('Title too long'); return; }
 
     setSubmitting(true);
     const { error } = await supabase.from('book_requests').insert({
@@ -122,83 +120,65 @@ const BookRequests = () => {
     setSubmitting(false);
   };
 
-  const handlePledge = async (requestId: string) => {
+  const onPledge = async (requestId: string) => {
     if (!user) { toast.error('Please sign in to pledge'); return; }
-
     setPledging(requestId);
     const { error } = await supabase.from('book_pledges').insert({
       request_id: requestId,
       user_id: user.id,
-      user_email: user.email,
-      user_name: user.user_metadata?.full_name || user.email,
-    } as any);
-
-    if (error) {
-      if (error.code === '23505') {
-        toast.error('You already pledged for this book!');
-      } else {
-        toast.error('Failed to pledge');
-      }
-    } else {
-      toast.success('Security deposit registered! 🎉', {
-        description: `Rs. ${PLEDGE_FEE} deposit recorded. This will be credited towards your purchase when the book arrives.`,
-      });
-      fetchRequests();
-    }
+    });
+    if (error) toast.error('Already pledged or error occurred');
+    else toast.success('Pledge successful! JazakAllah.');
     setPledging(null);
-  };
-
-  const handleUnpledge = async (requestId: string) => {
-    if (!user) return;
-    await supabase.from('book_pledges').delete().eq('request_id', requestId).eq('user_id', user.id);
-    toast.success('Pledge withdrawn — your deposit is refunded');
     fetchRequests();
   };
 
-  const votingRequests = requests.filter(r => r.status === 'voting');
-  const fundedRequests = requests.filter(r => r.status === 'funded');
-  const fulfilledRequests = requests.filter(r => r.status === 'fulfilled');
+  const onUnpledge = async (requestId: string) => {
+    const { error } = await supabase.from('book_pledges').delete().eq('request_id', requestId).eq('user_id', user?.id);
+    if (!error) toast.success('Pledge removed');
+    fetchRequests();
+  };
 
   return (
-    <main className="container mx-auto px-4 py-10 max-w-5xl">
-
-      {/* Hero */}
-      <div className="mb-10">
-        <div className="flex items-start justify-between flex-wrap gap-4">
+    <>
+      <SEOHead title="Request a Book | Khilafat Books" description="Can't find a book? Request it here and we'll source it for you." canonical="/book-requests" />
+      <main className="container mx-auto px-4 py-12 max-w-6xl">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
-            <p className="section-heading flex items-center gap-1.5">
-              <Sparkles className="h-3.5 w-3.5" /> Community-Driven
-            </p>
-            <h1 className="section-title">Request a Book</h1>
-            <p className="mt-2 text-sm text-muted-foreground max-w-lg leading-relaxed">
-              Can't find a book you want? Suggest it! When 20 people pledge{' '}
-              <strong className="text-foreground">{formatPKR(PLEDGE_FEE)}</strong> each as a security deposit, we'll import it.
-              Your deposit is fully credited towards your purchase.
+            <h1 className="font-display text-4xl font-bold text-foreground">Request a Book</h1>
+            <p className="mt-2 text-muted-foreground max-w-xl">
+              Can't find a specific Islamic title? Suggest it to our community. If enough people pledge their interest, we'll source and add it to our catalog.
             </p>
           </div>
 
           <Dialog open={suggestOpen} onOpenChange={setSuggestOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-1.5 rounded-xl">
-                <Plus className="h-4 w-4" /> Suggest a Book
+              <Button size="lg" className="rounded-xl gap-2 shadow-lg hover:shadow-xl transition-all">
+                <Plus className="h-5 w-5" /> Suggest New Book
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-[500px] rounded-3xl">
               <DialogHeader>
-                <DialogTitle className="font-display">Suggest a Book</DialogTitle>
+                <DialogTitle className="font-display text-2xl font-bold">Suggest a Title</DialogTitle>
               </DialogHeader>
-              <div className="space-y-4 mt-2">
-                <div>
-                  <label className="text-sm font-medium text-foreground">Book Title *</label>
-                  <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Riyad as-Salihin" className="mt-1.5 h-11 rounded-xl" maxLength={200} />
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Book Title *</label>
+                  <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="e.g. Al-Fawz al-Kabir" className="rounded-xl" />
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Author</label>
-                  <Input value={author} onChange={e => setAuthor(e.target.value)} placeholder="e.g. Imam An-Nawawi" className="mt-1.5 h-11 rounded-xl" maxLength={100} />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Author Name</label>
+                  <Input value={author} onChange={e => setAuthor(e.target.value)} placeholder="e.g. Shah Waliullah Dehlawi" className="rounded-xl" />
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Why do you want this book?</label>
-                  <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Tell others why this book is worth importing..." className="mt-1.5 rounded-xl" maxLength={500} rows={3} />
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Why should we add this?</label>
+                  <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Briefly describe the book..." className="rounded-xl min-h-[100px]" />
+                </div>
+                <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex gap-3">
+                  <Info className="h-5 w-5 text-primary shrink-0" />
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    By suggesting, you agree to follow up with a pledge if others show interest. We prioritize authentic, scholar-approved literature.
+                  </p>
                 </div>
                 <Button onClick={handleSuggest} disabled={submitting} className="w-full h-11 rounded-xl">
                   {submitting ? 'Submitting...' : 'Submit Suggestion'}
@@ -207,203 +187,78 @@ const BookRequests = () => {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
 
-      {/* How it works — Shariah Compliant */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        {[
-          { step: '1', title: 'Suggest or Vote', desc: 'Suggest a book or show interest by pledging' },
-          { step: '2', title: 'Security Deposit', desc: `${formatPKR(PLEDGE_FEE)} deposit (Hamish Jiddiyyah) — fully refundable` },
-          { step: '3', title: 'We Import & You Buy', desc: "The actual sale happens only when the book is in our possession" },
-        ].map((s, i) => (
-          <div key={i} className="rounded-xl border border-border bg-card p-4 text-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-sm mx-auto mb-2">
-              {s.step}
-            </div>
-            <p className="text-sm font-semibold text-foreground">{s.title}</p>
-            <p className="text-[11px] text-muted-foreground mt-1">{s.desc}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Shariah Compliance Notice */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 mb-10 flex gap-3 items-start">
-        <ShieldCheck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-        <div className="text-xs text-muted-foreground leading-relaxed">
-          <p className="font-semibold text-foreground text-sm mb-1">100% Shariah Compliant</p>
-          <ul className="space-y-1 list-disc list-inside">
-            <li>Your <strong className="text-foreground">{formatPKR(PLEDGE_FEE)}</strong> is a <strong className="text-foreground">security deposit</strong> (Hamish Jiddiyyah), not a sale — the actual sale happens only when the book is in our possession.</li>
-            <li>Your deposit is <strong className="text-foreground">fully credited</strong> towards the final purchase price.</li>
-            <li>If the final price changes significantly from the estimate, you have <strong className="text-foreground">full right to withdraw</strong> and get your deposit back.</li>
-            <li>If import fails, you choose: <strong className="text-foreground">full EasyPaisa refund</strong> or <strong className="text-foreground">store credit</strong> — your choice, no coercion.</li>
-          </ul>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="space-y-4">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="rounded-xl border border-border bg-card p-6 animate-pulse">
-              <div className="h-5 w-1/3 bg-muted rounded mb-3" />
-              <div className="h-3 w-1/2 bg-muted rounded mb-4" />
-              <div className="h-2 w-full bg-muted rounded" />
-            </div>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {loading ? (
+            Array(6).fill(0).map((_, i) => <div key={i} className="h-64 rounded-2xl bg-muted animate-pulse" />)
+          ) : requests.map((req) => (
+            <RequestCard
+              key={req.id}
+              request={req}
+              onPledge={onPledge}
+              onUnpledge={onUnpledge}
+              pledging={pledging}
+              isLoggedIn={!!user}
+            />
           ))}
         </div>
-      ) : (
-        <div className="space-y-8">
-          {votingRequests.length > 0 && (
-            <section>
-              <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-accent" /> Active Requests
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <AnimatePresence>
-                  {votingRequests.map((req) => (
-                    <RequestCard
-                      key={req.id}
-                      request={req}
-                      onPledge={handlePledge}
-                      onUnpledge={handleUnpledge}
-                      pledging={pledging}
-                      isLoggedIn={!!user}
-                    />
-                  ))}
-                </AnimatePresence>
-              </div>
-            </section>
-          )}
-
-          {fundedRequests.length > 0 && (
-            <section>
-              <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                <Check className="h-4 w-4 text-primary" /> Goal Reached — Importing!
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {fundedRequests.map((req) => (
-                  <RequestCard key={req.id} request={req} onPledge={handlePledge} onUnpledge={handleUnpledge} pledging={pledging} isLoggedIn={!!user} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {fulfilledRequests.length > 0 && (
-            <section>
-              <h2 className="font-display text-lg font-bold text-foreground mb-4 flex items-center gap-2">
-                <BookOpen className="h-4 w-4 text-primary" /> Now Available
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                {fulfilledRequests.map((req) => (
-                  <RequestCard key={req.id} request={req} onPledge={handlePledge} onUnpledge={handleUnpledge} pledging={pledging} isLoggedIn={!!user} />
-                ))}
-              </div>
-            </section>
-          )}
-
-          {requests.length === 0 && (
-            <div className="text-center py-16 rounded-2xl border border-border bg-card">
-              <BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h2 className="font-display text-xl font-bold text-foreground">No book requests yet</h2>
-              <p className="mt-2 text-muted-foreground">Be the first to suggest a book!</p>
-            </div>
-          )}
-        </div>
-      )}
-    </main>
+      </main>
+    </>
   );
 };
 
-const RequestCard = ({
-  request: req, onPledge, onUnpledge, pledging, isLoggedIn,
-}: {
-  request: BookRequest;
-  onPledge: (id: string) => void;
-  onUnpledge: (id: string) => void;
-  pledging: string | null;
-  isLoggedIn: boolean;
-}) => {
-  const progress = Math.min(100, (req.pledge_count / req.pledge_goal) * 100);
-  const isFunded = req.status === 'funded' || req.pledge_count >= req.pledge_goal;
+const RequestCard = ({ request: req, onPledge, onUnpledge, pledging, isLoggedIn }: any) => {
+  const progress = (req.pledge_count / req.pledge_goal) * 100;
   const isFulfilled = req.status === 'fulfilled';
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`rounded-xl border p-5 transition-all ${
-        isFulfilled ? 'border-primary/20 bg-primary/5' :
-        isFunded ? 'border-accent/20 bg-accent/5' :
-        'border-border bg-card hover:shadow-md'
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-display text-base font-bold text-foreground truncate">{req.title}</h3>
-            {isFulfilled && <Badge className="bg-primary/15 text-primary text-[10px]">📚 Available</Badge>}
-            {isFunded && !isFulfilled && <Badge className="bg-accent/15 text-accent-foreground text-[10px]">🎉 Goal Reached</Badge>}
-          </div>
-          {req.author && <p className="text-xs text-muted-foreground mt-0.5">by {req.author}</p>}
-          {req.description && <p className="text-xs text-muted-foreground mt-2 line-clamp-2 leading-relaxed">{req.description}</p>}
-        </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted shrink-0">
-          <BookOpen className="h-5 w-5 text-muted-foreground" />
-        </div>
+    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-all">
+      <div className="flex justify-between items-start mb-4">
+        <Badge variant={isFulfilled ? 'default' : 'secondary'} className="capitalize">{req.status}</Badge>
+        {isFulfilled && <Sparkles className="h-4 w-4 text-primary animate-pulse" />}
       </div>
 
-      {/* Estimated Price */}
-      {req.estimated_price && (
-        <div className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Info className="h-3 w-3" />
-          <span>Estimated final price: <strong className="text-foreground">{formatPKR(req.estimated_price)}</strong></span>
-          <span className="text-[10px]">(may vary — you can withdraw if it changes significantly)</span>
-        </div>
-      )}
+      <h3 className="font-display text-xl font-bold text-foreground line-clamp-1">{req.title}</h3>
+      <p className="text-sm text-muted-foreground font-medium mb-3">{req.author || 'Unknown Author'}</p>
 
-      {/* Progress */}
-      <div className="mt-3">
-        <div className="flex items-center justify-between text-xs mb-1.5">
-          <span className="text-muted-foreground flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            {req.pledge_count}/{req.pledge_goal} pledges
+      <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-6 min-h-[32px]">
+        {req.description || 'No description provided.'}
+      </p>
+
+      <div className="space-y-3">
+        <div className="flex justify-between text-xs mb-1">
+          <span className="text-muted-foreground flex items-center gap-1.5">
+            <Users className="h-3.5 w-3.5" /> {req.pledge_count} / {req.pledge_goal} Pledges
           </span>
-          <span className="font-medium text-foreground">{Math.round(progress)}%</span>
+          <span className="font-bold text-foreground">{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} className="h-2" />
       </div>
 
-      {/* Actions */}
-      <div className="mt-4 flex items-center justify-between">
-        <span className="text-[11px] text-muted-foreground">
-          {formatPKR(req.pledge_fee)} security deposit
-        </span>
+      <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+        <div className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
+          Pledge: {formatPKR(req.pledge_fee)}
+        </div>
 
         {isFulfilled ? (
-          <Button asChild size="sm" className="rounded-lg h-8 text-xs gap-1">
-            <Link to="/shop">Shop Now <ArrowRight className="h-3 w-3" /></Link>
+          <Button asChild size="sm" className="rounded-lg h-9 gap-2">
+            <Link to="/shop">Buy Now <ArrowRight className="h-3.5 w-3.5" /></Link>
           </Button>
-        ) : req.has_pledged ? (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onUnpledge(req.id)}
-            className="rounded-lg h-8 text-xs gap-1"
-          >
-            <Check className="h-3 w-3" /> Pledged ✓
+        ) : requestHasPledged(req) ? (
+          <Button variant="outline" size="sm" className="rounded-lg h-9 gap-2 border-primary text-primary" onClick={() => onUnpledge(req.id)}>
+            <Check className="h-4 w-4" /> Pledged
           </Button>
         ) : (
-          <Button
-            size="sm"
-            onClick={() => isLoggedIn ? onPledge(req.id) : toast.error('Please sign in to pledge')}
-            disabled={pledging === req.id}
-            className="rounded-lg h-8 text-xs gap-1"
-          >
-            {pledging === req.id ? 'Pledging...' : `Deposit ${formatPKR(req.pledge_fee)}`}
+          <Button size="sm" className="rounded-lg h-9 gap-2" onClick={() => onPledge(req.id)} disabled={pledging === req.id}>
+            {pledging === req.id ? '...' : 'Pledge Now'}
           </Button>
         )}
       </div>
     </motion.div>
   );
 };
+
+// Helper for brevity
+const requestHasPledged = (req: any) => req.has_pledged;
 
 export default BookRequests;
