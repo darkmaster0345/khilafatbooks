@@ -1,3 +1,5 @@
+import { SEOHead } from '@/components/SEOHead';
+import { websiteSchema, organizationSchema, localBusinessSchema } from '@/lib/seo-schemas';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ShieldCheck, Truck, Download, Heart, Star, BookOpen, Sparkles, ShoppingCart, Mail } from 'lucide-react';
 import VerseOfTheDay from '@/components/VerseOfTheDay';
@@ -49,6 +51,13 @@ const Index = () => {
   const heroContentY = useTransform(scrollYProgress, [0, 1], [0, 60]);
 
   return (
+    <>
+      <SEOHead
+        title="Khilafat Books | Authentic Islamic Books, Courses & Halal Products"
+        description="Buy authentic Islamic books, digital courses, and halal products in Pakistan. Quran, Hadith, Tafsir, Seerah, Fiqh and children's books. Fast delivery. EasyPaisa accepted."
+        canonical="/"
+        jsonLd={[websiteSchema, organizationSchema, localBusinessSchema]}
+      />
     <main className="flex min-h-screen flex-col">
       <OrganizationJsonLd />
       <LocalBusinessJsonLd />
@@ -104,8 +113,8 @@ const Index = () => {
               transition={{ delay: 0.4, duration: 0.8 }}
               className="font-display text-5xl md:text-8xl font-black text-primary-foreground leading-[1.1] tracking-tight"
             >
-              Knowledge with <br />
-              <span className="text-gold-gradient drop-shadow-sm">Barakah</span>
+              Authentic Islamic Books, Courses & Halal Products
+              <span className="text-gold-gradient drop-shadow-sm text-4xl md:text-5xl block mt-4">Knowledge with Barakah</span>
             </motion.h1>
 
             <motion.p
@@ -114,7 +123,7 @@ const Index = () => {
               transition={{ delay: 0.6, duration: 0.8 }}
               className="mx-auto mt-8 max-w-2xl text-lg md:text-xl text-primary-foreground/80 leading-relaxed font-medium"
             >
-              Discover authentic Islamic books, fragrances, and digital courses curated for the Pakistani Ummah. Trusted by thousands across the country.
+              Serving the Muslim community of Pakistan — Knowledge with Barakah
             </motion.p>
 
             <motion.div
@@ -213,7 +222,7 @@ const Index = () => {
                 <div className="absolute bottom-0 left-0 right-0 p-6">
                   <h3 className="font-display text-xl font-bold text-primary-foreground">{cat.name}</h3>
                   <p className="mt-1 text-sm text-primary-foreground/70 flex items-center gap-1.5 group-hover:text-primary-foreground transition-colors">
-                    Browse collection <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                    {`Browse ${cat.name} Collection`} <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
                   </p>
                 </div>
               </Link>
@@ -350,6 +359,7 @@ const Index = () => {
       </section>
       <WelcomeBanner />
     </main>
+    </>
   );
 };
 

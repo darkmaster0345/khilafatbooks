@@ -52,11 +52,11 @@ const formFromProduct = (p: Product): ProductForm => ({
   in_stock: p.in_stock,
   rating: String(p.rating),
   reviews: String(p.reviews),
-  series: (p as any).series || '',
-  series_order: (p as any).series_order ? String((p as any).series_order) : '',
-  bundle_discount: (p as any).bundle_discount ? String((p as any).bundle_discount) : '100',
-  image_urls: (p as any).image_urls && (p as any).image_urls.length > 0
-    ? [...(p as any).image_urls, '', '', '', ''].slice(0, 4)
+  series: p.series || '',
+  series_order: p.series_order ? String(p.series_order) : '',
+  bundle_discount: p.bundle_discount ? String(p.bundle_discount) : '100',
+  image_urls: p.image_urls && p.image_urls.length > 0
+    ? [...p.image_urls, '', '', '', ''].slice(0, 4)
     : ['', '', '', ''],
 });
 
@@ -102,37 +102,23 @@ const AdminProducts = () => {
         formData.append('file', file);
         formData.append('folder', 'products');
 
-        const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-image', {
+        const { data, error } = await supabase.functions.invoke('upload-image', {
           body: formData,
         });
 
-        if (uploadError || !uploadData?.success) {
-          console.error(`Failed to migrate ${product.name}:`, uploadError || uploadData?.error);
-          continue;
+        if (data?.success) {
+          await supabase.from('products').update({ image_url: data.url }).eq('id', product.id);
+          migrated++;
         }
-
-        await supabase.from('products').update({ image_url: uploadData.url } as any).eq('id', product.id);
-        migrated++;
       } catch (err) {
-        console.error(`Error migrating ${product.name}:`, err);
+        console.error(`Failed to migrate ${product.name}:`, err);
       }
     }
 
-    toast({
-      title: '🎉 Migration Complete',
-      description: `${migrated}/${localImageProducts.length} images migrated to Cloudinary CDN.`,
-    });
+    toast({ title: 'Migration complete', description: `Successfully migrated ${migrated} images to Cloudinary.` });
     setMigrating(false);
     refetch();
   };
-
-  const filtered = products.filter(p => {
-    const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = categoryFilter === 'All' || p.category === categoryFilter;
-    return matchSearch && matchCategory;
-  });
-
-  const allCategories = ['All', ...PRODUCT_CATEGORIES];
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -298,73 +284,85 @@ const AdminProducts = () => {
       description: p.description || '',
       price: parseFloat(p.price || '0'),
       original_price: p.original_price ? parseFloat(p.original_price) : null,
-      delivery_fee: parseFloat(p.delivery_fee || '0'),
       category: p.category || 'Uncategorized',
       type: p.type || 'physical',
-      in_stock: p.in_stock === 'true',
       is_new: p.is_new === 'true',
       is_halal: p.is_halal === 'true',
-      ethical_source: p.ethical_source || null,
+      in_stock: true,
+      image_url: p.image_url || null,
     }));
 
     const { error } = await supabase.from('products').insert(products as any);
+
     if (error) {
-      toast({ title: 'CSV Import Failed', description: error.message, variant: 'destructive' });
+      toast({ title: 'Import failed', description: error.message, variant: 'destructive' });
     } else {
-      toast({ title: 'Success', description: `Imported ${products.length} products successfully.` });
+      toast({ title: 'Import complete', description: `Successfully imported ${products.length} products.` });
       setCsvPreview(null);
       refetch();
     }
     setCsvImporting(false);
   };
 
-  if (mode === 'add' || mode === 'edit') {
+  const allCategories = ['All', ...PRODUCT_CATEGORIES];
+  const filtered = products.filter(p => {
+    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
+
+  if (mode !== 'list') {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => setMode('list')}><X className="h-4 w-4" /></Button>
-          <h2 className="font-display text-2xl font-bold text-foreground">{mode === 'add' ? 'Add Product' : 'Edit Product'}</h2>
+      <div className="space-y-6 max-w-4xl">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-2xl font-bold text-foreground">
+            {mode === 'add' ? 'Add New Product' : 'Edit Product'}
+          </h2>
+          <Button variant="ghost" onClick={() => setMode('list')} className="gap-1">
+            <X className="h-4 w-4" /> Cancel
+          </Button>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2">
+        <div className="grid gap-6 md:grid-cols-2">
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground">Product Name *</label>
-              <Input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className="mt-1" />
+              <label className="text-sm font-medium text-foreground">Basic Information</label>
+              <div className="mt-2 space-y-3">
+                <Input placeholder="Product Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
+                <Input placeholder="Arabic Name (Optional)" value={form.name_ar} onChange={e => setForm({ ...form, name_ar: e.target.value })} className="font-amiri text-lg" dir="rtl" />
+                <textarea
+                  placeholder="Description"
+                  value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
+                  className="w-full min-h-[120px] rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Arabic Name</label>
-              <Input value={form.name_ar} onChange={e => setForm(p => ({ ...p, name_ar: e.target.value }))} className="mt-1 font-amiri text-right" dir="rtl" />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Description</label>
-              <textarea
-                value={form.description}
-                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[120px]"
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-3">
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-sm font-medium text-foreground">Price (PKR) *</label>
-                <Input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} className="mt-1" />
+                <label className="text-sm font-medium text-foreground">Price (PKR)</label>
+                <Input type="number" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} className="mt-1" />
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Original Price</label>
-                <Input type="number" value={form.original_price} onChange={e => setForm(p => ({ ...p, original_price: e.target.value }))} className="mt-1" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Delivery Fee (PKR)</label>
-                <Input type="number" value={form.delivery_fee} onChange={e => setForm(p => ({ ...p, delivery_fee: e.target.value }))} className="mt-1" />
+                <Input type="number" value={form.original_price} onChange={e => setForm({ ...form, original_price: e.target.value })} className="mt-1" />
               </div>
             </div>
+
+            <div>
+              <label className="text-sm font-medium text-foreground">Delivery Fee (PKR)</label>
+              <Input type="number" value={form.delivery_fee} onChange={e => setForm({ ...form, delivery_fee: e.target.value })} className="mt-1" />
+              <p className="text-[10px] text-muted-foreground mt-1 italic">Per-item shipping cost for this product.</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-sm font-medium text-foreground">Category</label>
                 <select
                   value={form.category}
-                  onChange={e => setForm(p => ({ ...p, category: e.target.value }))}
-                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onChange={e => setForm({ ...form, category: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
                   {PRODUCT_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
@@ -373,89 +371,88 @@ const AdminProducts = () => {
                 <label className="text-sm font-medium text-foreground">Type</label>
                 <select
                   value={form.type}
-                  onChange={e => setForm(p => ({ ...p, type: e.target.value }))}
-                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  onChange={e => setForm({ ...form, type: e.target.value })}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                 >
-                  <option value="physical">Physical Product</option>
-                  <option value="digital">Digital Product</option>
+                  <option value="physical">📦 Physical</option>
+                  <option value="digital">💾 Digital</option>
                 </select>
               </div>
             </div>
-            <div className="flex flex-wrap gap-4">
+
+            <div className="flex flex-wrap gap-4 pt-2">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.is_new} onChange={e => setForm(p => ({ ...p, is_new: e.target.checked }))} className="rounded border-input" />
-                <span className="text-sm text-foreground">New Arrival</span>
+                <input type="checkbox" checked={form.is_new} onChange={e => setForm({ ...form, is_new: e.target.checked })} className="rounded border-input" />
+                <span className="text-sm font-medium">Mark as New</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.is_halal} onChange={e => setForm(p => ({ ...p, is_halal: e.target.checked }))} className="rounded border-input" />
-                <span className="text-sm text-foreground">Halal Certified</span>
+                <input type="checkbox" checked={form.is_halal} onChange={e => setForm({ ...form, is_halal: e.target.checked })} className="rounded border-input" />
+                <span className="text-sm font-medium">Halal Certified</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" checked={form.in_stock} onChange={e => setForm(p => ({ ...p, in_stock: e.target.checked }))} className="rounded border-input" />
-                <span className="text-sm text-foreground">In Stock</span>
+                <input type="checkbox" checked={form.in_stock} onChange={e => setForm({ ...form, in_stock: e.target.checked })} className="rounded border-input" />
+                <span className="text-sm font-medium">In Stock</span>
               </label>
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div>
               <label className="text-sm font-medium text-foreground">Main Product Image</label>
               <div className="mt-2 flex items-center gap-4">
-                <div className="h-32 w-32 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                  <img src={imagePreview || '/placeholder.svg'} alt="Preview" className="h-full w-full object-cover" />
+                <div className="h-32 w-32 shrink-0 rounded-xl border border-border bg-muted overflow-hidden">
+                  {imagePreview ? <img src={imagePreview} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center"><ImageIcon className="h-8 w-8 text-muted-foreground/30" /></div>}
                 </div>
-                <div>
+                <div className="space-y-2">
                   <input ref={imageInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                   <Button type="button" variant="outline" size="sm" onClick={() => imageInputRef.current?.click()} className="gap-1">
-                    <Upload className="h-3 w-3" /> {imagePreview ? 'Change Image' : 'Upload Image'}
+                    <Upload className="h-3 w-3" /> Upload Main Image
                   </Button>
+                  <p className="text-[10px] text-muted-foreground">High resolution JPG or PNG recommended.</p>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                <ImageIcon className="h-4 w-4" /> Gallery Images (Up to 4 URLs)
-              </label>
-              <div className="grid grid-cols-1 gap-2">
-                {form.image_urls.map((url, i) => (
-                  <div key={i} className="flex gap-2">
-                    <div className="flex-none flex items-center justify-center w-8 h-8 rounded-full bg-muted text-[10px] font-bold">
-                      {i + 1}
+            <div>
+              <label className="text-sm font-medium text-foreground">Gallery Image URLs</label>
+              <div className="mt-2 space-y-2">
+                {form.image_urls.map((url, idx) => (
+                  <div key={idx} className="flex gap-2 items-center">
+                    <div className="h-9 w-9 shrink-0 rounded bg-muted border border-border overflow-hidden flex items-center justify-center">
+                       {url ? <img src={url} className="h-full w-full object-cover" /> : <ImageIcon className="h-4 w-4 text-muted-foreground/20" />}
                     </div>
                     <Input
-                      placeholder="https://images.cloudinary.com/..."
+                      placeholder={`Additional Image URL ${idx + 1}`}
                       value={url}
                       onChange={e => {
                         const newUrls = [...form.image_urls];
-                        newUrls[i] = e.target.value;
-                        setForm(p => ({ ...p, image_urls: newUrls }));
+                        newUrls[idx] = e.target.value;
+                        setForm({ ...form, image_urls: newUrls });
                       }}
                       className="h-9 text-xs"
                     />
                   </div>
                 ))}
               </div>
-              <p className="text-[10px] text-muted-foreground italic">Add up to 4 additional image URLs for the product gallery.</p>
+              <p className="text-[10px] text-muted-foreground mt-1 italic">Add up to 4 additional image URLs for the product gallery.</p>
             </div>
 
             {form.type === 'digital' && (
               <div>
-                <label className="text-sm font-medium text-foreground">Digital File (PDF, ZIP, etc.)</label>
+                <label className="text-sm font-medium text-foreground">Digital File</label>
                 <div className="mt-2">
                   <input ref={digitalInputRef} type="file" onChange={handleDigitalFileChange} className="hidden" />
                   <Button type="button" variant="outline" size="sm" onClick={() => digitalInputRef.current?.click()} className="gap-1">
-                    <Download className="h-3 w-3" /> {digitalFile ? digitalFile.name : 'Upload Digital File'}
+                    <Download className="h-3 w-3" /> {digitalFile ? digitalFile.name : 'Select Digital File'}
                   </Button>
-                  {digitalFile && <span className="ml-2 text-xs text-muted-foreground">{digitalFile.name}</span>}
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        <Button onClick={handleSave} disabled={saving} className="gap-1">
-          <Save className="h-4 w-4" /> {saving ? 'Saving...' : mode === 'add' ? 'Add Product' : 'Save Changes'}
+        <Button onClick={handleSave} disabled={saving} className="gap-2 h-11 px-8 rounded-xl gold-gradient border-0 text-foreground font-bold shadow-lg mt-4">
+          <Save className="h-4 w-4" /> {saving ? 'Saving...' : mode === 'add' ? 'Create Product' : 'Save Changes'}
         </Button>
       </div>
     );
@@ -466,155 +463,82 @@ const AdminProducts = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display text-2xl font-bold text-foreground">Products</h2>
-          <p className="text-sm text-muted-foreground">Manage your product catalog.</p>
+          <h2 className="font-display text-3xl font-bold text-foreground">Product Catalog</h2>
+          <p className="text-sm text-muted-foreground">Manage your store's items and digital assets.</p>
         </div>
         <div className="flex gap-2">
           {localImageProducts.length > 0 && (
-            <Button variant="outline" onClick={migrateToCloudinary} disabled={migrating} className="gap-1">
-              <Cloud className="h-4 w-4" /> {migrating ? 'Migrating...' : `Migrate ${localImageProducts.length} to CDN`}
+            <Button variant="outline" onClick={migrateToCloudinary} disabled={migrating} className="gap-2 rounded-xl">
+              <Cloud className="h-4 w-4" /> {migrating ? '...' : `CDN Sync (${localImageProducts.length})`}
             </Button>
           )}
-          <Button onClick={openAdd} className="gap-1"><Plus className="h-4 w-4" /> Add Product</Button>
-          <div>
-            <input ref={csvInputRef} type="file" accept=".csv" onChange={handleCSVFile} className="hidden" />
-            <Button variant="outline" onClick={() => csvInputRef.current?.click()} className="gap-1">
-              <FileUp className="h-4 w-4" /> Import CSV
-            </Button>
-          </div>
+          <Button onClick={openAdd} className="gap-2 rounded-xl shadow-md"><Plus className="h-4 w-4" /> Add New</Button>
         </div>
       </div>
 
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-        <div className="rounded-lg border border-border bg-card p-4 text-center">
-          <p className="text-xl font-bold font-display text-foreground">{products.length}</p>
-          <p className="text-xs text-muted-foreground">Total Products</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4 text-center">
-          <p className="text-xl font-bold font-display text-primary">{inStock}</p>
-          <p className="text-xs text-muted-foreground">In Stock</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4 text-center">
-          <p className="text-xl font-bold font-display text-foreground">{digitalCount}</p>
-          <p className="text-xs text-muted-foreground">Digital</p>
-        </div>
-        <div className="rounded-lg border border-border bg-card p-4 text-center">
-          <p className="text-xl font-bold font-display text-accent">{products.length - digitalCount}</p>
-          <p className="text-xs text-muted-foreground">Physical</p>
-        </div>
+      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+        <StatCard label="Total" value={products.length} />
+        <StatCard label="In Stock" value={inStock} />
+        <StatCard label="Digital" value={digitalCount} />
+        <StatCard label="Physical" value={products.length - digitalCount} />
       </div>
 
-      {csvPreview && (
-        <div className="rounded-lg border border-primary/30 bg-primary/5 p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-display text-sm font-semibold text-foreground">
-              CSV Preview — {csvPreview.length} products ready to import
-            </h3>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={() => { setCsvPreview(null); setCsvErrors([]); }}>
-                <X className="h-4 w-4 mr-1" /> Cancel
-              </Button>
-              <Button size="sm" onClick={importCSV} disabled={csvImporting || csvPreview.length === 0} className="gap-1">
-                {csvImporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-                Import {csvPreview.length} Products
-              </Button>
-            </div>
-          </div>
-          {csvErrors.length > 0 && (
-            <div className="rounded-md bg-destructive/10 p-3 space-y-1">
-              {csvErrors.map((err, i) => (
-                <p key={i} className="text-xs text-destructive flex items-center gap-1">
-                  <AlertTriangle className="h-3 w-3 shrink-0" /> {err}
-                </p>
-              ))}
-            </div>
-          )}
-          <div className="max-h-48 overflow-y-auto rounded border border-border">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-muted">
-                  <th className="px-2 py-1 text-left text-muted-foreground">Name</th>
-                  <th className="px-2 py-1 text-left text-muted-foreground">Price</th>
-                  <th className="px-2 py-1 text-left text-muted-foreground">Category</th>
-                  <th className="px-2 py-1 text-left text-muted-foreground">Type</th>
-                </tr>
-              </thead>
-              <tbody>
-                {csvPreview.slice(0, 10).map((row, i) => (
-                  <tr key={i} className="border-t border-border/50">
-                    <td className="px-2 py-1 text-foreground">{row.name}</td>
-                    <td className="px-2 py-1 text-foreground">{formatPKR(row.price)}</td>
-                    <td className="px-2 py-1 text-muted-foreground">{row.category}</td>
-                    <td className="px-2 py-1 text-muted-foreground">{row.type}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {csvPreview.length > 10 && (
-              <p className="text-center text-[10px] text-muted-foreground py-1">...and {csvPreview.length - 10} more</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      <div className="flex flex-col sm:flex-row gap-3">
+      <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search products..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input placeholder="Search catalog..." value={search} onChange={e => setSearch(e.target.value)} className="pl-10 h-11 rounded-xl bg-card" />
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
           {allCategories.map(c => (
-            <Button key={c} variant={categoryFilter === c ? 'default' : 'outline'} size="sm" onClick={() => setCategoryFilter(c)}>
+            <button
+              key={c}
+              onClick={() => setCategoryFilter(c)}
+              className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                categoryFilter === c ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-card text-muted-foreground border border-border hover:border-primary/30'
+              }`}
+            >
               {c}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
 
       {loading ? (
-        <div className="py-16 text-center text-muted-foreground">Loading products...</div>
+        <div className="py-20 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-primary/30" /></div>
       ) : filtered.length === 0 ? (
-        <div className="py-16 text-center text-muted-foreground">No products found.</div>
+        <div className="py-20 text-center border-2 border-dashed border-border rounded-3xl">
+          <Package className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-muted-foreground font-medium">No items match your criteria</p>
+        </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map(product => (
-            <div key={product.id} className="rounded-lg border border-border bg-card overflow-hidden hover:shadow-md transition-shadow">
-              <div className="aspect-square relative">
-                <img src={product.image_url || '/placeholder.svg'} alt={product.name} className="w-full h-full object-cover" />
-                <div className="absolute top-2 right-2 flex gap-1">
-                  {product.is_new && <Badge className="bg-accent text-accent-foreground text-xs">New</Badge>}
-                  <Badge variant="outline" className="text-xs bg-card/80 backdrop-blur-sm">{product.type}</Badge>
+            <div key={product.id} className="group relative bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+              <div className="aspect-square relative overflow-hidden bg-muted">
+                <img src={product.image_url || '/placeholder.svg'} alt={product.name} className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                <div className="absolute top-3 right-3 flex gap-1.5">
+                  {product.is_new && <Badge className="bg-accent text-accent-foreground border-0 text-[10px] h-5">New</Badge>}
+                  <Badge variant="outline" className="text-[10px] h-5 bg-card/80 backdrop-blur-md">{product.type}</Badge>
                 </div>
               </div>
               <div className="p-4">
-                <h3 className="font-display font-semibold text-foreground text-sm">{product.name}</h3>
-                <p className="text-xs text-muted-foreground mt-1">{product.category}</p>
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-foreground">{formatPKR(product.price)}</span>
-                    {product.original_price && (
-                      <span className="text-xs text-muted-foreground line-through">{formatPKR(product.original_price)}</span>
-                    )}
-                  </div>
+                <div className="flex justify-between items-start gap-2 mb-1">
+                  <h3 className="font-display font-bold text-foreground text-sm line-clamp-1">{product.name}</h3>
+                  <span className="font-bold text-primary text-sm shrink-0">{formatPKR(product.price)}</span>
                 </div>
-                <div className="mt-3 flex items-center justify-between">
-                  <Badge className={product.in_stock ? 'bg-primary/20 text-primary' : 'bg-destructive/20 text-destructive'}>
-                    {product.in_stock ? 'In Stock' : 'Out of Stock'}
+                <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-4">{product.category}</p>
+                <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                  <Badge className={product.in_stock ? 'bg-primary/10 text-primary border-primary/20' : 'bg-destructive/10 text-destructive border-destructive/20'}>
+                    {product.in_stock ? 'Active' : 'Sold Out'}
                   </Badge>
                   <div className="flex gap-1">
-                    <Button size="sm" variant="ghost" onClick={() => openEdit(product)} className="gap-1 text-xs">
-                      <Edit className="h-3 w-3" /> Edit
+                    <Button size="sm" variant="ghost" onClick={() => openEdit(product)} className="h-8 w-8 p-0 rounded-lg hover:bg-primary/10 hover:text-primary">
+                      <Edit className="h-3.5 w-3.5" />
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDelete(product.id)}
-                      disabled={deleting === product.id}
-                      className="gap-1 text-xs text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3 w-3" /> {deleting === product.id ? '...' : 'Delete'}
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(product.id)} disabled={deleting === product.id} className="h-8 w-8 p-0 rounded-lg hover:bg-destructive/10 hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -626,5 +550,12 @@ const AdminProducts = () => {
     </div>
   );
 };
+
+const StatCard = ({ label, value }: { label: string, value: number }) => (
+  <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
+    <p className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground mb-1">{label}</p>
+    <p className="text-2xl font-black text-foreground">{value}</p>
+  </div>
+);
 
 export default AdminProducts;

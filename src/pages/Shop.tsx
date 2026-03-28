@@ -1,3 +1,5 @@
+import { Breadcrumb } from '@/components/Breadcrumb';
+import { SEOHead } from '@/components/SEOHead';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, X, Eye, Loader2 } from 'lucide-react';
@@ -87,13 +89,20 @@ const Shop = () => {
   };
 
   return (
+    <>
+      <SEOHead
+        title={selectedCategory !== "All" ? `Buy ${selectedCategory} Books Online | Khilafat Books` : "Islamic Books Online | Browse Our Full Catalog"}
+        description={selectedCategory !== "All" ? `Shop our ${selectedCategory} collection — authentic, scholar-approved Islamic titles. Available in Pakistan with fast delivery and EasyPaisa payment.` : "Explore hundreds of Islamic books including Quran translations, Tafsir, Hadith collections, Seerah, Fiqh, and children's Islamic books. Shop with EasyPaisa."}
+        canonical={selectedCategory !== "All" ? `/shop?category=${selectedCategory}` : "/shop"}
+      />
     <main className="container mx-auto px-4 py-10">
+      <Breadcrumb crumbs={[{ label: "Home", href: "/" }, { label: selectedCategory === "All" ? "Shop" : selectedCategory, href: "/shop" }]} />
 
       {/* Header */}
       <div className="mb-8">
         <p className="section-heading">Browse</p>
-        <h1 className="section-title">Our Collection</h1>
-        <p className="mt-2 text-sm text-muted-foreground max-w-lg">Explore our curated selection of Islamic books, courses, and ethically sourced products.</p>
+        <h1 className="section-title">{selectedCategory === "All" ? "Islamic Books & Products Collection" : selectedCategory}</h1>
+        <div className="mt-2 text-sm text-muted-foreground max-w-2xl leading-relaxed">{selectedCategory === "All" ? "Explore our curated selection of Islamic books, courses, and ethically sourced products." : `Shop our ${selectedCategory} collection — authentic, scholar-approved Islamic titles. Available in Pakistan with fast delivery and EasyPaisa payment. Explore our curated selection of Quran translations, Tafsir, and Tajweed guides — carefully selected from trusted Islamic scholars and publishers.`}</div>
       </div>
 
       {/* Filters bar */}
@@ -235,6 +244,7 @@ const Shop = () => {
         onOpenChange={(open) => !open && setQuickViewProduct(null)}
       />
     </main>
+    </>
   );
 };
 

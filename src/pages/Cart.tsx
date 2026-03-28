@@ -1,3 +1,4 @@
+import { SEOHead } from '@/components/SEOHead';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useEffect } from 'react';
 import { Minus, Plus, Trash2, ShoppingBag, ArrowLeft, ArrowRight, Gift, Award } from 'lucide-react';
@@ -32,6 +33,8 @@ const Cart = () => {
 
   if (items.length === 0) {
     return (
+    <>
+      <SEOHead title="Your Cart | Khilafat Books" description="Review your selected Islamic books and products before checkout." canonical="/cart" noIndex={true} />
       <main className="container mx-auto px-4 py-24 text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md mx-auto">
           <div className="relative inline-flex mb-8">
@@ -49,11 +52,13 @@ const Cart = () => {
           </Button>
         </motion.div>
       </main>
-    );
+    </>)
   }
 
   return (
-    <main className="container mx-auto px-4 py-10">
+    <>
+      <SEOHead title="Your Cart | Khilafat Books" description="Review your selected Islamic books and products before checkout." canonical="/cart" noIndex={true} />
+      <main className="container mx-auto px-4 py-10">
       <Link to="/shop" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-6 group">
         <ArrowLeft className="mr-1.5 h-4 w-4 transition-transform group-hover:-translate-x-0.5" /> Continue Shopping
       </Link>
@@ -207,7 +212,7 @@ const Cart = () => {
         </div>
       </div>
     </main>
-  );
+    </>)
 };
 
 export default Cart;

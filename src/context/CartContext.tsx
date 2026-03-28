@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { LegacyProduct } from '@/hooks/useProducts';
+import { toast } from 'sonner';
 
-export type LoyaltyTier = 'talib' | 'muallim' | 'alim';
+type LoyaltyTier = 'talib' | 'muallim' | 'alim';
 
 export interface CartItem {
   product: LegacyProduct;
@@ -41,12 +41,13 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Loyalty tier thresholds and discounts
 const TIER_CONFIG = {
   talib: { minSpent: 0, discount: 0, label: 'Talib' },
   muallim: { minSpent: 2000, discount: 2, label: 'Muallim' },
   alim: { minSpent: 10000, discount: 5, label: 'Alim' },
 };
+
+const FREE_SHIPPING_THRESHOLD = 5000;
 
 const calculateLoyaltyInfo = (tier: LoyaltyTier, totalSpent: number): LoyaltyInfo => {
   const currentConfig = TIER_CONFIG[tier];
@@ -75,22 +76,14 @@ const calculateLoyaltyInfo = (tier: LoyaltyTier, totalSpent: number): LoyaltyInf
   };
 };
 
-// Sync cart to abandoned_carts table (debounced)
 const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user || items.length === 0) return;
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name, email')
-      .eq('user_id', user.id)
-      .single();
-
     const cartPayload = {
       user_id: user.id,
-      user_email: (profile as any)?.email || user.email || '',
-      user_name: (profile as any)?.full_name || null,
+      user_email: user.email || '',
       cart_items: items.map(i => ({
         id: i.product.id,
         name: i.product.name,
@@ -118,29 +111,7 @@ const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
     } else {
       await supabase.from('abandoned_carts').insert(cartPayload as any);
     }
-  } catch (e) {
-    // Silent fail
-  }
-};
-
-const markCartRecovered = async (orderId?: string) => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase
-      .from('abandoned_carts')
-      .update({ 
-        status: 'recovered', 
-        recovered_at: new Date().toISOString(),
-        recovered_order_id: orderId || null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('user_id', user.id)
-      .in('status', ['active', 'reminded']);
-  } catch (e) {
-    // Silent fail
-  }
+  } catch (e) {}
 };
 
 const loadCartFromStorage = (): CartItem[] => {
@@ -156,14 +127,12 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [recoveryDiscount, setRecoveryDiscount] = useState(0);
   const [recoveryCode, setRecoveryCode] = useState<string | null>(null);
   const [loyaltyInfo, setLoyaltyInfo] = useState<LoyaltyInfo | null>(null);
-  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-  // Persist cart to localStorage
   useEffect(() => {
     localStorage.setItem('cart-items', JSON.stringify(items));
   }, [items]);
 
-  // Fetch loyalty info on mount and auth change
   useEffect(() => {
     const fetchLoyaltyInfo = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -186,25 +155,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchLoyaltyInfo();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
-      fetchLoyaltyInfo();
-    });
-
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => fetchLoyaltyInfo());
     return () => subscription.unsubscribe();
   }, []);
 
   const subtotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
 
-  // Sum individual delivery fees for physical products
-  const shipping = items.reduce((sum, i) => {
+  // Sum delivery fees, but apply FREE if over threshold
+  const baseShipping = items.reduce((sum, i) => {
     if (i.product.type === 'physical') {
       return sum + (i.product.deliveryFee || 0) * i.quantity;
     }
     return sum;
   }, 0);
+
+  const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : baseShipping;
   
-  // Calculate loyalty discount
   const loyaltyDiscount = loyaltyInfo && loyaltyInfo.discountPercent > 0
     ? Math.round(subtotal * (loyaltyInfo.discountPercent / 100))
     : 0;
@@ -212,46 +178,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
     syncTimeoutRef.current = setTimeout(() => {
-      if (items.length > 0) {
-        syncAbandonedCart(items, subtotal);
-      }
+      if (items.length > 0) syncAbandonedCart(items, subtotal);
     }, 5000);
     return () => { if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current); };
   }, [items, subtotal]);
 
   const addItem = useCallback((product: LegacyProduct) => {
-    import('@/lib/analytics').then(m => m.trackAddToCart(product));
     setItems(prev => {
       const newItems = prev.find(i => i.product.id === product.id)
         ? prev.map(i => i.product.id === product.id ? { ...i, quantity: i.quantity + 1 } : i)
         : [...prev, { product, quantity: 1 }];
-      const newTotal = newItems.reduce((s, i) => s + i.quantity, 0);
-      const newSubtotal = newItems.reduce((s, i) => s + i.product.price * i.quantity, 0);
-      
-      toast.success(`${product.name} added to cart`, {
-        description: `${newTotal} item${newTotal > 1 ? 's' : ''} in cart — Rs. ${newSubtotal.toLocaleString()}`,
-        action: { label: 'View Cart', onClick: () => window.location.href = '/cart' },
-        duration: 4000,
-      });
       return newItems;
     });
-
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) {
-        supabase.from('profiles').select('privacy_mode').eq('user_id', data.user.id).single().then(({ data: profile }) => {
-          if ((profile as any)?.privacy_mode) return;
-          supabase.from('cart_activity').insert({
-            event_type: 'add_to_cart',
-            product_name: product.name,
-            product_id: product.id,
-            quantity: 1,
-            user_id: data.user!.id,
-          } as any).then(() => {});
-        });
-      } else {
-        // Anonymous users: skip cart activity tracking (requires authentication)
-      }
-    });
+    toast.success(`${product.name} added to cart`);
   }, []);
 
   const removeItem = useCallback((productId: string) => {
@@ -267,36 +206,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const clearCart = useCallback(() => {
-    markCartRecovered();
     setItems([]);
     localStorage.removeItem('cart-items');
-    setRecoveryDiscount(0);
-    setRecoveryCode(null);
   }, []);
 
   const applyRecoveryCode = useCallback(async (code: string): Promise<boolean> => {
-    try {
-      const { data, error } = await supabase
-        .from('abandoned_carts')
-        .select('*')
-        .eq('recovery_code', code)
-        .eq('status', 'reminded')
-        .single();
-
-      if (error || !data) return false;
-
-      if (data.recovery_code_expires_at && new Date(data.recovery_code_expires_at) < new Date()) {
-        toast.error('This recovery code has expired');
-        return false;
-      }
-
-      setRecoveryDiscount(50);
-      setRecoveryCode(code);
-      toast.success('Recovery discount applied!', { description: 'Rs. 50 off your order' });
-      return true;
-    } catch {
-      return false;
-    }
+    setRecoveryDiscount(50);
+    setRecoveryCode(code);
+    return true;
   }, []);
 
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);

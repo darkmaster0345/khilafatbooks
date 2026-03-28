@@ -1,91 +1,34 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
-import { Search, Home, ShoppingBag, BookOpen, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { motion } from 'framer-motion';
-import SmartSuggest from '@/components/SmartSuggest';
-
-const suggestedLinks = [
-  { to: '/', label: 'Home', icon: Home },
-  { to: '/shop', label: 'All Products', icon: ShoppingBag },
-  { to: '/book-requests', label: 'Request a Book', icon: BookOpen },
-];
+import { SEOHead } from '@/components/SEOHead';
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Home, Search } from "lucide-react";
 
 const NotFound = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Try to extract a category hint from the URL
-  const pathParts = location.pathname.split('/').filter(Boolean);
-  const possibleCategory = pathParts.find(p => 
-    ['books', 'quran', 'tasbih', 'hijab', 'oud', 'calligraphy', 'accessories'].includes(p.toLowerCase())
-  );
-
-  useEffect(() => {
-    console.error('404 Error: User attempted to access non-existent route:', location.pathname);
-  }, [location.pathname]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
-    }
-  };
-
   return (
-    <div className="flex min-h-[70vh] items-center justify-center px-4">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="w-full max-w-lg text-center"
-      >
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl emerald-gradient shadow-lg mx-auto mb-6">
-          <span className="font-arabic text-4xl text-primary-foreground">٤٠٤</span>
+    <>
+      <SEOHead title="404 - Page Not Found | Khilafat Books" description="The page you are looking for does not exist." noIndex={true} />
+      <div className="min-h-[80vh] flex flex-col items-center justify-center text-center px-4">
+        <div className="relative mb-8">
+          <h1 className="text-9xl font-black text-primary/10">404</h1>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Search className="h-16 w-16 text-primary" />
+          </div>
         </div>
-
-        <h1 className="font-display text-3xl font-bold text-foreground mb-2">Page Not Found</h1>
-        <p className="text-muted-foreground mb-8">
-          The page you're looking for doesn't exist or has been moved.
+        <h2 className="text-3xl font-bold mb-4">Oops! Page not found</h2>
+        <p className="text-muted-foreground max-w-md mb-8">
+          The page you're looking for might have been moved, deleted, or never existed.
+          Let's get you back on track.
         </p>
-
-        {/* Smart Suggestions */}
-        <div className="mb-8 text-left">
-          <SmartSuggest 
-            reason="404"
-            category={possibleCategory}
-            limit={3}
-          />
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button asChild size="lg" className="rounded-xl gap-2">
+            <Link to="/"><Home className="h-4 w-4" /> Go to Home</Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="rounded-xl">
+            <Link to="/shop">Browse Shop</Link>
+          </Button>
         </div>
-
-        <form onSubmit={handleSearch} className="relative mb-8">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search for products..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full h-12 pl-11 pr-4 rounded-xl bg-muted/50 border border-border text-sm outline-none focus:ring-2 focus:ring-primary/20"
-          />
-        </form>
-
-        <div className="flex flex-wrap justify-center gap-3 mb-8">
-          {suggestedLinks.map(link => (
-            <Button key={link.to} asChild variant="outline" size="sm" className="gap-2">
-              <Link to={link.to}>
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
-            </Button>
-          ))}
-        </div>
-
-        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-muted-foreground gap-2">
-          <ArrowLeft className="h-4 w-4" /> Go Back
-        </Button>
-      </motion.div>
-    </div>
+      </div>
+    </>
   );
 };
 

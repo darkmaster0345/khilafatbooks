@@ -1,15 +1,34 @@
-// Standard Web API based middleware for Vercel Edge
-// This avoids dependency on 'next' package
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
+// Search engine and social media bot user agents
+const BOT_AGENTS = [
+  'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider',
+  'yandexbot', 'facebookexternalhit', 'twitterbot', 'whatsapp',
+  'linkedinbot', 'pinterestbot', 'telegrambot', 'applebot',
+  'ahrefsbot', 'semrushbot', 'mj12bot',
+]
+
+// Rate limiting state (Note: Edge Middleware is ephemeral, so this is per-instance)
 const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
 const MAX_REQUESTS = 10;
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
-export default function middleware(request: Request) {
-  const url = new URL(request.url);
-  const pathname = url.pathname;
+export function middleware(request: NextRequest) {
+  const url = request.nextUrl.clone()
+  const pathname = url.pathname
+  const ua = request.headers.get('user-agent')?.toLowerCase() ?? ''
 
-  // Only apply rate limiting to sensitive routes
+  // 1. Bot Detection & Prerendering Rewrite
+  const isBot = BOT_AGENTS.some(bot => ua.includes(bot))
+  if (isBot) {
+    // Rewrite bots to pre-built static HTML snapshots
+    // e.g., /products/some-book -> /_prerendered/products/some-book.html
+    url.pathname = `/_prerendered${pathname === '/' ? '/index' : pathname}.html`
+    return NextResponse.rewrite(url)
+  }
+
+  // 2. Rate Limiting for Sensitive Routes
   const isSensitiveRoute =
     pathname.startsWith('/api/login') ||
     pathname.startsWith('/api/search') ||
@@ -19,7 +38,6 @@ export default function middleware(request: Request) {
   if (isSensitiveRoute) {
     const ip = request.headers.get('x-real-ip') || request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous';
     const now = Date.now();
-
     const rateLimit = rateLimitMap.get(ip);
 
     if (!rateLimit || now > rateLimit.resetAt) {
@@ -30,7 +48,7 @@ export default function middleware(request: Request) {
     } else {
       rateLimit.count++;
       if (rateLimit.count > MAX_REQUESTS) {
-        return new Response(
+        return new NextResponse(
           JSON.stringify({ error: 'Too many requests. Please try again in a minute.' }),
           {
             status: 429,
@@ -44,18 +62,18 @@ export default function middleware(request: Request) {
     }
   }
 
-  // Pass-through
-  return new Response(null, {
-    headers: {
-      'x-middleware-next': '1',
-    },
-  });
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    '/api/:path*',
-    '/auth/:path*',
-    '/supabase/functions/:path*'
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next
+     * - _prerendered
+     * - favicon.ico, robots.txt, sitemap.xml
+     * - static files (extension with dot)
+     */
+    '/((?!_next|_prerendered|favicon|robots|sitemap|.*\\..*).*)',
   ],
-};
+}

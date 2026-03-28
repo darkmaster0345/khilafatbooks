@@ -1,10 +1,12 @@
+import { SEOHead } from '@/components/SEOHead';
+import { GIFT_WRAP_FEE, FREE_SHIPPING_THRESHOLD, SITE_URL } from '@/lib/constants';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, ShoppingCart, Truck, ShieldCheck, MapPin,
-  Phone, Mail, User, PhoneCall, Copy, Upload, CheckCircle2,
-  Gift, Package, AlertCircle
+  Phone, Mail, User, Copy, Upload, CheckCircle2,
+  Gift, Package, AlertCircle, PhoneCall
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +29,7 @@ const Checkout = () => {
   const { items, subtotal, shipping, total, clearCart, zakatEnabled, zakatAmount } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isPluginEnabled } = usePluginSettings();
   const [step, setStep] = useState<'details' | 'payment'>('details');
 
   // Gifter/Customer state
@@ -47,56 +50,57 @@ const Checkout = () => {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [transactionId, setTransactionId] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Discount/Referral state
   const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
-  const { isPluginEnabled } = usePluginSettings();
-
-  const GIFT_WRAP_FEE = 100;
-
-  // Referral state
   const [referralCode, setReferralCode] = useState('');
-  const [referralValidation, setReferralValidation] = useState<any>(null);
   const [referralLoading, setReferralLoading] = useState(false);
-  const [referralRewardType, setReferralRewardType] = useState<'discount' | 'digital_pack' | null>(null);
+  const [referralValidation, setReferralValidation] = useState<any>(null);
   const [showRewardModal, setShowRewardModal] = useState(false);
+  const [selectedReward, setSelectedReward] = useState<string | null>(null);
 
-  const discountAmount = discount?.discountAmount ?? 0;
-  const referralDiscount = referralRewardType === 'discount' && referralValidation?.valid
-    ? referralValidation.discount_amount
-    : 0;
-  const giftWrapFee = isGift && giftWrap ? GIFT_WRAP_FEE : 0;
-  const grandTotal = Math.max(0, total + giftWrapFee - discountAmount - referralDiscount);
-  const hasPhysical = items.some(i => i.product.type === 'physical');
+  useEffect(() => {
+    if (items.length === 0) navigate('/shop');
+  }, [items, navigate]);
 
   const validateReferralCode = async () => {
     if (!referralCode.trim() || !user) return;
     setReferralLoading(true);
+    try {
+      const { data, error } = await supabase.rpc('validate_referral_code', {
+        p_code: referralCode.trim(),
+        p_order_total: subtotal,
+        p_user_id: user.id
+      });
 
-    const { data, error } = await supabase.rpc('validate_referral_code', {
-      p_code: referralCode.trim().toUpperCase(),
-      p_user_id: user.id,
-      p_order_total: subtotal,
-    } as any);
+      if (error) {
+        toast({ title: 'Invalid code', description: error.message, variant: 'destructive' });
+        return;
+      }
 
-    if (error) {
-      toast({ title: 'Invalid code', description: error.message, variant: 'destructive' });
-      setReferralValidation({ valid: false });
-    } else {
       const res = data as any;
-      setReferralValidation(res);
       if (res.valid) {
-        setShowRewardModal(true);
+        setReferralValidation(res);
+        if (res.reward_type === 'both') {
+          setShowRewardModal(true);
+        } else {
+          setSelectedReward(res.reward_type);
+        }
       } else {
         toast({ title: 'Not eligible', description: res.message || 'Code is valid but you are not eligible.', variant: 'destructive' });
       }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setReferralLoading(false);
     }
-    setReferralLoading(false);
   };
 
-  const handleRewardSelection = (type: 'discount' | 'digital_pack') => {
-    setReferralRewardType(type);
+  const handleRewardSelection = (type: string) => {
+    setSelectedReward(type);
     setShowRewardModal(false);
     toast({
-      title: 'Reward Selected!',
+      title: 'Reward Applied!',
       description: type === 'discount' ? '5% discount applied to your order.' : 'Digital Scholar Pack will be added to your library.',
     });
   };
@@ -121,410 +125,305 @@ const Checkout = () => {
   };
 
   const handleSubmitOrder = async () => {
-    if (grandTotal > 0 && !screenshotFile && isPluginEnabled('easypaisa_payments')) {
+    if (grandTotal > 0 && !screenshotFile) {
       toast({ title: 'Missing proof', description: 'Please upload the payment screenshot.', variant: 'destructive' });
       return;
     }
 
     setSubmitting(true);
-    let screenshotPath = null;
+    try {
+      let screenshotUrl = '';
+      if (screenshotFile) {
+        const fileExt = screenshotFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('payment-proofs')
+          .upload(fileName, screenshotFile);
 
-    if (screenshotFile) {
-      const ext = screenshotFile.name.split('.').pop();
-      const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('payment-proofs').upload(path, screenshotFile);
-      if (upErr) {
-        toast({ title: 'Upload failed', description: 'Failed to upload screenshot. Please try again.', variant: 'destructive' });
+        if (uploadError) {
+          toast({ title: 'Upload failed', description: 'Failed to upload screenshot. Please try again.', variant: 'destructive' });
+          setSubmitting(false);
+          return;
+        }
+
+        const { data: { publicUrl } } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
+        screenshotUrl = publicUrl;
+      }
+
+      const orderItems = items.map(item => ({
+        id: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        quantity: item.quantity,
+        image: item.product.image,
+        category: item.product.category,
+        type: item.product.type
+      }));
+
+      const { data: orderId, error } = await supabase.rpc('create_verified_order', {
+        p_customer_name: isGift ? `Gift from ${name || 'Anonymous'}` : name,
+        p_customer_phone: phone,
+        p_customer_email: email,
+        p_delivery_address: hasPhysical ? address : 'Digital Delivery',
+        p_delivery_city: hasPhysical ? city : 'Digital',
+        p_payment_screenshot_url: screenshotUrl,
+        p_transaction_id: transactionId,
+        p_items: orderItems,
+        p_zakat_enabled: zakatEnabled,
+        p_discount_code: discount?.code,
+        p_referral_code_id: referralValidation?.referral_code_id,
+        p_referred_reward_type: selectedReward,
+        p_is_gift: isGift,
+        p_gift_recipient_name: giftRecipientName,
+        p_gift_message: giftMessage,
+        p_gift_wrap: giftWrap
+      });
+
+      if (error) {
+        toast({ title: 'Order failed', description: error.message, variant: 'destructive' });
         setSubmitting(false);
         return;
       }
-      const { data: { publicUrl } } = supabase.storage.from('payment-proofs').getPublicUrl(path);
-      screenshotPath = publicUrl;
-    }
 
-    const orderItems = items.map(i => ({
-      product_id: i.product.id,
-      quantity: i.quantity,
-      price: i.product.price,
-      name: i.product.name,
-      image_url: i.product.image,
-    }));
-
-    const { data: orderData, error } = await supabase.rpc('create_verified_order', {
-      p_items: orderItems,
-      p_customer_name: isGift ? giftRecipientName : name, // Use recipient name as primary name if gift? or just store separately
-      p_customer_phone: phone,
-      p_customer_email: email || null,
-      p_delivery_address: address || null,
-      p_delivery_city: city || null,
-      p_payment_screenshot_url: screenshotPath,
-      p_transaction_id: transactionId || null,
-      p_zakat_enabled: zakatEnabled,
-      p_discount_code: discount?.code || null,
-      p_referral_discount: referralDiscount,
-      p_recovery_discount: 0,
-      p_is_gift: isGift,
-      p_gift_recipient_name: isGift ? giftRecipientName || null : null,
-      p_gift_message: isGift ? giftMessage || null : null,
-      p_gift_wrap: isGift && giftWrap,
-      p_referral_code_id: referralValidation?.valid ? referralValidation.code_id : null,
-      p_referred_reward_type: referralRewardType || null,
-    } as any);
-
-    const orderId = orderData as unknown as string;
-
-    if (error) {
-      toast({ title: 'Order failed', description: error.message, variant: 'destructive' });
+      toast({ title: 'Order successful!', description: 'JazakAllah! Your order has been placed.' });
+      clearCart();
+      navigate(`/order-confirmed/${orderId}`);
+    } catch (err) {
+      console.error(err);
       setSubmitting(false);
-      return;
     }
-
-    toast({ title: 'Order successful!', description: 'JazakAllah! Your order has been placed.' });
-    clearCart();
-    navigate(`/order-confirmed/${orderId}`);
   };
 
-  if (items.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-32 text-center">
-        <div className="flex justify-center mb-6">
-          <div className="p-6 rounded-full bg-muted">
-            <ShoppingCart className="h-12 w-12 text-muted-foreground" />
-          </div>
-        </div>
-        <h1 className="text-2xl font-bold font-display">Your cart is empty</h1>
-        <p className="mt-2 text-muted-foreground">Add some books to your cart to checkout.</p>
-        <Button asChild className="mt-6 h-11 px-8"><Link to="/shop">Browse Books</Link></Button>
-      </div>
-    );
-  }
+  const hasPhysical = items.some(i => i.product.type === 'physical');
+  const giftWrapFee = giftWrap ? GIFT_WRAP_FEE : 0;
+  const discountVal = discount ? (discount.type === 'percentage' ? (subtotal * discount.value) / 100 : discount.value) : 0;
+  const referralDiscount = (selectedReward === 'discount' && referralValidation) ? referralValidation.discount_amount : 0;
+  const grandTotal = Math.max(0, total + giftWrapFee - discountVal - referralDiscount);
+
+  const canContinue = () => {
+    if (!phone || !name) return false;
+    if (isGift && !giftRecipientName) return false;
+    if (hasPhysical && (!address || !city)) return false;
+    return true;
+  };
 
   return (
-    <main className="container mx-auto px-4 py-8 md:py-12 max-w-6xl">
-      <div className="mb-8 flex items-center justify-between">
-        <Button variant="ghost" onClick={() => navigate('/cart')} className="gap-2 -ml-2 text-muted-foreground hover:text-primary transition-colors">
-          <ArrowLeft className="h-4 w-4" /> Back to Cart
-        </Button>
-        <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <span className={`px-2 py-1 rounded-full ${step === 'details' ? 'bg-primary/10 text-primary' : 'bg-muted'}`}>1. Details</span>
-          <div className="h-px w-4 bg-border" />
-          <span className={`px-2 py-1 rounded-full ${step === 'payment' ? 'bg-primary/10 text-primary' : 'bg-muted'}`}>2. Payment</span>
+    <>
+      <SEOHead title="Checkout | Khilafat Books" description="Secure checkout at Khilafat Books." canonical="/checkout" noIndex={true} />
+      <main className="container mx-auto px-4 py-10">
+        <div className="mb-8">
+          <Button variant="ghost" asChild className="gap-2 -ml-2 text-muted-foreground hover:text-primary">
+            <Link to="/cart"><ArrowLeft className="h-4 w-4" /> Back to Cart</Link>
+          </Button>
+          <h1 className="mt-4 font-display text-3xl font-bold text-foreground">Checkout</h1>
+          <div className="mt-2 flex items-center gap-4 text-sm">
+            <div className={`flex items-center gap-2 ${step === 'details' ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
+              <span className={`flex h-6 w-6 items-center justify-center rounded-full border ${step === 'details' ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'}`}>1</span>
+              Details
+            </div>
+            <div className="h-px w-8 bg-border" />
+            <div className={`flex items-center gap-2 ${step === 'payment' ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
+              <span className={`flex h-6 w-6 items-center justify-center rounded-full border ${step === 'payment' ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground'}`}>2</span>
+              Payment
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-6">
-          {step === 'details' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
-              {/* Gift Toggle */}
-              <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Gift className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="font-display text-base font-bold text-foreground">Sending this as a Gift?</h2>
-                    <p className="text-xs text-muted-foreground">We'll hide prices and include a message.</p>
-                  </div>
-                </div>
-                <Switch checked={isGift} onCheckedChange={setIsGift} />
-              </div>
-
-              {/* Contact Information (Gifter) */}
-              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-                <h2 className="font-display text-lg font-bold text-foreground mb-5 flex items-center gap-2">
-                  <User className="h-5 w-5 text-primary" /> {isGift ? 'Your Details (For Receipt)' : 'Contact Information'}
-                </h2>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  {!isGift && (
-                    <div className="sm:col-span-2">
-                      <label className="text-sm font-medium text-foreground">Full Name *</label>
-                      <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Ahmad Hassan" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
-                    </div>
-                  )}
-                  <div>
-                    <label className="text-sm font-medium text-foreground">Phone Number *</label>
-                    <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="03XXXXXXXXX" className="mt-1.5 h-11 rounded-xl text-base" maxLength={15} />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-foreground">Email Address (optional)</label>
-                    <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="ahmad@example.com" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Shipping Information (Recipient) */}
-              {hasPhysical && (
-                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-                  <h2 className="font-display text-lg font-bold text-foreground mb-5 flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-primary" /> {isGift ? 'Recipient Delivery Details' : 'Shipping Address'}
-                  </h2>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    {isGift && (
-                      <div className="sm:col-span-2">
-                        <label className="text-sm font-medium text-foreground">Recipient's Full Name *</label>
-                        <Input value={giftRecipientName} onChange={e => setGiftRecipientName(e.target.value)} placeholder="Who is this gift for?" className="mt-1.5 h-11 rounded-xl text-base" maxLength={100} />
-                      </div>
-                    )}
-                    <div className="sm:col-span-2">
-                      <label className="text-sm font-medium text-foreground">{isGift ? "Recipient's Full Address *" : "Street Address *"}</label>
-                      <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="House/Street/Area" className="mt-1.5 h-11 rounded-xl text-base" maxLength={200} />
+        <div className="grid gap-8 lg:grid-cols-3">
+          <div className="lg:col-span-2 space-y-6">
+            {step === 'details' && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-6 flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Gift className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-foreground">City *</label>
-                      <Input value={city} onChange={e => setCity(e.target.value)} placeholder="Karachi" className="mt-1.5 h-11 rounded-xl text-base" maxLength={50} />
+                      <h2 className="font-display text-base font-bold text-foreground">Sending this as a Gift?</h2>
+                      <p className="text-xs text-muted-foreground">We'll hide prices and include a message.</p>
+                    </div>
+                  </div>
+                  <Switch checked={isGift} onCheckedChange={setIsGift} />
+                </div>
+
+                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                  <h2 className="font-display text-lg font-bold text-foreground mb-5 flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" /> {isGift ? 'Your Details (Sender)' : 'Contact Information'}
+                  </h2>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <label className="text-sm font-medium text-foreground">Full Name *</label>
+                      <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Ahmad Hassan" className="mt-1.5 h-11 rounded-xl" />
+                    </div>
+                    <div className="sm:col-span-1">
+                      <label className="text-sm font-medium text-foreground">Phone Number *</label>
+                      <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="03XXXXXXXXX" className="mt-1.5 h-11 rounded-xl" />
+                    </div>
+                    <div className="sm:col-span-1">
+                      <label className="text-sm font-medium text-foreground">Email Address (optional)</label>
+                      <Input value={email} onChange={e => setEmail(e.target.value)} placeholder="ahmad@example.com" className="mt-1.5 h-11 rounded-xl" />
                     </div>
                   </div>
                 </div>
-              )}
 
-              {/* Gift Message & Wrapping */}
-              <AnimatePresence>
-                {isGift && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-                      <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
-                        <Package className="h-4 w-4 text-primary" /> Gift Options
-                      </h2>
-                      <div>
-                        <label className="text-sm font-medium text-foreground">Gift Message (optional)</label>
-                        <Textarea
-                          value={giftMessage}
-                          onChange={e => setGiftMessage(e.target.value)}
-                          placeholder="Write a personal message to be included with the gift..."
-                          className="mt-1.5 rounded-xl resize-none"
-                          maxLength={300}
-                          rows={3}
-                        />
-                        <p className="text-xs text-muted-foreground mt-1 text-right">{giftMessage.length}/300</p>
+                {hasPhysical && (
+                  <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                    <h2 className="font-display text-lg font-bold text-foreground mb-5 flex items-center gap-2">
+                      <MapPin className="h-5 w-5 text-primary" /> {isGift ? 'Recipient Delivery Details' : 'Shipping Address'}
+                    </h2>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {isGift && (
+                        <div className="sm:col-span-2">
+                          <label className="text-sm font-medium text-foreground">Recipient Name *</label>
+                          <Input value={giftRecipientName} onChange={e => setGiftRecipientName(e.target.value)} placeholder="Full name of receiver" className="mt-1.5 h-11 rounded-xl" />
+                        </div>
+                      )}
+                      <div className="sm:col-span-2">
+                        <label className="text-sm font-medium text-foreground">Street Address *</label>
+                        <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="House, Street, Area" className="mt-1.5 h-11 rounded-xl" />
                       </div>
-                      <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
-                        <Checkbox
-                          id="gift-wrap"
-                          checked={giftWrap}
-                          onCheckedChange={(v) => setGiftWrap(!!v)}
-                        />
-                        <label htmlFor="gift-wrap" className="flex items-center gap-2 text-sm cursor-pointer flex-1">
-                          <Package className="h-4 w-4 text-primary" />
-                          <span className="text-foreground font-medium">Add Premium Gift Wrapping</span>
-                          <span className="text-muted-foreground ml-auto">+{formatPKR(GIFT_WRAP_FEE)}</span>
-                        </label>
+                      <div>
+                        <label className="text-sm font-medium text-foreground">City *</label>
+                        <Input value={city} onChange={e => setCity(e.target.value)} placeholder="City" className="mt-1.5 h-11 rounded-xl" />
                       </div>
                     </div>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
 
-              {/* Referral Code Section */}
-              <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6">
-                <h2 className="font-display text-base font-semibold text-foreground mb-1 flex items-center gap-2">
-                  <Gift className="h-4 w-4 text-primary" />
-                  Have a Referral Code?
-                </h2>
-                <p className="text-xs text-muted-foreground mb-4">First-time customers get a special welcome reward!</p>
-                <div className="flex gap-2">
-                  <Input
-                    value={referralCode}
-                    onChange={e => setReferralCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. KB-AHMAD"
-                    className="h-11 rounded-xl font-mono uppercase"
-                    maxLength={30}
-                  />
-                  <Button
-                    onClick={validateReferralCode}
-                    disabled={referralLoading || !referralCode.trim() || !user}
-                    variant="secondary"
-                    className="h-11 rounded-xl"
-                  >
-                    {referralLoading ? '...' : 'Apply'}
-                  </Button>
+                <AnimatePresence>
+                  {isGift && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                      <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+                        <h2 className="font-display text-base font-bold text-foreground flex items-center gap-2">
+                          <Package className="h-4 w-4 text-primary" /> Gift Options
+                        </h2>
+                        <div>
+                          <label className="text-sm font-medium text-foreground">Gift Message (optional)</label>
+                          <Textarea value={giftMessage} onChange={e => setGiftMessage(e.target.value)} placeholder="Your personal message..." className="mt-1.5 rounded-xl" maxLength={300} />
+                        </div>
+                        <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 p-3">
+                          <Checkbox id="gift-wrap" checked={giftWrap} onCheckedChange={(v) => setGiftWrap(!!v)} />
+                          <label htmlFor="gift-wrap" className="text-sm cursor-pointer flex-1">Add Premium Gift Wrapping (+{formatPKR(GIFT_WRAP_FEE)})</label>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6">
+                  <h2 className="font-display text-base font-semibold text-foreground mb-4">Referral Code</h2>
+                  <div className="flex gap-2">
+                    <Input value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} placeholder="e.g. KB-AHMAD" className="h-11 rounded-xl" />
+                    <Button onClick={validateReferralCode} disabled={referralLoading || !referralCode.trim() || !user} variant="secondary">Apply</Button>
+                  </div>
                 </div>
-                {!user && <p className="text-[10px] text-destructive mt-2">Please sign in to apply a referral code.</p>}
-              </div>
 
-              <Button
-                onClick={() => {
-                  if (!phone || (hasPhysical && (!address || !city)) || (isGift && !giftRecipientName) || (!isGift && !name)) {
-                    toast({ title: 'Required fields', description: 'Please fill in all required fields marked with *', variant: 'destructive' });
-                    return;
-                  }
-                  setStep('payment');
-                  window.scrollTo(0, 0);
-                }}
-                size="lg"
-                className="h-12 px-8 text-base w-full sm:w-auto shadow-md"
-              >
-                Continue to Payment
-              </Button>
-            </motion.div>
-          )}
+                <Button onClick={() => setStep('payment')} disabled={!canContinue()} size="lg" className="w-full sm:w-auto h-12 px-10 shadow-md">Continue to Payment</Button>
+              </motion.div>
+            )}
 
-          {step === 'payment' && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-              {grandTotal === 0 && (
-                <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6 text-center">
-                  <CheckCircle2 className="h-10 w-10 text-primary mx-auto mb-3" />
-                  <h2 className="font-display text-lg font-bold text-foreground">Free Order</h2>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Your order total is Rs. 0. No payment is required. Your order will be processed immediately upon submission.
-                  </p>
-                </div>
-              )}
-
-              {grandTotal > 0 && isPluginEnabled('easypaisa_payments') && (
+            {step === 'payment' && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
                 <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
                   <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2 mb-4">
-                    <Phone className="h-5 w-5 text-primary" /> EasyPaisa Payment
+                    <PhoneCall className="h-5 w-5 text-primary" /> EasyPaisa Payment
                   </h2>
-
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white mt-0.5">1</div>
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-foreground">Send {formatPKR(grandTotal)} to:</p>
-                        <div className="mt-2 flex items-center gap-3 rounded-xl bg-background border border-border px-4 py-2.5 w-fit">
-                          <span className="font-mono text-lg font-bold text-foreground tracking-wider">{EASYPAISA_ACCOUNT}</span>
-                          <button onClick={copyAccount} className="text-muted-foreground hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/10">
-                            <Copy className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <p className="mt-1 text-[11px] text-muted-foreground">Account Title: <span className="font-medium text-foreground">Khilafat Books</span></p>
-                      </div>
+                  <div className="space-y-4 text-sm">
+                    <p>Send <strong>{formatPKR(grandTotal)}</strong> to:</p>
+                    <div className="flex items-center gap-3 rounded-xl bg-background border border-border px-4 py-2.5 w-fit">
+                      <span className="font-mono text-lg font-bold">{EASYPAISA_ACCOUNT}</span>
+                      <button onClick={copyAccount} className="p-1.5 rounded-lg hover:bg-primary/10"><Copy className="h-4 w-4" /></button>
                     </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white mt-0.5">2</div>
-                      <p className="text-sm font-medium text-foreground">Screenshot the payment confirmation</p>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white mt-0.5">3</div>
-                      <p className="text-sm font-medium text-foreground">Upload the screenshot below</p>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-white mt-0.5">4</div>
-                      <p className="text-sm font-medium text-foreground">Submit — we verify within 24 hours</p>
-                    </div>
+                    <p className="text-xs text-muted-foreground italic">Upload screenshot after payment.</p>
                   </div>
                 </div>
-              )}
 
-              {grandTotal > 0 && (
-                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
+                <div className="rounded-xl border border-border bg-card p-6">
                   <label className="text-sm font-medium text-foreground">Upload Payment Screenshot *</label>
-                  <div className="mt-3 rounded-xl border-2 border-dashed border-border hover:border-primary/30 transition-colors p-8 text-center">
+                  <div className="mt-3 border-2 border-dashed border-border rounded-xl p-8 text-center">
                     {screenshotPreview ? (
                       <div className="space-y-3">
-                        <img src={screenshotPreview} alt="Payment screenshot" className="mx-auto max-h-52 rounded-lg shadow-sm" />
-                        <button onClick={() => { setScreenshotPreview(null); setScreenshotFile(null); }} className="text-xs text-destructive hover:underline">Remove</button>
+                        <img src={screenshotPreview} alt="Preview" className="mx-auto max-h-48 rounded-lg" />
+                        <button onClick={() => { setScreenshotPreview(null); setScreenshotFile(null); }} className="text-xs text-destructive">Remove</button>
                       </div>
                     ) : (
                       <label className="cursor-pointer flex flex-col items-center gap-2">
-                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
-                          <Upload className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <span className="text-sm font-semibold text-foreground">Click to upload screenshot</span>
-                        <span className="text-xs text-muted-foreground mt-1">PNG, JPG or JPEG (Max 5MB)</span>
-                        <span className="text-[10px] text-primary font-medium mt-1 italic">Please ensure Transaction ID is visible</span>
+                        <Upload className="h-8 w-8 text-muted-foreground" />
+                        <span className="text-sm font-semibold">Click to upload</span>
                         <input type="file" accept="image/*" onChange={handleScreenshot} className="hidden" />
                       </label>
                     )}
                   </div>
                 </div>
-              )}
 
-              {grandTotal > 0 && (
-                <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-                  <label className="text-sm font-medium text-foreground">Transaction ID (optional)</label>
-                  <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1.5 h-11 rounded-xl text-base" maxLength={50} />
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <label className="text-sm font-medium">Transaction ID (optional)</label>
+                  <Input value={transactionId} onChange={e => setTransactionId(e.target.value)} placeholder="e.g. EP123456789" className="mt-1.5 h-11 rounded-xl" />
+                </div>
+
+                <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => setStep('details')}>Back</Button>
+                  <Button onClick={handleSubmitOrder} size="lg" disabled={submitting} className="gold-gradient border-0 text-foreground font-semibold px-8 shadow-lg">
+                    {submitting ? 'Submitting...' : 'Submit Order'}
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-border bg-card p-6 h-fit lg:sticky lg:top-24 shadow-md">
+            <h2 className="font-display text-lg font-bold mb-5">Order Summary</h2>
+            <div className="space-y-3 text-sm">
+              {items.map(i => (
+                <div key={i.product.id} className="flex justify-between text-muted-foreground">
+                  <span className="truncate max-w-[150px]">{i.product.name} × {i.quantity}</span>
+                  <span>{formatPKR(i.product.price * i.quantity)}</span>
+                </div>
+              ))}
+              <div className="border-t pt-3 flex justify-between">
+                <span>Subtotal</span><span>{formatPKR(subtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Shipping</span><span>{formatPKR(shipping)}</span>
+              </div>
+              {zakatEnabled && (
+                <div className="flex justify-between">
+                  <span>Zakat</span><span>{formatPKR(zakatAmount)}</span>
                 </div>
               )}
-
-              <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setStep('details')} className="h-11">Back</Button>
-                <Button onClick={handleSubmitOrder} size="lg" disabled={submitting} className="gold-gradient border-0 text-foreground font-semibold h-12 px-8 text-base shadow-lg">
-                  {submitting ? 'Submitting...' : 'Submit Order'}
-                </Button>
+              {giftWrapFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Gift Wrap</span><span>{formatPKR(giftWrapFee)}</span>
+                </div>
+              )}
+              {discountVal > 0 && (
+                <div className="flex justify-between text-primary">
+                  <span>Discount</span><span>-{formatPKR(discountVal)}</span>
+                </div>
+              )}
+              {referralDiscount > 0 && (
+                <div className="flex justify-between text-primary">
+                  <span>Referral Reward</span><span>-{formatPKR(referralDiscount)}</span>
+                </div>
+              )}
+              <div className="border-t pt-3 flex justify-between font-bold text-lg text-foreground">
+                <span>Total</span><span>{formatPKR(grandTotal)}</span>
               </div>
-            </motion.div>
-          )}
-        </div>
-
-        {/* Order summary sidebar */}
-        <div className="rounded-xl border border-border bg-card p-6 h-fit lg:sticky lg:top-24 shadow-md">
-          <h2 className="font-display text-lg font-bold text-foreground mb-5">Order Summary</h2>
-          <div className="space-y-2.5 text-sm">
-            {items.map(({ product, quantity }) => (
-              <div key={product.id} className="flex justify-between text-muted-foreground">
-                <span className="truncate pr-3">{product.name} × {quantity}</span>
-                <span className="shrink-0 font-medium text-foreground">{formatPKR(product.price * quantity)}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-5 space-y-2.5 border-t border-border pt-4 text-sm">
-            <div className="flex justify-between text-muted-foreground">
-              <span>Subtotal</span><span className="font-medium text-foreground">{formatPKR(subtotal)}</span>
             </div>
-            <div className="flex justify-between text-muted-foreground">
-              <span>Shipping</span><span className="font-medium text-foreground">{formatPKR(shipping)}</span>
-            </div>
-            {zakatEnabled && (
-              <div className="flex justify-between text-muted-foreground">
-                <span>Zakat (2.5%)</span><span className="font-medium text-foreground">{formatPKR(zakatAmount)}</span>
-              </div>
-            )}
-            {giftWrapFee > 0 && (
-              <div className="flex justify-between text-muted-foreground">
-                <span>Gift Wrap</span><span className="font-medium text-foreground">{formatPKR(giftWrapFee)}</span>
-              </div>
-            )}
-            {discountAmount > 0 && (
-              <div className="flex justify-between text-primary">
-                <span>Discount</span><span className="font-medium">-{formatPKR(discountAmount)}</span>
-              </div>
-            )}
-            {referralDiscount > 0 && (
-              <div className="flex justify-between text-primary">
-                <span>Referral (5%)</span><span className="font-medium">-{formatPKR(referralDiscount)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-display font-bold text-foreground text-lg border-t border-border pt-3">
-              <span>Total</span><span>{formatPKR(grandTotal)}</span>
-            </div>
-          </div>
-          <div className="mt-4">
-            <DiscountCodeInput subtotal={subtotal} onApply={setDiscount} applied={discount} />
-          </div>
-          <div className="mt-5 space-y-2.5 border-t border-border pt-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span>1000+ orders delivered across Pakistan</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span>100% Halal Guaranteed</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span>24-hour payment verification</span>
+            <div className="mt-4">
+              <DiscountCodeInput subtotal={subtotal} onApply={setDiscount} applied={discount} />
             </div>
           </div>
         </div>
-      </div>
 
-      <ReferralRewardModal
-        open={showRewardModal}
-        onClose={() => setShowRewardModal(false)}
-        discountAmount={referralValidation?.discount_amount || 0}
-        onSelect={handleRewardSelection}
-      />
-    </main>
+        <ReferralRewardModal
+          open={showRewardModal}
+          onClose={() => setShowRewardModal(false)}
+          discountAmount={referralValidation?.discount_amount || 0}
+          onSelect={handleRewardSelection}
+        />
+      </main>
+    </>
   );
 };
 
