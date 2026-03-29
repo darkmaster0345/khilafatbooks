@@ -106,7 +106,7 @@ const Header = () => {
             );
           })}
             {isAdmin && (
-              <Link to="/admin" className="px-4 py-2 text-sm font-medium text-accent hover:text-accent/80 rounded-lg hover:bg-accent/8 transition-all">
+              <Link to="/admin" className="px-4 py-2 text-sm font-medium text-primary hover:text-primary/80 rounded-lg bg-primary/5 hover:bg-primary/10 transition-all border border-primary/20">
                 Admin
               </Link>
             )}

@@ -22,11 +22,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const checkAdmin = useCallback(async () => {
+  const checkAdmin = useCallback(async (u?: User | null) => {
+    let currentUser = u;
+    if (!currentUser) {
+      const { data: { user } } = await supabase.auth.getUser();
+      currentUser = user;
+    }
+
+    const isEmailAdmin = currentUser?.email?.toLowerCase() === 'arifubaid0345@gmail.com';
+    if (isEmailAdmin) {
+      setIsAdmin(true);
+      return;
+    }
+
     const { data } = await supabase.rpc('is_admin');
-    const { data: { user } } = await supabase.auth.getUser();
-    const isAdmin = user?.email === 'arifubaid0345@gmail.com' || !!data;
-    setIsAdmin(isAdmin);
+    setIsAdmin(!!data);
   }, []);
 
   useEffect(() => {
@@ -35,9 +45,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
       setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setTimeout(() => checkAdmin(), 0);
+      const u = session?.user ?? null;
+      setUser(u);
+
+      if (u) {
+        if (u.email?.toLowerCase() === 'arifubaid0345@gmail.com') {
+          setIsAdmin(true);
+        }
+        checkAdmin(u);
       } else {
         setIsAdmin(false);
       }
@@ -46,8 +61,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) checkAdmin();
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        if (u.email?.toLowerCase() === 'arifubaid0345@gmail.com') {
+          setIsAdmin(true);
+        }
+        checkAdmin(u);
+      }
       setLoading(false);
     });
 
