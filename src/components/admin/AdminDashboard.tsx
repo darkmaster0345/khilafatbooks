@@ -21,14 +21,34 @@ interface AdminDashboardProps {
 
 const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+
+
+
+
+
+
   const { products } = useProducts();
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      if (data) setOrders(data as unknown as Order[]);
-      setLoading(false);
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        if (data) setOrders(data as unknown as Order[]);
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchOrders();
   }, []);

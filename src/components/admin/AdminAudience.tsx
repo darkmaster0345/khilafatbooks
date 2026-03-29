@@ -17,7 +17,18 @@ interface Customer {
 
 const AdminAudience = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+
+
+
+
   const [search, setSearch] = useState('');
 
   useEffect(() => {

@@ -70,7 +70,12 @@ const Admin = () => {
   useOrderNotifications();
 
   useEffect(() => {
-    if (!authLoading) setLoading(false);
+    if (!authLoading) {
+      setLoading(false);
+    }
+    // Fail-safe: if auth is still loading after 6s, stop showing the loader
+    const timer = setTimeout(() => setLoading(false), 3000);
+    return () => clearTimeout(timer);
   }, [authLoading]);
 
   useEffect(() => {

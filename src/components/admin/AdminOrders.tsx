@@ -50,7 +50,20 @@ const AdminOrders = () => {
   const { user } = useAuth();
   const { products } = useProducts();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+
+
+
+
+
+
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [screenshotUrl, setScreenshotUrl] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -79,9 +92,16 @@ const AdminOrders = () => {
   }, []);
 
   const fetchOrders = async () => {
-    const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-    if (!error && data) setOrders(data as unknown as Order[]);
-    setLoading(false);
+    try {
+      setLoading(true);
+      const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      if (data) setOrders(data as unknown as Order[]);
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Bulk selection handlers

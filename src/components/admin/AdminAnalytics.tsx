@@ -36,7 +36,20 @@ const COLORS = [
 const AdminAnalytics = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [cartStats, setCartStats] = useState<AbandonedCartStats>({ total: 0, reminded: 0, recovered: 0, expired: 0, recoveredRevenue: 0 });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+
+
+
+
+
+
   const [period, setPeriod] = useState<'7d' | '30d' | 'all'>('30d');
 
   useEffect(() => {
@@ -165,7 +178,7 @@ const AdminAnalytics = () => {
     doc.save(`khilafat-books-report-${period}.pdf`);
   };
 
-  if (loading) return <p className="text-muted-foreground p-8">Loading analytics...</p>;
+
 
   return (
     <div className="space-y-6">

@@ -61,7 +61,20 @@ const AdminSecurity = () => {
   const [events, setEvents] = useState<SecurityEvent[]>([]);
   const [geoStats, setGeoStats] = useState<GeoStats[]>([]);
   const [rlsChecks, setRlsChecks] = useState<RLSCheck[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+
+
+
+
+
+
   const [checkingRLS, setCheckingRLS] = useState(false);
   const [expandedTable, setExpandedTable] = useState<string | null>(null);
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null);
@@ -230,13 +243,6 @@ const AdminSecurity = () => {
 
   const threatLevel = getThreatLevel();
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -509,7 +515,7 @@ const AdminSecurity = () => {
                   </CardTitle>
                   <CardDescription>
                     Live verification of Row Level Security policies across all {rlsChecks.length || 23} tables
-                    {lastCheckedAt && (
+                    {lastCheckedAt && !isNaN(new Date(lastCheckedAt).getTime()) && (
                       <span className="ml-2 text-xs">
                         · Last checked: {format(new Date(lastCheckedAt), 'MMM d, HH:mm:ss')}
                       </span>

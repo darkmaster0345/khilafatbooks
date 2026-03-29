@@ -25,7 +25,20 @@ interface Discount {
 const AdminDiscounts = () => {
   const { toast } = useToast();
   const [discounts, setDiscounts] = useState<Discount[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+
+
+
+
+
+
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({
     code: '',

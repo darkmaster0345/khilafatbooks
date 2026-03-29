@@ -88,9 +88,19 @@ const plugins: PluginDef[] = [
   },
 ];
 
+import { useState, useEffect } from 'react';
+
 const AdminPlugins = () => {
-  const { isPluginEnabled, togglePlugin, isLoading, isToggling } = usePluginSettings();
+  const { isPluginEnabled, togglePlugin, isLoading: queryLoading, isToggling } = usePluginSettings();
   const { toast } = useToast();
+  const [timeoutLoading, setTimeoutLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setTimeoutLoading(false), 3500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const isLoading = queryLoading && timeoutLoading;
 
   const availablePlugins = plugins.filter(p => p.available);
   const comingSoon = plugins.filter(p => !p.available);
@@ -105,13 +115,6 @@ const AdminPlugins = () => {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-6">

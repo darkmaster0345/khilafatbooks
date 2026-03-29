@@ -22,7 +22,20 @@ interface BookRequest {
 
 const AdminBookRequests = () => {
   const [requests, setRequests] = useState<BookRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+
+
+
+
+
+
   const [notifying, setNotifying] = useState<string | null>(null);
   const [editingPrice, setEditingPrice] = useState<string | null>(null);
   const [priceValue, setPriceValue] = useState('');

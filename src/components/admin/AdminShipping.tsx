@@ -25,7 +25,18 @@ interface Order {
 const AdminShipping = () => {
   const { toast } = useToast();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setLoading(false), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+
+
+
+
   const [trackingInput, setTrackingInput] = useState<Record<string, string>>({});
 
   useEffect(() => {
