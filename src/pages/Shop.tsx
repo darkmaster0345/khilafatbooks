@@ -43,7 +43,7 @@ const Shop = () => {
     let query = supabase
       .from('products')
       .select(PRODUCT_PUBLIC_COLUMNS)
-      .eq('is_hidden', false);
+      .neq('is_hidden', true);
 
     if (search) query = query.ilike('name', `%${search}%`);
     if (selectedCategory !== 'All') query = query.eq('category', selectedCategory);
