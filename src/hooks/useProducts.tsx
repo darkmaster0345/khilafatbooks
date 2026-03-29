@@ -12,8 +12,6 @@ export interface Product {
   price: number;
   original_price: number | null;
   image_url: string | null;
-  image_urls: string[] | null;
-  delivery_fee: number;
   category: string;
   type: string;
   is_new: boolean;
@@ -33,7 +31,7 @@ export interface Product {
 }
 
 // Safe columns to select for public-facing product queries (excludes digital_file_url)
-export const PRODUCT_PUBLIC_COLUMNS = 'id, name, name_ar, description, price, original_price, image_url, image_urls, delivery_fee, category, type, is_new, is_halal, ethical_source, rating, reviews, in_stock, stock_quantity, low_stock_threshold, series, series_order, bundle_discount, is_hidden, created_at, updated_at' as const;
+export const PRODUCT_PUBLIC_COLUMNS = 'id, name, name_ar, description, price, original_price, image_url, category, type, is_new, is_halal, ethical_source, rating, reviews, in_stock, stock_quantity, low_stock_threshold, series, series_order, bundle_discount, is_hidden, created_at, updated_at' as const;
 
 // Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
@@ -67,8 +65,8 @@ export function toLegacyProduct(p: Product): LegacyProduct {
     price: p.price,
     originalPrice: p.original_price || undefined,
     image: resolveProductImage(p.image_url),
-    imageUrls: p.image_urls || [],
-    deliveryFee: p.delivery_fee || 0,
+    imageUrls: p.image_url ? [resolveProductImage(p.image_url)] : [],
+    deliveryFee: 0,
     category: p.category,
     type: p.type as 'physical' | 'digital',
     isNew: p.is_new || undefined,
