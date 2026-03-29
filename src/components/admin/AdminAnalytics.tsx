@@ -41,23 +41,28 @@ const AdminAnalytics = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Fetch orders
-      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: true });
-      if (ordersData) setOrders(ordersData as unknown as Order[]);
+      try {
+        setLoading(true);
+        // Fetch orders
+        const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: true });
+        if (ordersData) setOrders(ordersData as unknown as Order[]);
 
-      // Fetch abandoned cart stats
-      const { data: carts } = await supabase.from('abandoned_carts').select('status, cart_total, recovered_at');
-      if (carts) {
-        const stats: AbandonedCartStats = { total: carts.length, reminded: 0, recovered: 0, expired: 0, recoveredRevenue: 0 };
-        (carts as any[]).forEach(c => {
-          if (c.status === 'reminded') stats.reminded++;
-          else if (c.status === 'recovered') { stats.recovered++; stats.recoveredRevenue += c.cart_total || 0; }
-          else if (c.status === 'expired') stats.expired++;
-        });
-        setCartStats(stats);
+        // Fetch abandoned cart stats
+        const { data: carts } = await supabase.from('abandoned_carts').select('status, cart_total, recovered_at');
+        if (carts) {
+          const stats: AbandonedCartStats = { total: carts.length, reminded: 0, recovered: 0, expired: 0, recoveredRevenue: 0 };
+          (carts as any[]).forEach(c => {
+            if (c.status === 'reminded') stats.reminded++;
+            else if (c.status === 'recovered') { stats.recovered++; stats.recoveredRevenue += c.cart_total || 0; }
+            else if (c.status === 'expired') stats.expired++;
+          });
+          setCartStats(stats);
+        }
+      } catch (error) {
+        console.error('Error in AdminAnalytics fetchData:', error);
+      } finally {
+        setLoading(false);
       }
-
-      setLoading(false);
     };
     fetchData();
   }, []);
