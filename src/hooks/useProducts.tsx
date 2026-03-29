@@ -56,47 +56,53 @@ export interface LegacyProduct {
 }
 
 export function toLegacyProduct(p: Product): LegacyProduct {
-  return {
-    id: p.id,
-    slug: slugify(p.name),
-    name: p.name,
-    nameAr: p.name_ar || undefined,
-    description: p.description,
-    price: p.price,
-    originalPrice: p.original_price || undefined,
-    image: resolveProductImage(p.image_url),
-    imageUrls: p.image_url ? [resolveProductImage(p.image_url)] : [],
-    deliveryFee: 0,
-    category: p.category,
-    type: p.type as 'physical' | 'digital',
-    isNew: p.is_new || undefined,
-    isHalal: p.is_halal || undefined,
-    ethicalSource: p.ethical_source || undefined,
-    rating: p.rating,
-    reviews: p.reviews,
-    inStock: p.in_stock,
-  };
+  try {
+    return {
+      id: p.id,
+      slug: slugify(p.name || 'product'),
+      name: p.name || 'Untitled Product',
+      nameAr: p.name_ar || undefined,
+      description: p.description || '',
+      price: p.price || 0,
+      originalPrice: p.original_price || undefined,
+      image: resolveProductImage(p.image_url),
+      imageUrls: p.image_url ? [resolveProductImage(p.image_url)] : [],
+      deliveryFee: 0,
+      category: p.category || 'Uncategorized',
+      type: (p.type as any) || 'physical',
+      isNew: p.is_new || undefined,
+      isHalal: p.is_halal || undefined,
+      ethicalSource: p.ethical_source || undefined,
+      rating: p.rating || 5,
+      reviews: p.reviews || 0,
+      inStock: p.in_stock ?? true,
+    };
+  } catch (e) {
+    console.error("Mapping error:", e);
+    return { id: p?.id || 'error', name: 'Error', price: 0 } as any;
+  }
 }
 
 export function useProducts() {
-  const queryClient = useQueryClient();
-
-  const { data: products = [], isLoading, refetch } = useQuery({
+  return useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .neq('is_hidden', true)
-        .select(PRODUCT_PUBLIC_COLUMNS)
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(PRODUCT_PUBLIC_COLUMNS)
+          .neq('is_hidden', true)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as Product[];
+        if (error) throw error;
+        return (data || []) as Product[];
+      } catch (err) {
+        console.error("Supabase fetch error:", err);
+        return [];
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
-
-  return { products, loading: isLoading, refetch };
 }
 
 export const PRODUCT_CATEGORIES = [

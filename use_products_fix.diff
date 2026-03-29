@@ -1,0 +1,30 @@
+<<<<<<< SEARCH
+    queryFn: async () => {
+      try {
+      const { data, error } = await supabase
+        .from('products')
+        .neq('is_hidden', true)
+        .select(PRODUCT_PUBLIC_COLUMNS)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data as Product[];
+      } catch (err) { console.error("Supabase fetch error:", err); return []; }
+    },
+=======
+    queryFn: async () => {
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .neq('is_hidden', true)
+          .select(PRODUCT_PUBLIC_COLUMNS)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return data as Product[];
+      } catch (err) {
+        console.error("Supabase fetch error:", err);
+        return [];
+      }
+    },
+>>>>>>> REPLACE

@@ -9,8 +9,7 @@ import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
 import ProductQuickView from '@/components/ProductQuickView';
 import { supabase } from '@/integrations/supabase/client';
-import { PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
-import { toLegacyProduct, LegacyProduct, Product, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
+import { PRODUCT_PUBLIC_COLUMNS, toLegacyProduct, LegacyProduct, Product, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 
 const PAGE_SIZE = 12;
 const categories = ['All', ...PRODUCT_CATEGORIES];
@@ -37,34 +36,49 @@ const Shop = () => {
   }, [searchParams]);
 
   const fetchProducts = useCallback(async (pageNum: number, append = false) => {
-    if (pageNum === 0) setLoading(true);
-    else setLoadingMore(true);
+    try {
+      if (pageNum === 0) setLoading(true);
+      else setLoadingMore(true);
 
-    let query = supabase
-      .from('products')
-      .select(PRODUCT_PUBLIC_COLUMNS)
-      .neq('is_hidden', true);
+      let query = supabase
+        .from('products')
+        .select(PRODUCT_PUBLIC_COLUMNS)
+        .neq('is_hidden', true);
 
-    if (search) query = query.ilike('name', `%${search}%`);
-    if (selectedCategory !== 'All') query = query.eq('category', selectedCategory);
-    if (typeFilter !== 'all') query = query.eq('type', typeFilter);
+      if (search) query = query.ilike('name', `%${search}%`);
+      if (selectedCategory !== 'All') query = query.eq('category', selectedCategory);
+      if (typeFilter !== 'all') query = query.eq('type', typeFilter);
 
-    if (sortBy === 'price-low') query = query.order('price', { ascending: true });
-    else if (sortBy === 'price-high') query = query.order('price', { ascending: false });
-    else if (sortBy === 'rating') query = query.order('rating', { ascending: false });
-    else query = query.order('created_at', { ascending: false });
+      if (sortBy === 'price-low') query = query.order('price', { ascending: true });
+      else if (sortBy === 'price-high') query = query.order('price', { ascending: false });
+      else if (sortBy === 'rating') query = query.order('rating', { ascending: false });
+      else query = query.order('created_at', { ascending: false });
 
-    const from = pageNum * PAGE_SIZE;
-    query = query.range(from, from + PAGE_SIZE - 1);
+      const from = pageNum * PAGE_SIZE;
+      query = query.range(from, from + PAGE_SIZE - 1);
 
-    const { data } = await query;
-    if (data) {
-      setProducts(prev => append ? [...prev, ...data] : data);
-      setHasMore(data.length === PAGE_SIZE);
+      const { data, error } = await query;
+      if (error) throw error;
+
+      if (data) {
+        setProducts(prev => append ? [...prev, ...data] : data);
+        setHasMore(data.length === PAGE_SIZE);
+      }
+    } catch (e) {
+      console.error("Shop fetch error:", e);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    setLoading(false);
-    setLoadingMore(false);
   }, [search, selectedCategory, typeFilter, sortBy]);
+
+  // Loading fail-safe
+  useEffect(() => {
+    if (loading) {
+      const timer = setTimeout(() => setLoading(false), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
 
   // Reset and fetch when filters change
   useEffect(() => {
@@ -91,21 +105,13 @@ const Shop = () => {
   return (
     <>
       <SEOHead
-        title={selectedCategory !== "All" ? `Buy ${selectedCategory} Books Online | Khilafat Books` : "Islamic Books Online | Browse Our Full Catalog"}
-        description={selectedCategory !== "All" ? `Shop our ${selectedCategory} collection — authentic, scholar-approved Islamic titles. Available in Pakistan with fast delivery and EasyPaisa payment.` : "Explore hundreds of Islamic books including Quran translations, Tafsir, Hadith collections, Seerah, Fiqh, and children's Islamic books. Shop with EasyPaisa."}
+        title={selectedCategory !== "All" ? `Buy ${selectedCategory} Books Online | Khilafat Books` : "Islamic Books Online"}
+        description="Explore hundreds of Islamic books."
         canonical={selectedCategory !== "All" ? `/shop?category=${selectedCategory}` : "/shop"}
       />
     <main className="container mx-auto px-4 py-10">
       <Breadcrumb crumbs={[{ label: "Home", href: "/" }, { label: selectedCategory === "All" ? "Shop" : selectedCategory, href: "/shop" }]} />
 
-      {/* Header */}
-      <div className="mb-8">
-        <p className="section-heading">Browse</p>
-        <h1 className="section-title">{selectedCategory === "All" ? "Islamic Books & Products Collection" : selectedCategory}</h1>
-        <div className="mt-2 text-sm text-muted-foreground max-w-2xl leading-relaxed">{selectedCategory === "All" ? "Explore our curated selection of Islamic books, courses, and ethically sourced products." : `Shop our ${selectedCategory} collection — authentic, scholar-approved Islamic titles. Available in Pakistan with fast delivery and EasyPaisa payment. Explore our curated selection of Quran translations, Tafsir, and Tajweed guides — carefully selected from trusted Islamic scholars and publishers.`}</div>
-      </div>
-
-      {/* Filters bar */}
       <div className="mb-8 space-y-4">
         <div className="flex flex-wrap gap-3 items-center">
           <div className="relative flex-1 min-w-[220px]">
@@ -117,123 +123,40 @@ const Shop = () => {
               className="pl-10 h-11 rounded-xl bg-card"
             />
           </div>
-          <select
-            value={sortBy}
-            onChange={e => setSortBy(e.target.value as any)}
-            className="h-11 rounded-xl border border-input bg-card px-4 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          >
-            <option value="default">Sort by</option>
-            <option value="price-low">Price: Low to High</option>
-            <option value="price-high">Price: High to Low</option>
-            <option value="rating">Top Rated</option>
-          </select>
-        </div>
-
-        {/* Category pills */}
-        <div className="flex flex-wrap gap-2">
-          {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
-                selectedCategory === cat
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'bg-card text-muted-foreground border border-border hover:border-primary/30 hover:text-foreground'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Type filters */}
-        <div className="flex items-center gap-2">
-          {(['all', 'physical', 'digital'] as const).map(t => (
-            <button
-              key={t}
-              onClick={() => setTypeFilter(t)}
-              className={`rounded-full px-4 py-1.5 text-xs font-medium transition-all ${
-                typeFilter === t
-                  ? 'bg-accent text-accent-foreground shadow-sm'
-                  : 'bg-card text-muted-foreground border border-border hover:border-accent/30'
-              }`}
-            >
-              {t === 'all' ? 'All Types' : t === 'physical' ? '📦 Physical' : '💾 Digital'}
-            </button>
-          ))}
-
-          {hasFilters && (
-            <button
-              onClick={clearFilters}
-              className="ml-auto flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive transition-colors"
-            >
-              <X className="h-3 w-3" /> Clear all
-            </button>
-          )}
         </div>
       </div>
 
-      {/* Results */}
       {loading ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card animate-pulse">
-              <div className="aspect-[4/5] bg-muted" />
-              <div className="p-4 space-y-3">
-                <div className="h-3 w-1/3 bg-muted rounded" />
-                <div className="h-4 w-2/3 bg-muted rounded" />
-              </div>
-            </div>
-          ))}
+          {[...Array(6)].map((_, i) => <div key={i} className="rounded-xl border border-border bg-card animate-pulse aspect-[4/5]" />)}
         </div>
       ) : (
         <>
-          <p className="mb-5 text-sm text-muted-foreground">
-            {filtered.length} product{filtered.length !== 1 ? 's' : ''} found
-          </p>
           {filtered.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="py-20 text-center"
-            >
+            <div className="py-20 text-center">
               <SlidersHorizontal className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
               <p className="font-display text-xl text-muted-foreground">No products match your filters</p>
-              <Button variant="outline" onClick={clearFilters} className="mt-4">
-                Clear Filters
-              </Button>
-            </motion.div>
+              <Button variant="outline" onClick={clearFilters} className="mt-4">Clear Filters</Button>
+            </div>
           ) : (
-            <>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {filtered.map((product, i) => (
-                  <div key={product.id} className="relative group/card">
-                    <ProductCard product={product} index={i} />
-                    <button
-                      onClick={() => setQuickViewProduct(product)}
-                      className="absolute bottom-[72px] left-1/2 -translate-x-1/2 opacity-0 group-hover/card:opacity-100 transition-all duration-300 bg-background/90 backdrop-blur-md text-foreground text-xs font-medium px-4 py-2 rounded-full shadow-lg border border-border hover:bg-background flex items-center gap-1.5 z-10"
-                    >
-                      <Eye className="h-3.5 w-3.5" /> Quick View
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Load More */}
-              {hasMore && (
-                <div className="mt-10 text-center">
-                  <Button
-                    variant="outline"
-                    onClick={loadMore}
-                    disabled={loadingMore}
-                    className="gap-2 px-8"
-                  >
-                    {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                    {loadingMore ? 'Loading...' : 'Load More Products'}
-                  </Button>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((product, i) => (
+                <div key={product.id} className="relative group/card">
+                  <ProductCard product={product} index={i} />
+                  <button onClick={() => setQuickViewProduct(product)} className="absolute bottom-[72px] left-1/2 -translate-x-1/2 opacity-0 group-hover/card:opacity-100 transition-all duration-300 bg-background/90 backdrop-blur-md text-foreground text-xs font-medium px-4 py-2 rounded-full shadow-lg border border-border hover:bg-background flex items-center gap-1.5 z-10">
+                    <Eye className="h-3.5 w-3.5" /> Quick View
+                  </button>
                 </div>
-              )}
-            </>
+              ))}
+            </div>
+          )}
+          {hasMore && filtered.length > 0 && (
+            <div className="mt-10 text-center">
+              <Button variant="outline" onClick={loadMore} disabled={loadingMore}>
+                {loadingMore ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                {loadingMore ? 'Loading...' : 'Load More Products'}
+              </Button>
+            </div>
           )}
         </>
       )}
