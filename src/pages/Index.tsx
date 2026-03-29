@@ -39,7 +39,7 @@ const categories = [
 
 const Index = () => {
   const { products, loading } = useProducts();
-  const featured = products.slice(0, 6).map(toLegacyProduct);
+  const featured = (products || []).slice(0, 6).map(toLegacyProduct);
   const { items } = useCart();
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({

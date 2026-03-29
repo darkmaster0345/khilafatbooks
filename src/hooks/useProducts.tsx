@@ -30,10 +30,8 @@ export interface Product {
   updated_at: string;
 }
 
-// Safe columns to select for public-facing product queries (excludes digital_file_url)
 export const PRODUCT_PUBLIC_COLUMNS = 'id, name, name_ar, description, price, original_price, image_url, category, type, is_new, is_halal, ethical_source, rating, reviews, in_stock, stock_quantity, low_stock_threshold, series, series_order, bundle_discount, is_hidden, created_at, updated_at' as const;
 
-// Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
   id: string;
   slug: string;
@@ -57,8 +55,9 @@ export interface LegacyProduct {
 
 export function toLegacyProduct(p: Product): LegacyProduct {
   try {
+    if (!p) throw new Error("Product data is missing");
     return {
-      id: p.id,
+      id: p.id || 'unknown',
       slug: slugify(p.name || 'product'),
       name: p.name || 'Untitled Product',
       nameAr: p.name_ar || undefined,
@@ -69,7 +68,7 @@ export function toLegacyProduct(p: Product): LegacyProduct {
       imageUrls: p.image_url ? [resolveProductImage(p.image_url)] : [],
       deliveryFee: 0,
       category: p.category || 'Uncategorized',
-      type: (p.type as any) || 'physical',
+      type: (p.type as 'physical' | 'digital') || 'physical',
       isNew: p.is_new || undefined,
       isHalal: p.is_halal || undefined,
       ethicalSource: p.ethical_source || undefined,
@@ -78,13 +77,13 @@ export function toLegacyProduct(p: Product): LegacyProduct {
       inStock: p.in_stock ?? true,
     };
   } catch (e) {
-    console.error("Mapping error:", e);
-    return { id: p?.id || 'error', name: 'Error', price: 0 } as any;
+    console.error("Mapping error:", e, p);
+    return { id: 'error', name: 'Error Loading', price: 0, image: '', category: '', type: 'physical' } as any;
   }
 }
 
 export function useProducts() {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
       try {
@@ -94,15 +93,24 @@ export function useProducts() {
           .neq('is_hidden', true)
           .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (error) {
+          console.error("Supabase error fetching products:", error);
+          throw error;
+        }
         return (data || []) as Product[];
       } catch (err) {
-        console.error("Supabase fetch error:", err);
+        console.error("Resilient products fetch triggered:", err);
         return [];
       }
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
+
+  return {
+    products: query.data || [],
+    loading: query.isLoading,
+    refetch: query.refetch
+  };
 }
 
 export const PRODUCT_CATEGORIES = [
