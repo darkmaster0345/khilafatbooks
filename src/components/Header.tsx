@@ -26,9 +26,7 @@ const Header = () => {
   const navigate = useNavigate();
   const { totalItems } = useCart();
   const { wishlist } = useWishlist();
-  const { user, signOut } = useAuth();
-
-  const isAdmin = user?.email === 'admin@khilafatbooks.com';
+  const { user, isAdmin, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
