@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
+    const authTimeout = setTimeout(() => setLoading(false), 5000);
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (window.location.hash.includes("access_token=")) {
         window.history.replaceState({}, document.title, window.location.pathname);
@@ -72,7 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => { subscription.unsubscribe(); clearTimeout(authTimeout); };
   }, [checkAdmin]);
 
   const signUp = async (email: string, password: string, fullName: string) => {

@@ -93,7 +93,7 @@ import { useState, useEffect } from 'react';
 const AdminPlugins = () => {
   const { isPluginEnabled, togglePlugin, isLoading: queryLoading, isToggling } = usePluginSettings();
   const { toast } = useToast();
-  const [timeoutLoading, setTimeoutLoading] = useState(true);
+  const [timeoutLoading, setTimeoutLoading] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setTimeoutLoading(false), 3500);

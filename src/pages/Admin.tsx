@@ -238,7 +238,7 @@ const Admin = () => {
           </div>
 
           <div className="p-5 md:p-8 max-w-7xl">
-            <ActiveComponent onNavigate={handleNavClick} />
+            <ActiveComponent key={activeSection} onNavigate={handleNavClick} />
           </div>
         </main>
       </div>
