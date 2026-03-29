@@ -25,9 +25,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAdmin = useCallback(async () => {
     const { data } = await supabase.rpc('is_admin');
     const { data: { user } } = await supabase.auth.getUser();
-    const isHardcodedAdmin = user?.email === 'arifubaid0345@gmail.com';
-    const isMetadataAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin';
-    setIsAdmin(!!data || isHardcodedAdmin || isMetadataAdmin);
+    const isAdmin = user?.email === 'arifubaid0345@gmail.com' || !!data;
+    setIsAdmin(isAdmin);
   }, []);
 
   useEffect(() => {
