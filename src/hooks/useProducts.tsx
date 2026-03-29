@@ -88,6 +88,7 @@ export function useProducts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
+        .neq('is_hidden', true)
         .select(PRODUCT_PUBLIC_COLUMNS)
         .order('created_at', { ascending: false });
 
