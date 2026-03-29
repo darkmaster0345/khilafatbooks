@@ -26,7 +26,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data } = await supabase.rpc('is_admin');
     const { data: { user } } = await supabase.auth.getUser();
     const isHardcodedAdmin = user?.email === 'arifubaid0345@gmail.com';
-    setIsAdmin(!!data || isHardcodedAdmin);
+    const isMetadataAdmin = user?.user_metadata?.role === 'admin' || user?.app_metadata?.role === 'admin';
+    setIsAdmin(!!data || isHardcodedAdmin || isMetadataAdmin);
   }, []);
 
   useEffect(() => {
