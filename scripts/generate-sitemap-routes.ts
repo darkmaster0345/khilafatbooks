@@ -12,7 +12,7 @@ dotenv.config()
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_VITE_SUPABASE_PUBLISHABLE_KEY
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("YOUR_NEW_PUBLISHABLE_KEY_HERE")) {
   console.error('Supabase credentials missing. Using empty routes.')
   fs.writeFileSync(path.resolve(__dirname, '../src/sitemap-routes.json'), JSON.stringify([]))
   process.exit(0)

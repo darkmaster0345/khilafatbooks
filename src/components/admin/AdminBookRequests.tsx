@@ -28,26 +28,35 @@ const AdminBookRequests = () => {
   const [priceValue, setPriceValue] = useState('');
 
   const fetchRequests = async () => {
-    const { data: reqs } = await supabase
-      .from('book_requests')
-      .select('*')
-      .order('created_at', { ascending: false });
+    setLoading(true);
+    try {
+      const { data: reqs } = await supabase
+        .from('book_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (!reqs) { setLoading(false); return; }
+      if (!reqs) {
+        setRequests([]);
+        return;
+      }
 
-    const requestIds = reqs.map((r: any) => r.id);
-    const { data: pledges } = await supabase
-      .from('book_pledges')
-      .select('request_id')
-      .in('request_id', requestIds);
+      const requestIds = reqs.map((r: any) => r.id);
+      const { data: pledges } = await supabase
+        .from('book_pledges')
+        .select('request_id')
+        .in('request_id', requestIds);
 
-    const enriched: BookRequest[] = reqs.map((r: any) => ({
-      ...r,
-      pledge_count: (pledges || []).filter((p: any) => p.request_id === r.id).length,
-    }));
+      const enriched: BookRequest[] = reqs.map((r: any) => ({
+        ...r,
+        pledge_count: (pledges || []).filter((p: any) => p.request_id === r.id).length,
+      }));
 
-    setRequests(enriched);
-    setLoading(false);
+      setRequests(enriched);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => { fetchRequests(); }, []);

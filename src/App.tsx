@@ -39,6 +39,8 @@ const OrderConfirmed = lazy(() => import("./pages/OrderConfirmed"));
 const OrderDetail = lazy(() => import("./pages/OrderDetail"));
 const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
 const queryClient = new QueryClient();
 
@@ -79,6 +81,8 @@ const AppLayout = () => {
               <Route path="/order-confirmed/:id" element={<PageTransition><OrderConfirmed /></PageTransition>} />
               <Route path="/shipping-policy" element={<PageTransition><ShippingPolicy /></PageTransition>} />
               <Route path="/return-policy" element={<PageTransition><ReturnPolicy /></PageTransition>} />
+              <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+              <Route path="/terms-of-service" element={<PageTransition><TermsOfService /></PageTransition>} />
               <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
             </Routes>
           </Suspense>

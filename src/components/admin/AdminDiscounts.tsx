@@ -42,9 +42,15 @@ const AdminDiscounts = () => {
   }, []);
 
   const fetchDiscounts = async () => {
-    const { data } = await supabase.from('discounts').select('*').order('created_at', { ascending: false });
-    if (data) setDiscounts(data as unknown as Discount[]);
-    setLoading(false);
+    setLoading(true);
+    try {
+      const { data } = await supabase.from('discounts').select('*').order('created_at', { ascending: false });
+      if (data) setDiscounts(data as unknown as Discount[]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const createDiscount = async () => {
