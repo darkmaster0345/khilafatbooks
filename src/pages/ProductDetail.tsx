@@ -24,6 +24,7 @@ import ProductSkeleton from '@/components/ProductSkeleton';
 import SmartSuggest from '@/components/SmartSuggest';
 import StickyAddToCart from '@/components/StickyAddToCart';
 import WhatsAppIcon from '@/components/WhatsAppIcon';
+import { slugify } from '@/lib/utils';
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -36,7 +37,8 @@ const ProductDetail = () => {
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const addToCartRef = useRef<HTMLButtonElement>(null);
 
-  const found = products.find(p => p.slug === slug);
+  // Fix: The Product type from Supabase doesn't have a 'slug' field, so we use slugify(p.name)
+  const found = products.find(p => slugify(p.name) === slug);
   const product = found ? toLegacyProduct(found) : null;
 
   const relatedProducts = products
@@ -68,20 +70,18 @@ const ProductDetail = () => {
   return (
     <>
       <SEOHead
-        title={`${product.name} ${product.author ? `by ${product.author}` : ""} | Khilafat Books`}
+        title={`${product.name} | Khilafat Books`}
         description={product.description?.slice(0, 150) ?? `Buy ${product.name} at Khilafat Books. Authentic Islamic literature. Fast delivery across Pakistan.`}
         canonical={`/books/${product.slug}`}
         ogImage={product.image}
         ogType="product"
         jsonLd={productSchema({
           name: product.name,
-          author: product.author,
           description: product.description,
           image_url: product.image,
           price: product.price,
           slug: product.slug,
-          inStock: product.inStock,
-          publisher: product.publisher
+          inStock: product.inStock
         })}
       />
       <main className="container mx-auto px-4 py-8 md:py-12">
@@ -192,7 +192,7 @@ const ProductDetail = () => {
               )}
               <div className="flex items-center gap-3 p-4 rounded-xl bg-muted/30 border border-border">
                 {product.type === 'physical' ? (
-                  <><Truck className="h-5 w-5 text-muted-foreground" /><span className="text-sm">Delivery: {product.deliveryFee > 0 ? formatPKR(product.deliveryFee) : 'FREE'}</span></>
+                  <><Truck className="h-5 w-5 text-muted-foreground" /><span className="text-sm">Delivery: FREE</span></>
                 ) : (
                   <><Download className="h-5 w-5 text-primary" /><span className="text-sm font-bold">Instant Digital Access</span></>
                 )}
@@ -251,7 +251,7 @@ const ProductDetail = () => {
           <section className="mt-24 pt-16 border-t border-border">
             <div className="mb-10">
               <h2 className="font-display text-3xl font-bold">You May Also Like</h2>
-              <p className="text-muted-foreground mt-2">More from "{product.category}"</p>
+              <p className="text-muted-foreground mt-2">More from "${product.category}"</p>
             </div>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {relatedProducts.map((p, i) => (

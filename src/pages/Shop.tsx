@@ -40,30 +40,39 @@ const Shop = () => {
     if (pageNum === 0) setLoading(true);
     else setLoadingMore(true);
 
-    let query = supabase
-      .from('products')
-      .select(PRODUCT_PUBLIC_COLUMNS)
-      .neq('is_hidden', true);
+    try {
+      let query = supabase
+        .from('products')
+        .select(PRODUCT_PUBLIC_COLUMNS)
+        .neq('is_hidden', true);
 
-    if (search) query = query.ilike('name', `%${search}%`);
-    if (selectedCategory !== 'All') query = query.eq('category', selectedCategory);
-    if (typeFilter !== 'all') query = query.eq('type', typeFilter);
+      if (search) query = query.ilike('name', `%${search}%`);
+      if (selectedCategory !== 'All') query = query.eq('category', selectedCategory);
+      if (typeFilter !== 'all') query = query.eq('type', typeFilter);
 
-    if (sortBy === 'price-low') query = query.order('price', { ascending: true });
-    else if (sortBy === 'price-high') query = query.order('price', { ascending: false });
-    else if (sortBy === 'rating') query = query.order('rating', { ascending: false });
-    else query = query.order('created_at', { ascending: false });
+      if (sortBy === 'price-low') query = query.order('price', { ascending: true });
+      else if (sortBy === 'price-high') query = query.order('price', { ascending: false });
+      else if (sortBy === 'rating') query = query.order('rating', { ascending: false });
+      else query = query.order('created_at', { ascending: false });
 
-    const from = pageNum * PAGE_SIZE;
-    query = query.range(from, from + PAGE_SIZE - 1);
+      const from = pageNum * PAGE_SIZE;
+      query = query.range(from, from + PAGE_SIZE - 1);
 
-    const { data } = await query;
-    if (data) {
-      setProducts(prev => append ? [...prev, ...data] : data);
-      setHasMore(data.length === PAGE_SIZE);
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error fetching products:', error);
+        if (!append) setProducts([]);
+      } else if (data) {
+        setProducts(prev => append ? [...prev, ...data] : data);
+        setHasMore(data.length === PAGE_SIZE);
+      }
+    } catch (err) {
+      console.error('Unexpected error in fetchProducts:', err);
+      if (!append) setProducts([]);
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
     }
-    setLoading(false);
-    setLoadingMore(false);
   }, [search, selectedCategory, typeFilter, sortBy]);
 
   // Reset and fetch when filters change
