@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { resolveProductImage } from '@/lib/productImages';
-import { useEffect } from 'react';
 import { slugify } from '@/lib/utils';
 
 export interface Product {
@@ -30,8 +29,8 @@ export interface Product {
   updated_at: string;
 }
 
-// Safe columns to select for public-facing product queries (excludes digital_file_url)
-export const PRODUCT_PUBLIC_COLUMNS = 'id, name, name_ar, description, price, original_price, image_url, category, type, is_new, is_halal, ethical_source, rating, reviews, in_stock, stock_quantity, low_stock_threshold, series, series_order, bundle_discount, is_hidden, created_at, updated_at' as const;
+// Cleaned up safe columns to select for public-facing product queries
+export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,ethical_source,rating,reviews,in_stock,stock_quantity,low_stock_threshold,series,series_order,bundle_discount,is_hidden,created_at,updated_at' as const;
 
 // Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
@@ -79,24 +78,31 @@ export function toLegacyProduct(p: Product): LegacyProduct {
 }
 
 export function useProducts() {
-  const queryClient = useQueryClient();
-
-  const { data: products = [], isLoading, refetch } = useQuery({
+  const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .neq('is_hidden', true)
-        .select(PRODUCT_PUBLIC_COLUMNS)
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select(PRODUCT_PUBLIC_COLUMNS)
+          .neq('is_hidden', true)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      return data as Product[];
+        if (error) {
+          console.error('Supabase error fetching products:', error);
+          throw error;
+        }
+        return data as Product[];
+      } catch (err) {
+        console.error('Failed to fetch products:', err);
+        throw err;
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 2,
   });
 
-  return { products, loading: isLoading, refetch };
+  return { products, loading: isLoading, error, refetch };
 }
 
 export const PRODUCT_CATEGORIES = [

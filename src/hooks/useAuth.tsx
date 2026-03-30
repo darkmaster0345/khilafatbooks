@@ -22,37 +22,91 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const checkAdmin = useCallback(async () => {
-    const { data } = await supabase.rpc('is_admin');
-    const { data: { user } } = await supabase.auth.getUser();
-    const isAdmin = user?.email === 'arifubaid0345@gmail.com' || !!data;
-    setIsAdmin(isAdmin);
+  const checkAdminStatus = useCallback(async (u: User | null) => {
+    if (!u) {
+      setIsAdmin(false);
+      return false;
+    }
+
+    try {
+      // 1. Check hardcoded fallback
+      const email = u.email?.toLowerCase();
+      if (email === 'arifubaid0345@gmail.com') {
+        setIsAdmin(true);
+        return true;
+      }
+
+      // 2. Check metadata
+      if (u.app_metadata?.role === 'admin' || u.user_metadata?.role === 'admin') {
+        setIsAdmin(true);
+        return true;
+      }
+
+      // 3. Check RPC as last resort
+      const { data, error } = await supabase.rpc('is_admin');
+      if (error) {
+        console.error('Error checking admin status via RPC:', error);
+      }
+      const isRpcAdmin = !!data;
+      setIsAdmin(isRpcAdmin);
+      return isRpcAdmin;
+    } catch (err) {
+      console.error('Unexpected error in checkAdminStatus:', err);
+      setIsAdmin(false);
+      return false;
+    }
   }, []);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    let mounted = true;
+
+    async function initializeAuth() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!mounted) return;
+
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await checkAdminStatus(session.user);
+        } else {
+          setIsAdmin(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    }
+
+    initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
+
       if (window.location.hash.includes("access_token=")) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
+
       setSession(session);
       setUser(session?.user ?? null);
+
       if (session?.user) {
-        setTimeout(() => checkAdmin(), 0);
+        setLoading(true);
+        await checkAdminStatus(session.user);
+        setLoading(false);
       } else {
         setIsAdmin(false);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) checkAdmin();
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [checkAdmin]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [checkAdminStatus]);
 
   const signUp = async (email: string, password: string, fullName: string) => {
     const { error } = await supabase.auth.signUp({
@@ -83,6 +137,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setIsAdmin(false);
   };
 
   const resetPassword = async (email: string) => {
