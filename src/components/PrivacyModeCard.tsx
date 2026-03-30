@@ -7,8 +7,8 @@ import { usePrivacyMode } from '@/hooks/usePrivacyMode';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { toast } from 'sonner';
+import { PRIVACY_FEE } from '@/lib/constants';
 
-const PRIVACY_FEE = 50;
 
 const PrivacyModeCard = () => {
   const { user } = useAuth();

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import {
-  LayoutDashboard, ShoppingBag, Truck, Package, BarChart3,
+  LayoutDashboard, ShoppingBag, Truck, Package, BarChart3, Calculator,
   CreditCard, Tag, Users, Puzzle, Settings, BookOpen,
   ChevronLeft, ChevronRight, LogOut, Store, Menu, Shield, Mail,
 } from 'lucide-react';
@@ -15,6 +15,7 @@ import AdminOrders from '@/components/admin/AdminOrders';
 import AdminShipping from '@/components/admin/AdminShipping';
 import AdminProducts from '@/components/admin/AdminProducts';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
+import AdminFinancialOverview from '@/components/admin/AdminFinancialOverview';
 import AdminPayments from '@/components/admin/AdminPayments';
 import AdminDiscounts from '@/components/admin/AdminDiscounts';
 import AdminAudience from '@/components/admin/AdminAudience';
@@ -25,7 +26,7 @@ import AdminSecurity from '@/components/admin/AdminSecurity';
 import AdminNewsletter from '@/components/admin/AdminNewsletter';
 import logo from '@/assets/logo.png';
 
-type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests' | 'security' | 'newsletter';
+type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'finances' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests' | 'security' | 'newsletter';
 
 const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -33,6 +34,7 @@ const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'shipping', label: 'Shipping', icon: Truck },
   { id: 'products', label: 'Products', icon: Package },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { id: 'finances', label: 'Financials', icon: Calculator },
   { id: 'payments', label: 'Payments', icon: CreditCard },
   { id: 'discounts', label: 'Discounts', icon: Tag },
   { id: 'audience', label: 'Audience', icon: Users },
@@ -49,6 +51,7 @@ const sectionComponents: Record<Section, React.FC<{ onNavigate?: (section: Secti
   shipping: AdminShipping,
   products: AdminProducts,
   analytics: AdminAnalytics,
+  finances: AdminFinancialOverview,
   payments: AdminPayments,
   discounts: AdminDiscounts,
   audience: AdminAudience,
