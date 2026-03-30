@@ -40,7 +40,7 @@ const AdminAnalytics = () => {
   const [period, setPeriod] = useState<'7d' | '30d' | 'all'>('30d');
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async () => { try {
       // Fetch orders
       const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: true });
       if (ordersData) setOrders(ordersData as unknown as Order[]);
@@ -57,7 +57,7 @@ const AdminAnalytics = () => {
         setCartStats(stats);
       }
 
-      setLoading(false);
+      setLoading(false); } catch (err) { console.error(err); setLoading(false); }
     };
     fetchData();
   }, []);

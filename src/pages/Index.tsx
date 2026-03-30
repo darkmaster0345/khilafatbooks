@@ -132,10 +132,10 @@ const Index = () => {
               transition={{ delay: 0.8, duration: 0.8 }}
               className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-5"
             >
-              <Button asChild size="lg" className="gold-gradient h-15 px-10 text-lg font-bold text-foreground border-0 shadow-xl hover:shadow-gold/20 transition-all hover:scale-105 rounded-2xl active:scale-95">
+              <Button asChild size="lg" className="gold-gradient h-14 px-10 text-lg font-bold text-foreground border-0 shadow-xl hover:shadow-gold/20 transition-all hover:scale-105 rounded-2xl active:scale-95">
                 <Link to="/shop">Shop Collection</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-15 px-10 text-lg font-bold text-primary-foreground border-white/20 hover:bg-white/10 backdrop-blur-sm rounded-2xl transition-all hover:border-white/40 active:scale-95">
+              <Button asChild size="lg" variant="outline" className="h-14 px-10 text-lg font-bold text-primary-foreground border-white/20 hover:bg-white/10 backdrop-blur-sm rounded-2xl transition-all hover:border-white/40 active:scale-95">
                 <Link to="/shop?type=digital" className="flex items-center gap-2">
                   <Download className="h-5 w-5" /> Digital Courses
                 </Link>

@@ -35,8 +35,8 @@ const Footer = () => (
           <ul className="space-y-2.5 text-sm">
             <li><Link to="/shipping-policy" className="text-muted-foreground hover:text-primary transition-colors">Shipping Policy</Link></li>
             <li><Link to="/return-policy" className="text-muted-foreground hover:text-primary transition-colors">Return & Refund Policy</Link></li>
-            <li><Link to="/book-requests" className="text-muted-foreground hover:text-primary transition-colors">Request a Book</Link></li>
-            <li><Link to="/auth" className="text-muted-foreground hover:text-primary transition-colors">My Account</Link></li>
+            <li><Link to="/privacy-policy" className="text-muted-foreground hover:text-primary transition-colors">Privacy Policy</Link></li>
+            <li><Link to="/terms-of-service" className="text-muted-foreground hover:text-primary transition-colors">Terms of Service</Link></li>
           </ul>
         </div>
         <div>
