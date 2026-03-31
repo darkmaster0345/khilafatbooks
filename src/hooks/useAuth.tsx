@@ -68,6 +68,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
 
+        if (typeof window !== 'undefined') {
+          (window as any).__kbUser = session?.user ?? null;
+        }
+
         if (session?.user) {
           await checkAdminStatus(session.user);
         } else {
@@ -91,6 +95,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       setSession(session);
       setUser(session?.user ?? null);
+
+      if (typeof window !== 'undefined') {
+        (window as any).__kbUser = session?.user ?? null;
+      }
 
       if (session?.user) {
         setLoading(true);
