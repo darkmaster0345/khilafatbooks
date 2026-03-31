@@ -79,9 +79,20 @@ const AdminOrders = () => {
   }, []);
 
   const fetchOrders = async () => {
-    const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-    if (!error && data) setOrders(data as unknown as Order[]);
-    setLoading(false);
+    try {
+      const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      if (error) {
+        toast({ title: 'Error loading orders', description: error.message, variant: 'destructive' });
+        setOrders([]);
+      } else if (data) {
+        setOrders(data as unknown as Order[]);
+      }
+    } catch (err: any) {
+      toast({ title: 'Error loading orders', description: err?.message || String(err), variant: 'destructive' });
+      setOrders([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Bulk selection handlers

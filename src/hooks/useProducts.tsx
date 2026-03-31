@@ -99,7 +99,7 @@ export function useProducts() {
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 2,
+    retry: 0, // If we hit RLS/permission issues we want UI to stop loading immediately.
   });
 
   return { products, loading: isLoading, error, refetch };

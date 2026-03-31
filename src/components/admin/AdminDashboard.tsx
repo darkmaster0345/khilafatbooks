@@ -26,9 +26,21 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
-      if (data) setOrders(data as unknown as Order[]);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        if (error) {
+          // Keep dashboard usable even if RLS blocks this query.
+          console.error('Error fetching orders for dashboard:', error);
+          setOrders([]);
+        } else if (data) {
+          setOrders(data as unknown as Order[]);
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching orders for dashboard:', err);
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchOrders();
   }, []);
