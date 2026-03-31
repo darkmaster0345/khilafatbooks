@@ -116,7 +116,9 @@ const Admin = () => {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  if (!isAdmin) {
+  const isHardcodedAdmin = user.email?.toLowerCase() === 'arifubaid0345@gmail.com';
+
+  if (!isAdmin && !isHardcodedAdmin) {
     return (
       <>
         <SEOHead title="Admin Panel | Khilafat Books" description="Store administration." canonical="/admin" noIndex={true} />
