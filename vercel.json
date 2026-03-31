@@ -1,5 +1,12 @@
 {
   "version": 2,
+  "redirects": [
+    {
+      "source": "/product/:slug",
+      "destination": "/books/:slug",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/((?!_prerendered|assets|robots.txt|sitemap.xml|favicon.ico|.*\\..*).*)",

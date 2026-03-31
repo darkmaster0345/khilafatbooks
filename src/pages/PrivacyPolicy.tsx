@@ -7,6 +7,7 @@ const PrivacyPolicy = () => {
       <SEOHead
         title="Privacy Policy | Khilafat Books"
         description="Learn how Khilafat Books collects, uses, and protects your personal information in accordance with Islamic ethics and data protection standards."
+        canonical="/privacy-policy"
       />
       <main className="container mx-auto px-4 py-12 max-w-4xl">
         <Breadcrumb crumbs={[{ label: "Home", href: "/" }, { label: "Privacy Policy", href: "/privacy-policy" }]} />

@@ -5,7 +5,11 @@ import { motion } from 'framer-motion';
 const ShippingPolicy = () => {
   return (
     <>
-      <SEOHead title="Shipping Policy | Khilafat Books" description="Information about delivery times and shipping costs across Pakistan." canonical="/shipping-policy" />
+      <SEOHead
+        title="Shipping Policy | Khilafat Books"
+        description="Detailed information on delivery times, shipping costs, and order tracking across Pakistan. Free shipping on Islamic book orders over Rs. 5,000 at Khilafat Books."
+        canonical="/shipping-policy"
+      />
       <main className="container mx-auto px-4 py-16 max-w-4xl">
         <div className="text-center mb-16">
           <p className="section-heading">Delivery Information</p>

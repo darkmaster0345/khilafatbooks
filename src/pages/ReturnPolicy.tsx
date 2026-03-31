@@ -5,7 +5,11 @@ import { motion } from 'framer-motion';
 const ReturnPolicy = () => {
   return (
     <>
-      <SEOHead title="Return & Refund Policy | Khilafat Books" description="Our policies for returns, exchanges, and refunds." canonical="/return-policy" />
+      <SEOHead
+        title="Return & Refund Policy | Khilafat Books"
+        description="Understand our return and refund policy for physical Islamic books and digital products. We ensure a fair and ethical process for all Khilafat Books customers."
+        canonical="/return-policy"
+      />
       <main className="container mx-auto px-4 py-16 max-w-4xl">
         <div className="text-center mb-16">
           <p className="section-heading">Customer Satisfaction</p>

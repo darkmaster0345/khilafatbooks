@@ -1,3 +1,4 @@
+// Homepage with optimized hero section, pre-rendered JSON-LD, and featured products
 import { SEOHead } from '@/components/SEOHead';
 import { websiteSchema, organizationSchema, localBusinessSchema } from '@/lib/seo-schemas';
 import { Link } from 'react-router-dom';
@@ -19,6 +20,9 @@ import { useCart } from '@/context/CartContext';
 import WelcomeBanner from '@/components/WelcomeBanner';
 import NewsletterSignup from '@/components/NewsletterSignup';
 import NewsletterModal from '@/components/NewsletterModal';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary';
+
+// Local Assets
 import heroBg from '@/assets/hero-bg-new.jpg';
 import productQuran from '@/assets/product-quran.jpg';
 import productOud from '@/assets/product-oud.jpg';
@@ -36,6 +40,19 @@ const categories = [
   { name: 'Fragrances', image: productOud, link: '/shop' },
   { name: 'Digital Courses', image: productCalligraphy, link: '/shop?type=digital' },
 ];
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Khilafat Books",
+  "url": "https://khilafatbooks.vercel.app",
+  "logo": "https://khilafatbooks.vercel.app/logo.png",
+  "sameAs": [
+    "https://facebook.com/KhilafatBooks",
+    "https://instagram.com/KhilafatBooks",
+    "https://twitter.com/KhilafatBooks"
+  ]
+};
 
 const Index = () => {
   const { products, loading } = useProducts();
@@ -58,6 +75,11 @@ const Index = () => {
         canonical="/"
         jsonLd={[websiteSchema, organizationSchema, localBusinessSchema]}
       />
+      {/* Explicit Organization JSON-LD as requested */}
+      <script type="application/ld+json">
+        {JSON.stringify(organizationJsonLd)}
+      </script>
+
     <main className="flex min-h-screen flex-col">
       <OrganizationJsonLd />
       <LocalBusinessJsonLd />
@@ -69,11 +91,18 @@ const Index = () => {
           style={{ y: heroImageY }}
           className="absolute inset-0 z-0"
         >
+          {/* Hero image with optimized performance attributes */}
           <img
             src={heroBg}
-            alt="Islamic books and prayer essentials"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              if (target.src !== heroBg) {
+                target.src = heroBg;
+              }
+            }}
+            alt="Khilafat Books — Premium Islamic Books Pakistan"
             className="h-full w-full object-cover"
-            fetchPriority="high"
+            fetchpriority="high"
             loading="eager"
             decoding="sync"
             width="1200"
@@ -217,6 +246,7 @@ const Index = () => {
                   height="600"
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
+                  decoding="async"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
                 <div className="absolute bottom-0 left-0 right-0 p-6">

@@ -1,0 +1,75 @@
+
+    <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Static SEO (Stopgap for crawlers) -->
+    <title>Khilafat Books | Authentic Islamic Books &amp; Halal Products — Pakistan</title>
+    <meta name="description" content="Buy authentic Islamic books, Quran, Hadith, Tafsir, digital courses and halal products in Pakistan. EasyPaisa accepted. Fast delivery nationwide.">
+    <meta name="robots" content="index, follow">
+    <meta name="keywords" content="Islamic books Pakistan, buy Quran online Pakistan, Islamic bookstore, Hadith books, Tafsir, EasyPaisa books, halal products Pakistan">
+
+    <!-- Open Graph (WhatsApp / Facebook previews) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Khilafat Books">
+    <meta property="og:title" content="Khilafat Books | Islamic Books &amp; Halal Products">
+    <meta property="og:description" content="Pakistan's trusted Islamic bookstore. Authentic books, digital courses &amp; halal products. Order online with EasyPaisa.">
+    <meta property="og:url" content="https://khilafatbooks.vercel.app/">
+    <meta property="og:image" content="https://khilafatbooks.vercel.app/og-image.jpg">
+    <meta property="og:locale" content="en_PK">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Khilafat Books | Islamic Books Pakistan">
+    <meta name="twitter:description" content="Authentic Islamic books, courses &amp; halal products. Fast delivery across Pakistan.">
+    <meta name="twitter:image" content="https://khilafatbooks.vercel.app/og-image.jpg">
+
+    <meta name="author" content="Khilafat Books">
+    <link rel="icon" href="/favicon.png" type="image/png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" href="/favicon.png">
+    <link rel="canonical" href="https://khilafatbooks.vercel.app/">
+
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin="">
+    <link rel="preconnect" href="https://ebormxtkzertyxgszbip.supabase.co" crossorigin="">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&amp;family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&amp;family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+    <script src="https://t.contentsquare.net/uxa/9b270171e4faa.js"></script>
+
+    <!-- Static JSON-LD (visible before JS) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Khilafat Books",
+      "url": "https://khilafatbooks.vercel.app",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://khilafatbooks.vercel.app/shop?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "Khilafat Books",
+      "url": "https://khilafatbooks.vercel.app",
+      "description": "Pakistan's trusted online Islamic bookstore offering authentic Islamic books, digital courses, and halal products.",
+      "areaServed": "PK",
+      "currenciesAccepted": "PKR"
+    }
+    </script>
+    <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">

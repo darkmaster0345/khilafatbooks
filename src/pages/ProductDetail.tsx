@@ -1,3 +1,4 @@
+// Optimized book detail page with dynamic meta tags, structured data, and image optimization
 import { SEOHead } from '@/components/SEOHead';
 import { Breadcrumb } from '@/components/Breadcrumb';
 import { productSchema } from '@/lib/seo-schemas';
@@ -25,6 +26,8 @@ import SmartSuggest from '@/components/SmartSuggest';
 import StickyAddToCart from '@/components/StickyAddToCart';
 import WhatsAppIcon from '@/components/WhatsAppIcon';
 import { slugify } from '@/lib/utils';
+import { truncateDescription } from '@/lib/seo';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary';
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -67,11 +70,13 @@ const ProductDetail = () => {
   const soldCount = Math.floor(Math.random() * 150) + 20;
   const galleryImages = [product.image, ...(product.imageUrls || [])].filter(Boolean);
 
+  const mainImageUrl = optimizeCloudinaryUrl(activeImage || product.image, { w: 800, h: 800, fit: 'fill' });
+
   return (
     <>
       <SEOHead
         title={`${product.name} | Khilafat Books`}
-        description={product.description?.slice(0, 150) ?? `Buy ${product.name} at Khilafat Books. Authentic Islamic literature. Fast delivery across Pakistan.`}
+        description={truncateDescription(product.description || `Buy ${product.name} at Khilafat Books. Authentic Islamic literature. Fast delivery across Pakistan.`)}
         canonical={`/books/${product.slug}`}
         ogImage={product.image}
         ogType="product"
@@ -101,12 +106,20 @@ const ProductDetail = () => {
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
             <div className="aspect-square rounded-3xl overflow-hidden bg-card border border-border shadow-md">
               <img
-                src={activeImage || product.image}
+                src={mainImageUrl}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src !== '/placeholder.svg') {
+                    target.src = '/placeholder.svg';
+                  }
+                }}
                 alt={product.name}
                 className="w-full h-full object-cover transition-all duration-500"
                 fetchpriority="high"
                 loading="eager"
                 decoding="sync"
+                width="800"
+                height="800"
               />
             </div>
 
@@ -118,7 +131,21 @@ const ProductDetail = () => {
                     onClick={() => setActiveImage(img)}
                     className={`aspect-square rounded-xl border-2 transition-all overflow-hidden ${activeImage === img ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'}`}
                   >
-                    <img src={img} alt={`${product.name} gallery ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                    <img
+                      src={optimizeCloudinaryUrl(img, { w: 200, h: 200, fit: 'fill' })}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (target.src !== '/placeholder.svg') {
+                          target.src = '/placeholder.svg';
+                        }
+                      }}
+                      alt={`${product.name} gallery ${idx + 1}`}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                      width="200"
+                      height="200"
+                      decoding="async"
+                    />
                   </button>
                 ))}
               </div>

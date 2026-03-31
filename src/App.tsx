@@ -1,3 +1,4 @@
+// App layout with route-level lazy loading and improved Suspense fallback strategy
 import { Suspense, lazy } from "react";
 import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
@@ -22,6 +23,7 @@ import BrandedLoader from "@/components/BrandedLoader";
 import PageTransition from "@/components/PageTransition";
 import MaintenanceModal from "@/components/MaintenanceModal";
 import { usePluginSettings } from "@/hooks/usePluginSettings";
+import { ProductSkeletonGrid } from "@/components/ProductSkeleton";
 
 // Lazy-loaded routes
 const Shop = lazy(() => import("./pages/Shop"));
@@ -57,13 +59,22 @@ const AppLayout = () => {
     );
   }
 
+  // Use ProductSkeletonGrid for Shop page loading, and BrandedLoader for others
+  const isShop = location.pathname === '/shop';
+  const fallback = isShop ? (
+    <div className="container mx-auto px-4 py-10">
+      <div className="h-10 w-48 bg-muted rounded mb-8 animate-pulse" />
+      <ProductSkeletonGrid count={6} />
+    </div>
+  ) : <BrandedLoader />;
+
   return (
     <div className="flex min-h-screen flex-col overflow-x-hidden">
       <Header />
       <MaintenanceModal />
       <div className="flex-1">
         <AnimatePresence mode="wait">
-          <Suspense fallback={<BrandedLoader />} key={location.pathname}>
+          <Suspense fallback={fallback} key={location.pathname}>
             <Routes location={location}>
               <Route path="/" element={<PageTransition><Index /></PageTransition>} />
               <Route path="/shop" element={<PageTransition><Shop /></PageTransition>} />

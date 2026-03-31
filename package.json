@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "tsx scripts/generate-sitemap-routes.ts",
-    "build": "vite build && tsx scripts/generate-snapshots.ts",
+    "build": "node src/scripts/generate-sitemap.js && vite build && tsx scripts/generate-snapshots.ts",
     "build:ci": "vite build",
     "prerender": "tsx scripts/generate-snapshots.ts",
     "lint": "eslint .",

@@ -1,3 +1,4 @@
+// Centralized schema generators for SEO structured data (JSON-LD)
 const SITE_URL = import.meta.env.VITE_SITE_URL || 'https://khilafatbooks.vercel.app'
 
 export const websiteSchema = {
@@ -53,6 +54,9 @@ export function productSchema(product: {
   publisher?: string
   inStock?: boolean
 }) {
+  const price = product.price ?? 0;
+  const usdPrice = (price / 280).toFixed(2);
+
   return {
     '@context': 'https://schema.org',
     '@type': 'Book',
@@ -63,16 +67,28 @@ export function productSchema(product: {
     ...(product.isbn && { isbn: product.isbn }),
     ...(product.publisher && { publisher: { '@type': 'Organization', name: product.publisher } }),
     url: `${SITE_URL}/books/${product.slug}`,
-    offers: {
-      '@type': 'Offer',
-      priceCurrency: 'PKR',
-      price: product.price ?? 0,
-      availability: product.inStock !== false
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
-      url: `${SITE_URL}/books/${product.slug}`,
-      seller: { '@type': 'Organization', name: 'Khilafat Books' },
-    },
+    offers: [
+      {
+        '@type': 'Offer',
+        priceCurrency: 'PKR',
+        price: price,
+        availability: product.inStock !== false
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+        url: `${SITE_URL}/books/${product.slug}`,
+        seller: { '@type': 'Organization', name: 'Khilafat Books' },
+      },
+      {
+        '@type': 'Offer',
+        priceCurrency: 'USD',
+        price: usdPrice,
+        availability: product.inStock !== false
+          ? 'https://schema.org/InStock'
+          : 'https://schema.org/OutOfStock',
+        url: `${SITE_URL}/books/${product.slug}`,
+        seller: { '@type': 'Organization', name: 'Khilafat Books' },
+      }
+    ],
   }
 }
 

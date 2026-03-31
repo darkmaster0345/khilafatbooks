@@ -13,7 +13,7 @@ describe('optimizeCloudinaryUrl', () => {
 
   it('should add transforms to a standard Cloudinary URL', () => {
     const url = 'https://res.cloudinary.com/demo/image/upload/sample.jpg';
-    const expected = 'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_800/sample.jpg';
+    const expected = 'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,dpr_auto,w_800/sample.jpg';
     expect(optimizeCloudinaryUrl(url)).toBe(expected);
   });
 
@@ -24,7 +24,13 @@ describe('optimizeCloudinaryUrl', () => {
 
   it('should use custom width', () => {
     const url = 'https://res.cloudinary.com/demo/image/upload/sample.jpg';
-    const expected = 'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,w_1200/sample.jpg';
+    const expected = 'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,dpr_auto,w_1200/sample.jpg';
     expect(optimizeCloudinaryUrl(url, 1200)).toBe(expected);
+  });
+
+  it('should support options object', () => {
+    const url = 'https://res.cloudinary.com/demo/image/upload/sample.jpg';
+    const expected = 'https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,dpr_auto,w_400,h_500,c_fill/sample.jpg';
+    expect(optimizeCloudinaryUrl(url, { w: 400, h: 500, fit: 'fill' })).toBe(expected);
   });
 });

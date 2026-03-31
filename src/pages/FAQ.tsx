@@ -61,7 +61,12 @@ const faqJsonLd = {
 const FAQ = () => {
   return (
     <>
-      <SEOHead title="FAQ | Khilafat Books" description="Frequently asked questions about shipping, payments, and our products." canonical="/faq" jsonLd={faqJsonLd} />
+      <SEOHead
+        title="FAQ | Khilafat Books"
+        description="Find answers to frequently asked questions about Islamic books, digital courses, EasyPaisa payments, shipping across Pakistan, and our halal-certified products."
+        canonical="/faq"
+        jsonLd={faqJsonLd}
+      />
       <main className="container mx-auto px-4 py-10 max-w-3xl">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
           <p className="section-heading">Support</p>

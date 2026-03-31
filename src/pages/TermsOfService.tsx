@@ -7,6 +7,7 @@ const TermsOfService = () => {
       <SEOHead
         title="Terms of Service | Khilafat Books"
         description="Read the terms and conditions for using Khilafat Books website and purchasing our Islamic products."
+        canonical="/terms-of-service"
       />
       <main className="container mx-auto px-4 py-12 max-w-4xl">
         <Breadcrumb crumbs={[{ label: "Home", href: "/" }, { label: "Terms of Service", href: "/terms-of-service" }]} />

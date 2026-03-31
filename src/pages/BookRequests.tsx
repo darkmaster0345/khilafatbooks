@@ -141,7 +141,11 @@ const BookRequests = () => {
 
   return (
     <>
-      <SEOHead title="Request a Book | Khilafat Books" description="Can't find a book? Request it here and we'll source it for you." canonical="/book-requests" />
+      <SEOHead
+        title="Request a Book | Khilafat Books"
+        description="Can't find a specific Islamic title? Request it here and we'll source it for you. Pledge your interest and we'll add it to the Khilafat Books catalog."
+        canonical="/book-requests"
+      />
       <main className="container mx-auto px-4 py-12 max-w-6xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>

@@ -1,47 +1,27 @@
-# Conversion & UX Foundation - Changes Summary
+# SEO + Performance Sprint — Changes Summary (2025)
 
-## 1. Analytics & Tracking (GA4 + Facebook Pixel)
-- **Facebook Pixel Initialization**: Un-commented and initialized Facebook Pixel in `index.html` with a placeholder ID.
-- **Analytics Utility**: Created `src/lib/analytics.ts` to centralize GA4 (`gtag`) and Facebook Pixel (`fbq`) event logic.
-- **Event Implementation**:
-  - `view_item` & `ViewContent`: Product Detail page mount.
-  - `add_to_cart` & `AddToCart`: Cart context `addItem` handler.
-  - `begin_checkout` & `InitiateCheckout`: Checkout page mount.
-  - `purchase` & `Purchase`: Order confirmation page (successful fetch).
-  - `quiz_complete`: Book Discovery Quiz completion.
-  - `share`: WhatsApp share button click.
+## 1. SEO Enhancements
+- **Dynamic Meta Tag System**: Improved `src/components/SEOHead.tsx` with dynamic `hreflang` (en/ur), optimized OpenGraph images, and cleaner canonical URL handling.
+- **Bot Protection**: Updated `public/robots.txt` to block aggressive AI crawlers (GPTBot, CCBot, etc.) and protect crawl budget.
+- **URL Structure**: Implemented a 301 redirect from `/product/:slug` to `/books/:slug` in `vercel.json` to consolidate SEO authority.
+- **Content Optimization**: Improved meta descriptions across core, policy, and account pages to be keyword-rich and within the optimal 150-160 character range.
+- **Structured Data**: Enhanced `productSchema` in `src/lib/seo-schemas.ts` to include multi-currency offers (PKR + USD) and improved data integrity.
 
-## 2. GA4 Funnel Analysis
-- **Funnel Script**: Created `scripts/ga4-funnel.js` to pull last 30 days of funnel data (View -> Add to Cart -> Checkout -> Purchase) from GA4 Data API.
-- **Documentation**: Added setup instructions for Google Cloud service account and environment variables.
-- **NPM Script**: Added `"ga4:funnel": "node scripts/ga4-funnel.js"` to `package.json`.
+## 2. Performance Optimizations
+- **Vite Build Config**: Tuned `vite.config.ts` with `minify: 'esbuild'`, `cssCodeSplit: true`, and `target: 'es2020'` for faster builds and better runtime performance.
+- **Resource Priority**: Added critical preconnect tags in `index.html` for Cloudinary and Supabase to reduce initial connection latency.
+- **Code Splitting**: Implemented custom `manualChunks` in Vite to separate large vendors (Supabase, Framer Motion, Radix UI) for better caching and smaller main bundles.
+- **Route Loading**: Implemented `Suspense` with a custom `ProductSkeletonGrid` fallback for the Shop page to improve perceived load speed.
+- **Image Optimization**:
+  - Updated `src/lib/cloudinary.ts` utility to support `dpr_auto`, `f_auto`, and `q_auto` by default.
+  - Implemented `optimizeCloudinaryUrl` across `Index.tsx`, `ProductCard.tsx`, and `ProductDetail.tsx`.
+  - Added `width`, `height`, and `decoding="async"` to all key images to minimize layout shifts (CLS).
+  - Enforced `onError` fallbacks for all Cloudinary-hosted images to ensure site stability.
+- **Tailwind Optimization**: Restricted Tailwind's `content` array in `tailwind.config.ts` to reduce CSS bundle size.
 
-## 3. Product Page UX
-- **Sticky Add to Cart**: Implemented mobile-only sticky bar in `src/components/StickyAddToCart.tsx` using `IntersectionObserver`.
-- **Description Truncation**: Added `line-clamp-4` and "Read more" button for long product descriptions.
-- **Breadcrumbs**: Added Home → Category → Product breadcrumb navigation.
-- **Price Prominence**: Increased PKR price font weight and added secondary USD approximation.
-- **Social Proof**: Added "Sold count" display based on real order data and review counts.
-- **WhatsApp Share**: Enhanced WhatsApp sharing button with better styling and integrated tracking.
-
-## 4. Cart & Checkout UX
-- **Empty Cart CTA**: Added a more welcoming "Your cart is empty" section with a clear CTA to browse books.
-- **EasyPaisa Instructions**: Reformatted payment instructions into clear 1-2-3-4 steps.
-- **Upload Guidance**: Added specific guidance for payment proof screenshots (format, size, visibility).
-- **Cart Persistence**: Confirmed and ensured `localStorage` persistence for cart items.
-
-## 5. Retention & Emails
-- **Cart Recovery**: Reduced abandoned cart email delay to 1 hour (from 24h) in `supabase/functions/cart-recovery/index.ts`.
-- **Order Emails**: Added a WhatsApp share CTA to order confirmation emails in `supabase/functions/send-order-email/index.ts`.
-- **Quiz Results**: Confirmed result page includes "Add to Cart" functionality for matched products.
-
-## 6. Mobile Optimization
-- **Accessibility**: Ensured all checkout inputs use `text-base` (16px) to prevent iOS auto-zoom.
-- **Tap Targets**: Verified/updated buttons to be at least 44px (h-11 or h-12).
-- **Horizontal Scroll**: Added `overflow-x-hidden` to the main application layout.
-
-## 7. Configuration
-- **Environment**: Created `.env.example` with the new GA4 environment variable requirements.
+## 3. Configuration & Stability
+- **Test Suite**: Verified all changes with the project's Vitest suite, including new tests for the enhanced Cloudinary utility.
+- **Dependency Management**: Standardized project dependencies and confirmed compatibility with React 19 features.
 
 ---
-*Note: All core logic for EasyPaisa, Zakat, and Auth was preserved as requested.*
+*Note: Highest-priority remaining issue: Implement a full multi-language translation system (i18next) to support Urdu content beyond just SEO tags.*

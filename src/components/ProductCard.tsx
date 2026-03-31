@@ -1,3 +1,4 @@
+// Optimized product card with lazy loading, image optimization, and error fallbacks
 import { Link } from 'react-router-dom';
 import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye, Gift, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -9,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatPKR } from '@/lib/currency';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { optimizeCloudinaryUrl } from '@/lib/cloudinary';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 32 },
@@ -38,6 +40,8 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
     setTimeout(() => setJustAdded(false), 1200);
   };
 
+  const optimizedImage = optimizeCloudinaryUrl(product.image, { w: 400, h: 500, fit: 'fill' });
+
   return (
     <motion.div
       custom={index}
@@ -50,10 +54,17 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
       {/* Image area */}
       <Link to={`/books/${product.slug}`} className="relative aspect-[4/5] overflow-hidden bg-muted">
         <img
-          src={product.image}
+          src={optimizedImage}
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            if (target.src !== '/placeholder.svg') {
+              target.src = '/placeholder.svg';
+            }
+          }}
           alt={`${product.name} ${product.author ? `by ${product.author}` : ""} — Islamic book available at Khilafat Books`}
           width="400"
           height="500"
+          decoding="async"
           className="h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-[0.92]"
           loading="lazy"
         />
