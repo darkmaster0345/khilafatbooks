@@ -26,9 +26,10 @@ const Header = () => {
   const navigate = useNavigate();
   const { totalItems } = useCart();
   const { wishlist } = useWishlist();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
 
-  const isAdmin = user?.email === 'admin@khilafatbooks.com';
+  const isOwnerAdmin = user?.email?.toLowerCase() === 'arifubaid0345@gmail.com';
+  const showAdminLink = isAdmin || isOwnerAdmin;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -107,7 +108,7 @@ const Header = () => {
               </Link>
             );
           })}
-            {isAdmin && (
+            {showAdminLink && (
               <Link to="/admin" className="px-4 py-2 text-sm font-medium text-accent hover:text-accent/80 rounded-lg hover:bg-accent/8 transition-all">
                 Admin
               </Link>
@@ -247,7 +248,7 @@ const Header = () => {
                   My Orders
                 </Link>
               )}
-              {isAdmin && (
+              {showAdminLink && (
                 <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-4 py-2.5 text-sm font-medium text-accent hover:bg-muted">
                   Admin Panel
                 </Link>
