@@ -52,6 +52,7 @@ export interface LegacyProduct {
   rating: number;
   reviews: number;
   inStock: boolean;
+  delivery_price?: number | null;
 }
 
 export function toLegacyProduct(p: Product): LegacyProduct {
