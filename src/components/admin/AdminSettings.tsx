@@ -149,6 +149,38 @@ const AdminSettings = () => {
         <p className="text-xs text-muted-foreground">Orders above the threshold will get free shipping.</p>
       </div>
 
+      {/* Maintenance Mode */}
+      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <h3 className="font-display text-lg font-semibold text-foreground">Maintenance Mode</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          When enabled, a banner will appear on the website telling customers that orders may take longer to process.
+        </p>
+        <div className="flex items-center gap-3">
+          <Switch
+            checked={maintenanceMode}
+            disabled={maintenanceLoading}
+            onCheckedChange={async (checked) => {
+              setMaintenanceMode(checked);
+              await supabase.from('store_settings').upsert({
+                key: 'maintenance',
+                value: { enabled: checked } as any,
+              } as any, { onConflict: 'key' });
+              queryClient.invalidateQueries({ queryKey: ['maintenance-mode'] });
+              toast({
+                title: checked ? 'Maintenance mode enabled' : 'Maintenance mode disabled',
+                description: checked ? 'Customers will see a delay notice.' : 'Banner removed from the store.',
+              });
+            }}
+          />
+          <span className="text-sm text-foreground font-medium">
+            {maintenanceMode ? '🟡 Active — customers see delay notice' : 'Off'}
+          </span>
+        </div>
+      </div>
+
       {/* Admin Account */}
       <div className="rounded-lg border border-border bg-card p-5 space-y-4">
         <div className="flex items-center gap-2">
