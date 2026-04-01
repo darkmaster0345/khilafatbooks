@@ -35,7 +35,16 @@ const AdminSettings = () => {
         setSettings(prev => ({ ...prev, ...saved }));
       }
     };
+    const loadMaintenance = async () => {
+      const { data } = await supabase.from('store_settings').select('value').eq('key', 'maintenance').maybeSingle();
+      if (data) {
+        const val = data.value as any;
+        setMaintenanceMode(val?.enabled === true);
+      }
+      setMaintenanceLoading(false);
+    };
     loadSettings();
+    loadMaintenance();
   }, []);
 
   const saveSettings = async () => {
