@@ -53,6 +53,7 @@ const formFromProduct = (p: Product): ProductForm => ({
   series: (p as any).series || '',
   series_order: (p as any).series_order ? String((p as any).series_order) : '',
   bundle_discount: (p as any).bundle_discount ? String((p as any).bundle_discount) : '100',
+  delivery_price: (p as any).delivery_price != null ? String((p as any).delivery_price) : '',
 });
 
 const AdminProducts = () => {
