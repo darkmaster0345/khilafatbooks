@@ -223,6 +223,7 @@ const AdminProducts = () => {
       series: form.series || null,
       series_order: form.series_order ? parseInt(form.series_order) : null,
       bundle_discount: form.bundle_discount ? parseInt(form.bundle_discount) : 100,
+      delivery_price: form.delivery_price ? parseInt(form.delivery_price) : null,
     };
 
     if (image_url) payload.image_url = image_url;
