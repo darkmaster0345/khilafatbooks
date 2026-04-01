@@ -198,7 +198,22 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const subtotal = items.reduce((sum, i) => sum + i.product.price * i.quantity, 0);
   const hasPhysical = items.some(i => i.product.type === 'physical');
-  const shipping = hasPhysical && subtotal < 5000 ? 500 : 0;
+  
+  // Per-product delivery: sum custom delivery_price for items that have one,
+  // otherwise fall back to flat shipping if any physical item lacks a custom price
+  const physicalItems = items.filter(i => i.product.type === 'physical');
+  const allHaveCustomDelivery = physicalItems.length > 0 && physicalItems.every(i => (i.product as any).delivery_price != null);
+  
+  let shipping = 0;
+  if (hasPhysical) {
+    if (allHaveCustomDelivery) {
+      // Sum per-product delivery prices
+      shipping = physicalItems.reduce((sum, i) => sum + ((i.product as any).delivery_price || 0) * i.quantity, 0);
+    } else if (subtotal < 5000) {
+      shipping = 500; // Default flat rate
+    }
+    // If subtotal >= 5000 and no custom prices, free shipping
+  }
   
   // Calculate loyalty discount
   const loyaltyDiscount = loyaltyInfo && loyaltyInfo.discountPercent > 0
