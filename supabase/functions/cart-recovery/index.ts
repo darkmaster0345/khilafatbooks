@@ -194,7 +194,8 @@ Deno.serve(async (req) => {
         }
 
         // Update cart record with recovery code and reminder status
-        await (db
+        // @ts-ignore - dynamic update fields
+        await db
           .from("abandoned_carts")
           .update({
             status: "reminded",
@@ -203,8 +204,8 @@ Deno.serve(async (req) => {
             recovery_code: recoveryCode,
             recovery_code_expires_at: expiresAt.toISOString(),
             updated_at: now.toISOString(),
-          } as any)
-          .eq("id", cart.id) as any);
+          })
+          .eq("id", cart.id);
 
         results.emailsSent++;
         results.processed++;
