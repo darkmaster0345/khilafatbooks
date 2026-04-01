@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Settings, Save, Store, CreditCard, Truck, Shield } from 'lucide-react';
+import { Settings, Save, Store, CreditCard, Truck, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 
 const AdminSettings = () => {
   const { toast } = useToast();
