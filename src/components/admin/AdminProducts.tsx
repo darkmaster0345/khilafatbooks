@@ -26,6 +26,7 @@ type ProductForm = {
   series: string;
   series_order: string;
   bundle_discount: string;
+  delivery_price: string;
 };
 
 const emptyForm: ProductForm = {
