@@ -11,7 +11,10 @@ import { useQueryClient } from '@tanstack/react-query';
 const AdminSettings = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(true);
   const [settings, setSettings] = useState({
     easypaisa_account: '03352706540',
     easypaisa_name: 'Khilafat Books',
