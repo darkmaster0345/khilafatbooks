@@ -25,6 +25,7 @@ export interface Product {
   series: string | null;
   series_order: number | null;
   bundle_discount: number | null;
+  delivery_price: number | null;
   is_hidden: boolean;
   created_at: string;
   updated_at: string;
