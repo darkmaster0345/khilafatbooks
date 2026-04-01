@@ -437,8 +437,8 @@ const AdminProducts = () => {
             <Input value={form.ethical_source} onChange={e => updateField('ethical_source', e.target.value)} className="mt-1" placeholder="e.g. Fair-trade certified" />
           </div>
 
-          {/* Series / Bundle fields */}
-          <div className="grid gap-4 sm:grid-cols-3">
+          {/* Series / Bundle / Delivery fields */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="text-sm font-medium text-foreground">Series Name</label>
               <Input value={form.series} onChange={e => updateField('series', e.target.value)} className="mt-1" placeholder="e.g. Khilafat Series" />
@@ -452,6 +452,11 @@ const AdminProducts = () => {
               <label className="text-sm font-medium text-foreground">Bundle Discount (PKR)</label>
               <Input value={form.bundle_discount} onChange={e => updateField('bundle_discount', e.target.value)} type="number" className="mt-1" placeholder="100" />
               <p className="text-[10px] text-muted-foreground mt-1">Discount per book when added via bundle</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Delivery Price (PKR)</label>
+              <Input value={form.delivery_price} onChange={e => updateField('delivery_price', e.target.value)} type="number" className="mt-1" placeholder="Leave empty for default" />
+              <p className="text-[10px] text-muted-foreground mt-1">Custom delivery fee for this product. Empty = use store default (Rs. 500)</p>
             </div>
           </div>
 
