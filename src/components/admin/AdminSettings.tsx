@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Settings, Save, Store, CreditCard, Truck, Shield } from 'lucide-react';
+import { Settings, Save, Store, CreditCard, Truck, Shield, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 
 const AdminSettings = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [maintenanceLoading, setMaintenanceLoading] = useState(true);
   const [settings, setSettings] = useState({
     easypaisa_account: '03352706540',
     easypaisa_name: 'Khilafat Books',
@@ -30,7 +35,16 @@ const AdminSettings = () => {
         setSettings(prev => ({ ...prev, ...saved }));
       }
     };
+    const loadMaintenance = async () => {
+      const { data } = await supabase.from('store_settings').select('value').eq('key', 'maintenance').maybeSingle();
+      if (data) {
+        const val = data.value as any;
+        setMaintenanceMode(val?.enabled === true);
+      }
+      setMaintenanceLoading(false);
+    };
     loadSettings();
+    loadMaintenance();
   }, []);
 
   const saveSettings = async () => {
@@ -133,6 +147,38 @@ const AdminSettings = () => {
           </div>
         </div>
         <p className="text-xs text-muted-foreground">Orders above the threshold will get free shipping.</p>
+      </div>
+
+      {/* Maintenance Mode */}
+      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="h-5 w-5 text-amber-500" />
+          <h3 className="font-display text-lg font-semibold text-foreground">Maintenance Mode</h3>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          When enabled, a banner will appear on the website telling customers that orders may take longer to process.
+        </p>
+        <div className="flex items-center gap-3">
+          <Switch
+            checked={maintenanceMode}
+            disabled={maintenanceLoading}
+            onCheckedChange={async (checked) => {
+              setMaintenanceMode(checked);
+              await supabase.from('store_settings').upsert({
+                key: 'maintenance',
+                value: { enabled: checked } as any,
+              } as any, { onConflict: 'key' });
+              queryClient.invalidateQueries({ queryKey: ['maintenance-mode'] });
+              toast({
+                title: checked ? 'Maintenance mode enabled' : 'Maintenance mode disabled',
+                description: checked ? 'Customers will see a delay notice.' : 'Banner removed from the store.',
+              });
+            }}
+          />
+          <span className="text-sm text-foreground font-medium">
+            {maintenanceMode ? '🟡 Active — customers see delay notice' : 'Off'}
+          </span>
+        </div>
       </div>
 
       {/* Admin Account */}

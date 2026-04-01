@@ -26,13 +26,14 @@ type ProductForm = {
   series: string;
   series_order: string;
   bundle_discount: string;
+  delivery_price: string;
 };
 
 const emptyForm: ProductForm = {
   name: '', name_ar: '', description: '', price: '', original_price: '',
   category: 'Uncategorized', type: 'physical', is_new: false, is_halal: false,
   ethical_source: '', in_stock: true, rating: '0', reviews: '0',
-  series: '', series_order: '', bundle_discount: '100',
+  series: '', series_order: '', bundle_discount: '100', delivery_price: '',
 };
 
 const formFromProduct = (p: Product): ProductForm => ({
@@ -52,6 +53,7 @@ const formFromProduct = (p: Product): ProductForm => ({
   series: (p as any).series || '',
   series_order: (p as any).series_order ? String((p as any).series_order) : '',
   bundle_discount: (p as any).bundle_discount ? String((p as any).bundle_discount) : '100',
+  delivery_price: (p as any).delivery_price != null ? String((p as any).delivery_price) : '',
 });
 
 const AdminProducts = () => {
@@ -221,6 +223,7 @@ const AdminProducts = () => {
       series: form.series || null,
       series_order: form.series_order ? parseInt(form.series_order) : null,
       bundle_discount: form.bundle_discount ? parseInt(form.bundle_discount) : 100,
+      delivery_price: form.delivery_price ? parseInt(form.delivery_price) : null,
     };
 
     if (image_url) payload.image_url = image_url;
@@ -434,8 +437,8 @@ const AdminProducts = () => {
             <Input value={form.ethical_source} onChange={e => updateField('ethical_source', e.target.value)} className="mt-1" placeholder="e.g. Fair-trade certified" />
           </div>
 
-          {/* Series / Bundle fields */}
-          <div className="grid gap-4 sm:grid-cols-3">
+          {/* Series / Bundle / Delivery fields */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="text-sm font-medium text-foreground">Series Name</label>
               <Input value={form.series} onChange={e => updateField('series', e.target.value)} className="mt-1" placeholder="e.g. Khilafat Series" />
@@ -449,6 +452,11 @@ const AdminProducts = () => {
               <label className="text-sm font-medium text-foreground">Bundle Discount (PKR)</label>
               <Input value={form.bundle_discount} onChange={e => updateField('bundle_discount', e.target.value)} type="number" className="mt-1" placeholder="100" />
               <p className="text-[10px] text-muted-foreground mt-1">Discount per book when added via bundle</p>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Delivery Price (PKR)</label>
+              <Input value={form.delivery_price} onChange={e => updateField('delivery_price', e.target.value)} type="number" className="mt-1" placeholder="Leave empty for default" />
+              <p className="text-[10px] text-muted-foreground mt-1">Custom delivery fee for this product. Empty = use store default (Rs. 500)</p>
             </div>
           </div>
 

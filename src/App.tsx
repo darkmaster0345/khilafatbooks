@@ -17,6 +17,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import BackToTop from "@/components/BackToTop";
 import ExitIntentDialog from "@/components/ExitIntentDialog";
 import BrandedLoader from "@/components/BrandedLoader";
+import MaintenanceBanner from "@/components/MaintenanceBanner";
 import PageTransition from "@/components/PageTransition";
 import { usePluginSettings } from "@/hooks/usePluginSettings";
 
@@ -56,6 +57,7 @@ const AppLayout = () => {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <MaintenanceBanner />
       <Header />
       <div className="flex-1">
         <AnimatePresence mode="wait">

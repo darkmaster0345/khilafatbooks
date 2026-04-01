@@ -476,6 +476,7 @@ export type Database = {
           bundle_discount: number | null
           category: string
           created_at: string
+          delivery_price: number | null
           description: string
           digital_file_url: string | null
           ethical_source: string | null
@@ -502,6 +503,7 @@ export type Database = {
           bundle_discount?: number | null
           category?: string
           created_at?: string
+          delivery_price?: number | null
           description?: string
           digital_file_url?: string | null
           ethical_source?: string | null
@@ -528,6 +530,7 @@ export type Database = {
           bundle_discount?: number | null
           category?: string
           created_at?: string
+          delivery_price?: number | null
           description?: string
           digital_file_url?: string | null
           ethical_source?: string | null
