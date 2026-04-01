@@ -215,11 +215,12 @@ Deno.serve(async (req) => {
     }
 
     // Also expire old recovery codes
-    await (db
+    // @ts-ignore - dynamic update fields
+    await db
       .from("abandoned_carts")
-      .update({ status: "expired", updated_at: now.toISOString() } as any)
+      .update({ status: "expired", updated_at: now.toISOString() })
       .eq("status", "reminded")
-      .lt("recovery_code_expires_at", now.toISOString()) as any);
+      .lt("recovery_code_expires_at", now.toISOString());
 
     return new Response(
       JSON.stringify({
