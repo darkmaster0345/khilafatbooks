@@ -107,7 +107,6 @@ const AdminNewsletter = () => {
       const result = await response.json();
       if (result.error) throw new Error(result.error);
 
-      const result = res.data;
       setLastResult({ sent: result.sent, failed: result.failed });
       toast({ title: 'Newsletter sent!', description: `Sent to ${result.sent} subscribers.` });
       fetchCampaigns();
