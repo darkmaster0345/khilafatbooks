@@ -82,10 +82,19 @@ const AdminNewsletter = () => {
     setSending(true);
     setLastResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
+      // Get active subscribers from client (connected to external Supabase)
+      const activeSubscribers = subscribers.filter(s => s.is_active).map(s => ({
+        email: s.email,
+        name: s.name,
+      }));
 
-      // Call edge function on Lovable Cloud where it's deployed
+      if (activeSubscribers.length === 0) {
+        toast({ title: 'No subscribers', description: 'No active subscribers to send to.', variant: 'destructive' });
+        setSending(false);
+        return;
+      }
+
+      // Call edge function on Lovable Cloud, passing subscribers directly
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID || 'qdsjmhafojbmqcwlkmra';
       const response = await fetch(
         `https://${projectId}.supabase.co/functions/v1/send-newsletter`,
@@ -93,9 +102,8 @@ const AdminNewsletter = () => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ subject, body_html: bodyHtml }),
+          body: JSON.stringify({ subject, body_html: bodyHtml, subscribers: activeSubscribers }),
         }
       );
 
@@ -106,6 +114,13 @@ const AdminNewsletter = () => {
 
       const result = await response.json();
       if (result.error) throw new Error(result.error);
+
+      // Log campaign locally
+      await (supabase as any).from('newsletter_campaigns').insert({
+        subject,
+        body_html: bodyHtml,
+        recipient_count: result.sent,
+      });
 
       setLastResult({ sent: result.sent, failed: result.failed });
       toast({ title: 'Newsletter sent!', description: `Sent to ${result.sent} subscribers.` });
