@@ -12,75 +12,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const userId = user.id;
-
-    // Verify admin role
-    const { data: isAdmin } = await supabase.rpc("has_role", {
-      _user_id: userId,
-      _role: "admin",
-    });
-
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Forbidden" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const { subject, body_html } = await req.json();
+    const { subject, body_html, subscribers } = await req.json();
 
     if (!subject || !body_html) {
       return new Response(
         JSON.stringify({ error: "Subject and body are required" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Fetch active subscribers using service role for full access
-    const serviceClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    const { data: subscribers, error: subError } = await serviceClient
-      .from("newsletter_subscribers")
-      .select("email, name")
-      .eq("is_active", true);
-
-    if (subError) throw subError;
-
-    if (!subscribers || subscribers.length === 0) {
+    if (!subscribers || !Array.isArray(subscribers) || subscribers.length === 0) {
       return new Response(
-        JSON.stringify({ error: "No active subscribers found" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        JSON.stringify({ error: "No subscribers provided" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -88,21 +32,17 @@ Deno.serve(async (req) => {
     if (!RESEND_API_KEY) {
       return new Response(
         JSON.stringify({ error: "Email service not configured" }),
-        {
-          status: 500,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     let successCount = 0;
     let failCount = 0;
 
-    // Send in batches of 10
     const BATCH_SIZE = 10;
     for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
       const batch = subscribers.slice(i, i + BATCH_SIZE);
-      const promises = batch.map(async (sub) => {
+      const promises = batch.map(async (sub: { email: string; name?: string }) => {
         try {
           const res = await fetch("https://api.resend.com/emails", {
             method: "POST",
@@ -113,14 +53,14 @@ Deno.serve(async (req) => {
             body: JSON.stringify({
               from: "Khilafat Books <newsletter@khilafatbooks.com>",
               to: [sub.email],
-              subject: subject,
+              subject,
               html: body_html,
             }),
           });
-          const resBody = await res.text();
           if (res.ok) {
             successCount++;
           } else {
+            const resBody = await res.text();
             console.error(`Failed to send to ${sub.email}:`, resBody);
             failCount++;
           }
@@ -132,14 +72,6 @@ Deno.serve(async (req) => {
       await Promise.all(promises);
     }
 
-    // Log campaign
-    await serviceClient.from("newsletter_campaigns").insert({
-      subject,
-      body_html,
-      recipient_count: successCount,
-      sent_by: userId,
-    });
-
     return new Response(
       JSON.stringify({
         success: true,
@@ -147,18 +79,13 @@ Deno.serve(async (req) => {
         failed: failCount,
         total: subscribers.length,
       }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Newsletter send error:", error);
     return new Response(
       JSON.stringify({ error: (error as Error).message || "Internal server error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
