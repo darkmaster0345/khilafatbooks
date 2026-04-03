@@ -48,7 +48,7 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
     const { data } = await supabase
       .from('reviews')
       .select('id, reviewer_name, rating, comment, created_at, verified_purchase')
-      .eq('product_id', productId)
+      .eq('product_id', productId as any)
       .order('created_at', { ascending: false })
       .limit(20);
 
