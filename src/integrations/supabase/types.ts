@@ -373,39 +373,8 @@ export type Database = {
           },
         ]
       }
-      expenses: {
-        Row: {
-          amount: number
-          category: Database["public"]["Enums"]["expense_category"]
-          created_at: string
-          description: string
-          id: string
-          receipt_url: string | null
-          user_id: string | null
-        }
-        Insert: {
-          amount?: number
-          category: Database["public"]["Enums"]["expense_category"]
-          created_at?: string
-          description: string
-          id?: string
-          receipt_url?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number
-          category?: Database["public"]["Enums"]["expense_category"]
-          created_at?: string
-          description?: string
-          id?: string
-          receipt_url?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       orders: {
         Row: {
-          book_cost: number
           created_at: string
           customer_email: string | null
           customer_name: string
@@ -424,7 +393,6 @@ export type Database = {
           recovery_discount: number | null
           shipped_at: string | null
           shipping: number
-          shipping_cost: number
           shipping_status: string | null
           status: string
           subtotal: number
@@ -436,7 +404,6 @@ export type Database = {
           zakat_amount: number
         }
         Insert: {
-          book_cost?: number
           created_at?: string
           customer_email?: string | null
           customer_name: string
@@ -455,7 +422,6 @@ export type Database = {
           recovery_discount?: number | null
           shipped_at?: string | null
           shipping?: number
-          shipping_cost?: number
           shipping_status?: string | null
           status?: string
           subtotal: number
@@ -467,7 +433,6 @@ export type Database = {
           zakat_amount?: number
         }
         Update: {
-          book_cost?: number
           created_at?: string
           customer_email?: string | null
           customer_name?: string
@@ -486,7 +451,6 @@ export type Database = {
           recovery_discount?: number | null
           shipped_at?: string | null
           shipping?: number
-          shipping_cost?: number
           shipping_status?: string | null
           status?: string
           subtotal?: number
@@ -512,6 +476,7 @@ export type Database = {
           bundle_discount: number | null
           category: string
           created_at: string
+          delivery_price: number | null
           description: string
           digital_file_url: string | null
           ethical_source: string | null
@@ -538,6 +503,7 @@ export type Database = {
           bundle_discount?: number | null
           category?: string
           created_at?: string
+          delivery_price?: number | null
           description?: string
           digital_file_url?: string | null
           ethical_source?: string | null
@@ -564,6 +530,7 @@ export type Database = {
           bundle_discount?: number | null
           category?: string
           created_at?: string
+          delivery_price?: number | null
           description?: string
           digital_file_url?: string | null
           ethical_source?: string | null
@@ -1152,7 +1119,6 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
-      expense_category: "server_costs" | "packaging" | "shipping" | "marketing" | "office" | "other"
       loyalty_tier_type: "talib" | "muallim" | "alim"
       reading_status: "want_to_read" | "reading" | "completed"
     }
@@ -1283,7 +1249,6 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
-      expense_category: ["server_costs", "packaging", "shipping", "marketing", "office", "other"],
       loyalty_tier_type: ["talib", "muallim", "alim"],
       reading_status: ["want_to_read", "reading", "completed"],
     },
