@@ -4,7 +4,7 @@ import productOud from '@/assets/product-oud.jpg';
 import productCalligraphy from '@/assets/product-calligraphy.jpg';
 import productWallart from '@/assets/product-wallart.jpg';
 import productHijab from '@/assets/product-hijab.jpg';
-import { optimizeCloudinaryUrl } from './cloudinary';
+import { optimizeCloudinaryUrl, getCloudinarySrcSet, getCloudinaryPlaceholder } from './cloudinary';
 
 const imageMap: Record<string, string> = {
   '/product-tasbih.jpg': productTasbih,
@@ -24,14 +24,19 @@ export function resolveProductImage(imageUrl: string | null, width = 800): strin
 
 /**
  * Generate srcSet for responsive Cloudinary images.
- * Returns empty string for non-Cloudinary images.
+ * Returns empty string for non-Cloudinary or local images.
  */
-export function getCloudinarySrcSet(imageUrl: string | null): string {
-  if (!imageUrl || !imageUrl.includes('res.cloudinary.com')) return '';
-  const widths = [400, 800, 1200];
-  return widths
-    .map(w => {
-      return optimizeCloudinaryUrl(imageUrl, w);
-    })
-    .join(', ');
+export function getProductSrcSet(imageUrl: string | null): string {
+  if (!imageUrl) return '';
+  if (imageMap[imageUrl]) return ''; // local bundled assets, no srcSet needed
+  return getCloudinarySrcSet(imageUrl);
+}
+
+/**
+ * Get a tiny blurred placeholder for blur-up loading effect.
+ */
+export function getProductPlaceholder(imageUrl: string | null): string {
+  if (!imageUrl) return '';
+  if (imageMap[imageUrl]) return '';
+  return getCloudinaryPlaceholder(imageUrl);
 }

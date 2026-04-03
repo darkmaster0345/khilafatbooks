@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useProducts, toLegacyProduct, type LegacyProduct } from '@/hooks/useProducts';
+import { useProducts, toLegacyProduct, type LegacyProduct, type Product } from '@/hooks/useProducts';
 import { useCart, type CartItem } from '@/context/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import { formatPKR } from '@/lib/currency';
@@ -31,20 +31,17 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
   const cartIds = new Set(cartItems.map(i => i.product.id));
   const cartCategories = new Set(cartItems.map(i => i.product.category));
 
-  // Fetch series-related products for items in cart
   useEffect(() => {
     const fetchSeriesProducts = async () => {
-      // Get series info for cart items
       const cartProductIds = Array.from(cartIds);
       if (cartProductIds.length === 0) return;
 
       setLoadingSeries(true);
 
-      // Get series names for products in cart
       const { data: cartProducts } = await supabase
         .from('products')
         .select('id, series, series_order, bundle_discount')
-        .in('id', cartProductIds)
+        .in('id', cartProductIds as string[])
         .not('series', 'is', null);
 
       if (!cartProducts || cartProducts.length === 0) {
@@ -52,23 +49,24 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
         return;
       }
 
-      const seriesNames = [...new Set(cartProducts.map(p => p.series).filter(Boolean))];
+      const typedCart = cartProducts as unknown as { id: string; series: string | null; series_order: number | null; bundle_discount: number | null }[];
+      const seriesNames = [...new Set(typedCart.map(p => p.series).filter(Boolean))] as string[];
 
       if (seriesNames.length === 0) {
         setLoadingSeries(false);
         return;
       }
 
-      // Fetch all products in those series that aren't in cart
       const { data: related } = await supabase
         .from('products')
         .select('id, name, price, series, series_order, bundle_discount, image_url, category, in_stock')
-        .in('series', seriesNames)
-        .eq('in_stock', true)
+        .in('series', seriesNames as string[])
+        .eq('in_stock', true as any)
         .order('series_order', { ascending: true });
 
       if (related) {
-        setSeriesProducts(related.filter(p => !cartIds.has(p.id)) as SeriesProduct[]);
+        const typedRelated = related as unknown as SeriesProduct[];
+        setSeriesProducts(typedRelated.filter(p => !cartIds.has(p.id)));
       }
 
       setLoadingSeries(false);
@@ -77,17 +75,15 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
     fetchSeriesProducts();
   }, [cartItems.map(i => i.product.id).join(',')]);
 
-  // Group series products by series name
   const seriesGroups = seriesProducts.reduce((acc, p) => {
     if (!acc[p.series]) acc[p.series] = [];
     acc[p.series].push(p);
     return acc;
   }, {} as Record<string, SeriesProduct[]>);
 
-  // Category-based fallback suggestions
   const categorySuggestions = products
     .filter(p => !cartIds.has(p.id) && cartCategories.has(p.category) && p.in_stock)
-    .filter(p => !seriesProducts.some(sp => sp.id === p.id)) // Don't show duplicates
+    .filter(p => !seriesProducts.some(sp => sp.id === p.id))
     .slice(0, 3)
     .map(toLegacyProduct);
 
@@ -105,7 +101,6 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
 
   return (
     <div className="mt-6 space-y-6">
-      {/* Complete the Set — Series Bundles */}
       {hasSeriesOffers && (
         <div>
           {Object.entries(seriesGroups).map(([seriesName, items]) => {
@@ -119,7 +114,6 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                 animate={{ opacity: 1, y: 0 }}
                 className="rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-5"
               >
-                {/* Header */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15">
                     <Sparkles className="h-5 w-5 text-primary" />
@@ -137,7 +131,6 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                   </div>
                 </div>
 
-                {/* Series items */}
                 <div className="space-y-2">
                   {items.map(sp => (
                     <div
@@ -146,7 +139,7 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                     >
                       <Link to={`/books/${slugify(sp.name)}`} className="shrink-0">
                         {sp.image_url ? (
-                          <img src={sp.image_url} alt={sp.name} className="h-14 w-14 rounded-lg object-cover" />
+                          <img src={sp.image_url} alt={sp.name} className="h-14 w-14 rounded-lg object-cover" loading="lazy" />
                         ) : (
                           <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center">
                             <BookOpen className="h-6 w-6 text-muted-foreground/40" />
@@ -180,7 +173,6 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                   ))}
                 </div>
 
-                {/* Add all button */}
                 {items.length > 1 && (
                   <Button
                     variant="outline"
@@ -198,7 +190,6 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
         </div>
       )}
 
-      {/* Category-based suggestions (fallback) */}
       {hasSuggestions && (
         <div>
           <h3 className="font-display text-base font-semibold text-foreground mb-4 flex items-center gap-2">
@@ -212,7 +203,7 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                 className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow"
               >
                 <Link to={`/books/${product.slug}`} className="shrink-0">
-                  <img src={product.image} alt={product.name} className="h-16 w-16 rounded-lg object-cover" />
+                  <img src={product.image} alt={product.name} className="h-16 w-16 rounded-lg object-cover" loading="lazy" />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link to={`/books/${product.slug}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
