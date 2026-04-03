@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { toLegacyProduct, type LegacyProduct, type Product, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 import { useCart } from '@/context/CartContext';

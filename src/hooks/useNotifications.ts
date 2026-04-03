@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
 import { useEffect } from 'react';
 
@@ -52,12 +53,12 @@ export function useNotifications() {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { db.removeChannel(channel); };
   }, [user, refetch]);
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('notifications').update({ is_read: true } as any).eq('id', id);
+      const { error } = await db.from('notifications').update({ is_read: true } as any).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -68,7 +69,7 @@ export function useNotifications() {
   const markAllReadMutation = useMutation({
     mutationFn: async () => {
       if (!user) return;
-      const { error } = await supabase.from('notifications').update({ is_read: true } as any).eq('user_id', user.id).eq('is_read', false);
+      const { error } = await db.from('notifications').update({ is_read: true } as any).eq('user_id', user.id).eq('is_read', false);
       if (error) throw error;
     },
     onSuccess: () => {

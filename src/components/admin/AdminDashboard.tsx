@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { DollarSign, ShoppingBag, Users, Package, TrendingUp, AlertTriangle, Plus, Eye, FileDown, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
 import { useProducts } from '@/hooks/useProducts';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
@@ -27,7 +28,7 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+        const { data, error } = await db.from('orders').select('*').order('created_at', { ascending: false });
         if (error) {
           // Keep dashboard usable even if RLS blocks this query.
           console.error('Error fetching orders for dashboard:', error);

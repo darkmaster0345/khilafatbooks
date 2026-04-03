@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
 import { toast } from 'sonner';
 
@@ -62,7 +63,7 @@ const AdminBookRequests = () => {
   useEffect(() => { fetchRequests(); }, []);
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from('book_requests').update({ status } as any).eq('id', id);
+    await db.from('book_requests').update({ status } as any).eq('id', id);
     toast.success(`Status updated to ${status}`);
     fetchRequests();
   };
@@ -70,7 +71,7 @@ const AdminBookRequests = () => {
   const saveEstimatedPrice = async (id: string) => {
     const price = parseInt(priceValue);
     if (isNaN(price) || price <= 0) { toast.error('Enter a valid price'); return; }
-    await supabase.from('book_requests').update({ estimated_price: price } as any).eq('id', id);
+    await db.from('book_requests').update({ estimated_price: price } as any).eq('id', id);
     toast.success('Estimated price updated — visible to pledgers');
     setEditingPrice(null);
     setPriceValue('');
@@ -80,7 +81,7 @@ const AdminBookRequests = () => {
   const notifyPledgers = async (requestId: string) => {
     setNotifying(requestId);
     try {
-      const { data, error } = await supabase.functions.invoke('notify-pledgers', {
+      const { data, error } = await db.functions.invoke('notify-pledgers', {
         body: { requestId },
       });
       if (error) throw error;
@@ -94,7 +95,7 @@ const AdminBookRequests = () => {
 
   const deleteRequest = async (id: string) => {
     if (!confirm('Delete this book request and all its pledges?')) return;
-    await supabase.from('book_requests').delete().eq('id', id);
+    await db.from('book_requests').delete().eq('id', id);
     toast.success('Request deleted');
     fetchRequests();
   };

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
 import { useProducts } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
@@ -110,7 +111,7 @@ const Library = () => {
   };
 
   const downloadDigital = async (productId: string) => {
-    const { data, error } = await supabase.functions.invoke('download-digital-product', {
+    const { data, error } = await db.functions.invoke('download-digital-product', {
       body: { productId },
     });
 

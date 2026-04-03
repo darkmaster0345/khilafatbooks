@@ -3,6 +3,7 @@ import { CreditCard, CheckCircle2, XCircle, Eye, Clock, DollarSign } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,7 +26,7 @@ const AdminPayments = () => {
 
   useEffect(() => {
     const fetchOrders = async () => {
-      const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      const { data } = await db.from('orders').select('*').order('created_at', { ascending: false });
       if (data) setOrders(data as unknown as Order[]);
       setLoading(false);
     };
@@ -37,12 +38,12 @@ const AdminPayments = () => {
       toast({ title: 'No screenshot', description: 'This order has no payment proof uploaded.', variant: 'destructive' });
       return;
     }
-    const { data } = await supabase.storage.from('payment-proofs').createSignedUrl(order.payment_screenshot_url, 300);
+    const { data } = await db.storage.from('payment-proofs').createSignedUrl(order.payment_screenshot_url, 300);
     if (data?.signedUrl) setViewingScreenshot({ orderId: order.id, url: data.signedUrl });
   };
 
   const updateStatus = async (orderId: string, status: string) => {
-    const { error } = await supabase.from('orders').update({ status } as any).eq('id', orderId);
+    const { error } = await db.from('orders').update({ status } as any).eq('id', orderId);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {

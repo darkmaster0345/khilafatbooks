@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { ShoppingCart, Package, Clock, Zap } from 'lucide-react';
 import { formatPKR } from '@/lib/currency';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,8 +25,8 @@ const LiveActivityFeed = () => {
   useEffect(() => {
     const fetchRecent = async () => {
       const [ordersRes, cartRes] = await Promise.all([
-        supabase.from('orders').select('id, customer_name, total, status, created_at').order('created_at', { ascending: false }).limit(10),
-        supabase.from('cart_activity').select('*').order('created_at', { ascending: false }).limit(10),
+        db.from('orders').select('id, customer_name, total, status, created_at').order('created_at', { ascending: false }).limit(10),
+        db.from('cart_activity').select('*').order('created_at', { ascending: false }).limit(10),
       ]);
 
       const orderEvents: ActivityEvent[] = (ordersRes.data || []).map((o: any) => ({
@@ -101,7 +102,7 @@ const LiveActivityFeed = () => {
       });
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, []);
 

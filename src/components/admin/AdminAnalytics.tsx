@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, DollarSign, ShoppingBag, ShoppingCart, RefreshCw, FileDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
@@ -42,11 +43,11 @@ const AdminAnalytics = () => {
   useEffect(() => {
     const fetchData = async () => { try {
       // Fetch orders
-      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: true });
+      const { data: ordersData } = await db.from('orders').select('*').order('created_at', { ascending: true });
       if (ordersData) setOrders(ordersData as unknown as Order[]);
 
       // Fetch abandoned cart stats
-      const { data: carts } = await supabase.from('abandoned_carts').select('status, cart_total, recovered_at');
+      const { data: carts } = await db.from('abandoned_carts').select('status, cart_total, recovered_at');
       if (carts) {
         const stats: AbandonedCartStats = { total: carts.length, reminded: 0, recovered: 0, expired: 0, recoveredRevenue: 0 };
         (carts as any[]).forEach(c => {

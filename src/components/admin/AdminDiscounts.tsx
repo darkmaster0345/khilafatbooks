@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 
@@ -44,7 +45,7 @@ const AdminDiscounts = () => {
   const fetchDiscounts = async () => {
     setLoading(true);
     try {
-      const { data } = await supabase.from('discounts').select('*').order('created_at', { ascending: false });
+      const { data } = await db.from('discounts').select('*').order('created_at', { ascending: false });
       if (data) setDiscounts(data as unknown as Discount[]);
     } catch (err) {
       console.error(err);
@@ -58,7 +59,7 @@ const AdminDiscounts = () => {
       toast({ title: 'Missing fields', description: 'Code and value are required.', variant: 'destructive' });
       return;
     }
-    const { error } = await supabase.from('discounts').insert({
+    const { error } = await db.from('discounts').insert({
       code: form.code.toUpperCase(),
       description: form.description || null,
       type: form.type,
@@ -78,7 +79,7 @@ const AdminDiscounts = () => {
   };
 
   const toggleActive = async (id: string, isActive: boolean) => {
-    const { error } = await supabase.from('discounts').update({ is_active: !isActive } as any).eq('id', id);
+    const { error } = await db.from('discounts').update({ is_active: !isActive } as any).eq('id', id);
     if (!error) {
       setDiscounts(prev => prev.map(d => d.id === id ? { ...d, is_active: !isActive } : d));
       toast({ title: 'Updated', description: `Discount ${!isActive ? 'activated' : 'deactivated'}.` });
@@ -86,7 +87,7 @@ const AdminDiscounts = () => {
   };
 
   const deleteDiscount = async (id: string) => {
-    const { error } = await supabase.from('discounts').delete().eq('id', id);
+    const { error } = await db.from('discounts').delete().eq('id', id);
     if (!error) {
       setDiscounts(prev => prev.filter(d => d.id !== id));
       toast({ title: 'Deleted', description: 'Discount removed.' });

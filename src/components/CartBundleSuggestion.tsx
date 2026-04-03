@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useCart } from '@/context/CartContext';
 import { toLegacyProduct, Product, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';

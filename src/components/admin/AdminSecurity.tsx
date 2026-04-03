@@ -13,6 +13,7 @@ import {
   Info, Eye, EyeOff
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { toast } from 'sonner';
 import { format, subHours } from 'date-fns';
 
@@ -161,14 +162,14 @@ const AdminSecurity = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [fetchSecurityData]);
 
   const runRLSIntegrityCheck = async () => {
     setCheckingRLS(true);
     try {
-      const { data, error } = await supabase.functions.invoke('security-check');
+      const { data, error } = await db.functions.invoke('security-check');
 
       if (error) {
         toast.error('Failed to run integrity check: ' + error.message);

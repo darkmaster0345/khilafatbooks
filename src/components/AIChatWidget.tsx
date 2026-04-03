@@ -3,6 +3,7 @@ import { MessageCircle, X, Send, Loader2, Bot, User, Sparkles } from 'lucide-rea
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 
 type Msg = { role: 'user' | 'assistant'; content: string };
 
@@ -16,7 +17,7 @@ async function streamChat({
   onDone: () => void;
   onError: (msg: string) => void;
 }) {
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await db.auth.getSession();
   const sessionToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
   const resp = await fetch(CHAT_URL, {

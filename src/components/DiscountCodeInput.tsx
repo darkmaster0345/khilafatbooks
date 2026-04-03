@@ -3,6 +3,7 @@ import { Tag, Loader2, X, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useToast } from '@/hooks/use-toast';
 import { formatPKR } from '@/lib/currency';
 

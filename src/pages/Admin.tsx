@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import AdminOrders from '@/components/admin/AdminOrders';
 import AdminShipping from '@/components/admin/AdminShipping';
@@ -78,8 +79,8 @@ const Admin = () => {
 
   useEffect(() => {
     const fetchBadges = async () => {
-      const { data: orders } = await supabase.from('orders').select('status').eq('status', 'pending');
-      const { data: products } = await supabase.from('products').select('stock_quantity').lt('stock_quantity', 5);
+      const { data: orders } = await db.from('orders').select('status').eq('status', 'pending');
+      const { data: products } = await db.from('products').select('stock_quantity').lt('stock_quantity', 5);
 
       setBadges({
         orders: orders?.length || 0,
@@ -96,7 +97,7 @@ const Admin = () => {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(ordersChannel);
+      db.removeChannel(ordersChannel);
     };
   }, []);
 

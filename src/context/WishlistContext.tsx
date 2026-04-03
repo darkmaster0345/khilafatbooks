@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { LegacyProduct } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
 
 interface WishlistContextType {
@@ -69,7 +70,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         .map(p => ({ user_id: user.id, product_id: p.id }));
 
       if (toInsert.length > 0) {
-        await supabase.from('wishlists').insert(toInsert as any);
+        await db.from('wishlists').insert(toInsert as any);
         toInsert.forEach(i => dbProductIds.add(i.product_id));
       }
 
@@ -112,7 +113,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // Sync to DB if logged in
     if (user) {
-      supabase.from('wishlists').insert({ user_id: user.id, product_id: product.id } as any).then();
+      db.from('wishlists').insert({ user_id: user.id, product_id: product.id } as any).then();
     }
   }, [user]);
 
@@ -121,7 +122,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // Sync to DB if logged in
     if (user) {
-      supabase.from('wishlists').delete().eq('user_id', user.id).eq('product_id', productId).then();
+      db.from('wishlists').delete().eq('user_id', user.id).eq('product_id', productId).then();
     }
   }, [user]);
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useProducts, toLegacyProduct, type LegacyProduct, type Product } from '@/hooks/useProducts';
 import { useCart, type CartItem } from '@/context/CartContext';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
 import { slugify } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CheckCircle2, Gift, Clock, ShoppingCart, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/context/CartContext';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
@@ -22,7 +23,7 @@ const OrderConfirmed = () => {
 
   useEffect(() => {
     if (!id || !user) return;
-    supabase.from('orders').select('*').eq('id', id).eq('user_id', user.id).single()
+    db.from('orders').select('*').eq('id', id).eq('user_id', user.id).single()
       .then(({ data }) => {
         setOrder(data);
         if (data) {

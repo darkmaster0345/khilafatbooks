@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 
 export type PluginName =
   | 'whatsapp_notifications'

@@ -17,6 +17,7 @@ import { formatPKR } from '@/lib/currency';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import ProductReviews from '@/components/ProductReviews';
 import RecentlyViewed from '@/components/RecentlyViewed';
 import ProductCard from '@/components/ProductCard';

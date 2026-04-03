@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -26,7 +27,7 @@ const AdminSettings = () => {
 
   useEffect(() => {
     const loadSettings = async () => {
-      const { data } = await supabase.from('store_settings').select('*').eq('key', 'general');
+      const { data } = await db.from('store_settings').select('*').eq('key', 'general');
       if (data && data.length > 0) {
         const saved = (data[0] as any).value;
         setSettings(prev => ({ ...prev, ...saved }));
@@ -37,7 +38,7 @@ const AdminSettings = () => {
 
   const saveSettings = async () => {
     setSaving(true);
-    const { error } = await supabase.from('store_settings').upsert({
+    const { error } = await db.from('store_settings').upsert({
       key: 'general',
       value: settings as any,
     } as any, { onConflict: 'key' });
