@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 
@@ -79,7 +80,7 @@ const AdminShipping = () => {
         updates.tracking_number = trackingInput[orderId];
       }
     }
-    const { error } = await supabase.from('orders').update(updates).eq('id', orderId);
+    const { error } = await db.from('orders').update(updates).eq('id', orderId);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -87,7 +88,7 @@ const AdminShipping = () => {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updates } : o));
       // Send email notification for shipped/delivered
       if (shippingStatus === 'shipped' || shippingStatus === 'delivered') {
-        supabase.functions.invoke('send-order-email', {
+        db.functions.invoke('send-order-email', {
           body: { orderId, newStatus: shippingStatus },
         }).then(({ error: emailErr }) => {
           if (emailErr) console.error('Email notification failed:', emailErr);

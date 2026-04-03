@@ -3,6 +3,7 @@ import { Tag, Loader2, X, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useToast } from '@/hooks/use-toast';
 import { formatPKR } from '@/lib/currency';
 
@@ -31,8 +32,8 @@ const DiscountCodeInput = ({ subtotal, onApply, applied }: Props) => {
     const { data, error } = await supabase
       .from('discounts')
       .select('*')
-      .eq('code', code.trim().toUpperCase())
-      .eq('is_active', true)
+      .eq('code', code.trim().toUpperCase() as any)
+      .eq('is_active', true as any)
       .maybeSingle();
 
     if (error || !data) {
@@ -41,32 +42,34 @@ const DiscountCodeInput = ({ subtotal, onApply, applied }: Props) => {
       return;
     }
 
+    const d = data as any;
+
     // Check expiry
-    if (data.expires_at && new Date(data.expires_at) < new Date()) {
+    if (d.expires_at && new Date(d.expires_at) < new Date()) {
       toast({ title: 'Expired', description: 'This discount code has expired.', variant: 'destructive' });
       setLoading(false);
       return;
     }
 
     // Check min order
-    if (data.min_order_amount && subtotal < data.min_order_amount) {
-      toast({ title: 'Minimum not met', description: `Minimum order of ${formatPKR(data.min_order_amount)} required.`, variant: 'destructive' });
+    if (d.min_order_amount && subtotal < d.min_order_amount) {
+      toast({ title: 'Minimum not met', description: `Minimum order of ${formatPKR(d.min_order_amount)} required.`, variant: 'destructive' });
       setLoading(false);
       return;
     }
 
     // Check max uses
-    if (data.max_uses && (data.used_count ?? 0) >= data.max_uses) {
+    if (d.max_uses && (d.used_count ?? 0) >= d.max_uses) {
       toast({ title: 'Limit reached', description: 'This code has reached its usage limit.', variant: 'destructive' });
       setLoading(false);
       return;
     }
 
-    const discountAmount = data.type === 'percentage'
-      ? Math.round(subtotal * data.value / 100)
-      : Math.min(data.value, subtotal);
+    const discountAmount = d.type === 'percentage'
+      ? Math.round(subtotal * d.value / 100)
+      : Math.min(d.value, subtotal);
 
-    onApply({ code: data.code, type: data.type, value: data.value, discountAmount });
+    onApply({ code: d.code, type: d.type, value: d.value, discountAmount });
     toast({ title: 'Discount applied!', description: `You save ${formatPKR(discountAmount)}` });
     setLoading(false);
   };

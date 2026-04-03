@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import DiscountCodeInput, { AppliedDiscount } from '@/components/DiscountCodeInput';
 import ReferralRewardModal from '@/components/ReferralRewardModal';
 import { usePluginSettings } from '@/hooks/usePluginSettings';
@@ -67,7 +68,7 @@ const Checkout = () => {
     if (!referralCode.trim() || !user) return;
     setReferralLoading(true);
     try {
-      const { data, error } = await supabase.rpc('validate_referral_code', {
+      const { data, error } = await db.rpc('validate_referral_code', {
         p_code: referralCode.trim(),
         p_order_total: subtotal,
         p_user_id: user.id
@@ -136,7 +137,7 @@ const Checkout = () => {
       if (screenshotFile) {
         const fileExt = screenshotFile.name.split('.').pop();
         const fileName = `${Math.random()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await db.storage
           .from('payment-proofs')
           .upload(fileName, screenshotFile);
 
@@ -146,7 +147,7 @@ const Checkout = () => {
           return;
         }
 
-        const { data: { publicUrl } } = supabase.storage.from('payment-proofs').getPublicUrl(fileName);
+        const { data: { publicUrl } } = db.storage.from('payment-proofs').getPublicUrl(fileName);
         screenshotUrl = publicUrl;
       }
 
@@ -160,7 +161,7 @@ const Checkout = () => {
         type: item.product.type
       }));
 
-      const { data: orderId, error } = await supabase.rpc('create_verified_order', {
+      const { data: orderId, error } = await db.rpc('create_verified_order', {
         p_customer_name: isGift ? `Gift from ${name || 'Anonymous'}` : name,
         p_customer_phone: phone,
         p_customer_email: email,

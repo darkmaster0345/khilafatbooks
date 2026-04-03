@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
@@ -82,8 +83,8 @@ const AdminNewsletter = () => {
     setSending(true);
     setLastResult(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await supabase.functions.invoke('send-newsletter', {
+      const { data: { session } } = await db.auth.getSession();
+      const res = await db.functions.invoke('send-newsletter', {
         body: { subject, body_html: bodyHtml },
       });
 

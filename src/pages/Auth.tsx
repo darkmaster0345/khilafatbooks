@@ -2,6 +2,7 @@ import { SEOHead } from '@/components/SEOHead';
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { Navigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -123,7 +124,7 @@ const Auth = () => {
           <button
             type="button"
             onClick={() =>
-              supabase.auth.signInWithOAuth({
+              db.auth.signInWithOAuth({
                 provider: 'google',
                 options: { redirectTo: window.location.origin }
               })

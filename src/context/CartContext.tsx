@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { LegacyProduct } from '@/hooks/useProducts';
 import { toast } from 'sonner';
 
-type LoyaltyTier = 'talib' | 'muallim' | 'alim';
+export type LoyaltyTier = 'talib' | 'muallim' | 'alim';
 
 export interface CartItem {
   product: LegacyProduct;
@@ -78,7 +79,7 @@ const calculateLoyaltyInfo = (tier: LoyaltyTier, totalSpent: number): LoyaltyInf
 
 const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { user } } = await db.auth.getUser();
     if (!user || items.length === 0) return;
 
     const cartPayload = {
@@ -107,9 +108,9 @@ const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
       .single();
 
     if (existing) {
-      await supabase.from('abandoned_carts').update(cartPayload).eq('id', existing.id);
+      await db.from('abandoned_carts').update(cartPayload).eq('id', existing.id);
     } else {
-      await supabase.from('abandoned_carts').insert(cartPayload as any);
+      await db.from('abandoned_carts').insert(cartPayload as any);
     }
   } catch (e) {}
 };
@@ -135,7 +136,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const fetchLoyaltyInfo = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await db.auth.getUser();
       if (!user) {
         setLoyaltyInfo(null);
         return;
@@ -155,7 +156,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     fetchLoyaltyInfo();
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => fetchLoyaltyInfo());
+    const { data: { subscription } } = db.auth.onAuthStateChange(() => fetchLoyaltyInfo());
     return () => subscription.unsubscribe();
   }, []);
 

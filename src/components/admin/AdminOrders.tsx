@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -80,7 +81,7 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const { data, error } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      const { data, error } = await db.from('orders').select('*').order('created_at', { ascending: false });
       if (error) {
         toast({ title: 'Error loading orders', description: error.message, variant: 'destructive' });
         setOrders([]);
@@ -127,7 +128,7 @@ const AdminOrders = () => {
     if (selectedIds.size === 0) return;
     setBulkProcessing(true);
     const ids = Array.from(selectedIds);
-    const { error } = await supabase.from('orders').update({ status: 'approved' } as any).in('id', ids);
+    const { error } = await db.from('orders').update({ status: 'approved' } as any).in('id', ids);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -142,7 +143,7 @@ const AdminOrders = () => {
     if (selectedIds.size === 0) return;
     setBulkProcessing(true);
     const ids = Array.from(selectedIds);
-    const { error } = await supabase.from('orders').delete().in('id', ids);
+    const { error } = await db.from('orders').delete().in('id', ids);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -183,7 +184,7 @@ const AdminOrders = () => {
   const viewScreenshot = async (order: Order) => {
     setSelectedOrder(order);
     if (order.payment_screenshot_url) {
-      const { data } = await supabase.storage.from('payment-proofs').createSignedUrl(order.payment_screenshot_url, 300);
+      const { data } = await db.storage.from('payment-proofs').createSignedUrl(order.payment_screenshot_url, 300);
       setScreenshotUrl(data?.signedUrl ?? null);
     } else {
       setScreenshotUrl(null);
@@ -191,7 +192,7 @@ const AdminOrders = () => {
   };
 
   const updateStatus = async (orderId: string, status: string) => {
-    const { error } = await supabase.from('orders').update({ status } as any).eq('id', orderId);
+    const { error } = await db.from('orders').update({ status } as any).eq('id', orderId);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -199,7 +200,7 @@ const AdminOrders = () => {
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status } : o));
       setSelectedOrder(null);
       // Send email notification
-      supabase.functions.invoke('send-order-email', {
+      db.functions.invoke('send-order-email', {
         body: { orderId, newStatus: status },
       }).then(({ error: emailErr }) => {
         if (emailErr) console.error('Email notification failed:', emailErr);
@@ -209,7 +210,7 @@ const AdminOrders = () => {
   };
 
   const deleteOrder = async (orderId: string) => {
-    const { error } = await supabase.from('orders').delete().eq('id', orderId);
+    const { error } = await db.from('orders').delete().eq('id', orderId);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -230,7 +231,7 @@ const AdminOrders = () => {
     const subtotal = validItems.reduce((s, i) => s + i.price * i.quantity, 0);
     const total = subtotal + newOrder.shipping;
 
-    const { error } = await supabase.from('orders').insert({
+    const { error } = await db.from('orders').insert({
       customer_name: newOrder.customer_name,
       customer_phone: newOrder.customer_phone,
       customer_email: newOrder.customer_email || null,

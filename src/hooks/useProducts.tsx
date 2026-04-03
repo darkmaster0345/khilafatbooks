@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { resolveProductImage } from '@/lib/productImages';
 import { slugify } from '@/lib/utils';
 

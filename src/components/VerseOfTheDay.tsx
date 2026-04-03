@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { BookOpen } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 
 interface Verse {
   verse_arabic: string;

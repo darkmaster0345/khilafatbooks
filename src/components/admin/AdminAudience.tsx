@@ -3,6 +3,7 @@ import { Users, Mail, Phone, ShoppingBag, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
 
 interface Customer {
@@ -22,7 +23,7 @@ const AdminAudience = () => {
 
   useEffect(() => {
     const fetchCustomers = async () => {
-      const { data } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      const { data } = await db.from('orders').select('*').order('created_at', { ascending: false });
       if (data) {
         const customerMap: Record<string, Customer> = {};
         (data as any[]).forEach(order => {

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -48,7 +49,7 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
     const { data } = await supabase
       .from('reviews')
       .select('id, reviewer_name, rating, comment, created_at, verified_purchase')
-      .eq('product_id', productId)
+      .eq('product_id', productId as any)
       .order('created_at', { ascending: false })
       .limit(20);
 
@@ -98,7 +99,7 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
     }
     setSubmitting(true);
 
-    const { data: reviewData, error } = await supabase.from('reviews').insert({
+    const { data: reviewData, error } = await db.from('reviews').insert({
       product_id: productId,
       user_id: user.id,
       reviewer_name: name.trim(),
@@ -112,16 +113,18 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
       return;
     }
 
+    const rd = reviewData as any;
+
     // Upload images if any
-    if (reviewData && imageFiles.length > 0) {
+    if (rd && imageFiles.length > 0) {
       for (const file of imageFiles) {
         const ext = file.name.split('.').pop();
-        const path = `${reviewData.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from('review-images').upload(path, file);
+        const path = `${rd.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const { error: upErr } = await db.storage.from('review-images').upload(path, file);
         if (!upErr) {
-          const { data: urlData } = supabase.storage.from('review-images').getPublicUrl(path);
-          await supabase.from('review_images').insert({
-            review_id: reviewData.id,
+          const { data: urlData } = db.storage.from('review-images').getPublicUrl(path);
+          await db.from('review_images').insert({
+            review_id: rd.id,
             image_url: urlData.publicUrl,
           } as any);
         }

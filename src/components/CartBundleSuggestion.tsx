@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Package, Plus, Sparkles } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useCart } from '@/context/CartContext';
 import { toLegacyProduct, Product, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
@@ -17,37 +18,35 @@ const CartBundleSuggestion = ({ cartItems }: Props) => {
 
   useEffect(() => {
     const findBundles = async () => {
-      // Get all cart product IDs
       const cartIds = cartItems.map(i => i.product.id);
       if (cartIds.length === 0) return;
 
-      // Fetch cart products with series info
       const { data: cartProducts } = await supabase
         .from('products')
         .select(PRODUCT_PUBLIC_COLUMNS)
-        .in('id', cartIds)
+        .in('id', cartIds as string[])
         .not('series', 'is', null);
 
       if (!cartProducts || cartProducts.length === 0) { setBundles([]); return; }
 
-      // Get unique series names
-      const seriesNames = [...new Set(cartProducts.map(p => p.series).filter(Boolean))];
+      const typedCart = cartProducts as unknown as Product[];
+      const seriesNames = [...new Set(typedCart.map(p => p.series).filter(Boolean))];
 
-      // For each series, find missing products
       const result: { series: string; missing: Product[]; discount: number }[] = [];
       for (const series of seriesNames) {
         const { data: seriesProducts } = await supabase
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('series', series as string)
-          .eq('is_hidden', false)
+          .eq('is_hidden', false as any)
           .order('series_order', { ascending: true });
 
         if (!seriesProducts) continue;
-        const missing = seriesProducts.filter(p => !cartIds.includes(p.id));
-        if (missing.length > 0 && missing.length < seriesProducts.length) {
-          const avgDiscount = seriesProducts[0]?.bundle_discount || 100;
-          result.push({ series: series as string, missing: missing as Product[], discount: avgDiscount });
+        const typedSeries = seriesProducts as unknown as Product[];
+        const missing = typedSeries.filter(p => !cartIds.includes(p.id));
+        if (missing.length > 0 && missing.length < typedSeries.length) {
+          const avgDiscount = typedSeries[0]?.bundle_discount || 100;
+          result.push({ series: series as string, missing, discount: avgDiscount });
         }
       }
       setBundles(result);

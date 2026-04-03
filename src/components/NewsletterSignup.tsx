@@ -3,6 +3,7 @@ import { Mail, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useToast } from '@/hooks/use-toast';
 
 interface NewsletterSignupProps {

@@ -4,6 +4,7 @@ import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ArrowRight, 
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
@@ -76,7 +77,7 @@ const Orders = () => {
 
   const handleDownload = async (productId: string, productName: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('download-digital-product', {
+      const { data, error } = await db.functions.invoke('download-digital-product', {
         body: { productId },
       });
 

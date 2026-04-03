@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useProducts, Product, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 import { resolveProductImage } from '@/lib/productImages';
@@ -93,12 +94,12 @@ const AdminProducts = () => {
         formData.append('file', file);
         formData.append('folder', 'products');
 
-        const { data, error } = await supabase.functions.invoke('upload-image', {
+        const { data, error } = await db.functions.invoke('upload-image', {
           body: formData,
         });
 
         if (!error && data?.success) {
-          await supabase.from('products').update({ image_url: data.url }).eq('id', product.id);
+          await db.from('products').update({ image_url: data.url }).eq('id', product.id);
           migrated++;
         }
       } catch (err) {
@@ -145,7 +146,7 @@ const AdminProducts = () => {
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     setDeleting(id);
-    const { error } = await supabase.from('products').delete().eq('id', id);
+    const { error } = await db.from('products').delete().eq('id', id);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -170,7 +171,7 @@ const AdminProducts = () => {
       formData.append('file', imageFile);
       formData.append('folder', 'products');
 
-      const { data: uploadData, error: uploadError } = await supabase.functions.invoke('upload-image', {
+      const { data: uploadData, error: uploadError } = await db.functions.invoke('upload-image', {
         body: formData,
       });
 
@@ -185,13 +186,13 @@ const AdminProducts = () => {
     if (digitalFile) {
       const ext = digitalFile.name.split('.').pop();
       const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('digital-products').upload(path, digitalFile);
+      const { error: upErr } = await db.storage.from('digital-products').upload(path, digitalFile);
       if (upErr) {
         toast({ title: 'Digital file upload failed', description: upErr.message, variant: 'destructive' });
         setSaving(false);
         return;
       }
-      const { data: { publicUrl } } = supabase.storage.from('digital-products').getPublicUrl(path);
+      const { data: { publicUrl } } = db.storage.from('digital-products').getPublicUrl(path);
       digital_file_url = publicUrl;
     }
 
@@ -217,8 +218,8 @@ const AdminProducts = () => {
     };
 
     const { error } = mode === 'add'
-      ? await supabase.from('products').insert(payload as any)
-      : await supabase.from('products').update(payload as any).eq('id', editingId!);
+      ? await db.from('products').insert(payload as any)
+      : await db.from('products').update(payload as any).eq('id', editingId!);
 
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });

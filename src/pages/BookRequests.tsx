@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { toast } from 'sonner';
@@ -54,7 +55,7 @@ const BookRequests = () => {
     const requestIds = reqs.map(r => r.id);
     const pledgeCounts = await Promise.all(
       requestIds.map(async id => {
-        const { data } = await supabase.rpc('get_pledge_count', { p_request_id: id });
+        const { data } = await db.rpc('get_pledge_count', { p_request_id: id });
         return { request_id: id, count: Number(data) || 0 };
       })
     );
@@ -92,7 +93,7 @@ const BookRequests = () => {
       })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { db.removeChannel(channel); };
   }, [user]);
 
   const handleSuggest = async () => {
@@ -100,7 +101,7 @@ const BookRequests = () => {
     if (!title.trim()) { toast.error('Book title is required'); return; }
 
     setSubmitting(true);
-    const { error } = await supabase.from('book_requests').insert({
+    const { error } = await db.from('book_requests').insert({
       title: title.trim(),
       author: author.trim() || null,
       description: description.trim() || null,
@@ -123,7 +124,7 @@ const BookRequests = () => {
   const onPledge = async (requestId: string) => {
     if (!user) { toast.error('Please sign in to pledge'); return; }
     setPledging(requestId);
-    const { error } = await supabase.from('book_pledges').insert({
+    const { error } = await db.from('book_pledges').insert({
       request_id: requestId,
       user_id: user.id,
     });
@@ -134,7 +135,7 @@ const BookRequests = () => {
   };
 
   const onUnpledge = async (requestId: string) => {
-    const { error } = await supabase.from('book_pledges').delete().eq('request_id', requestId).eq('user_id', user?.id);
+    const { error } = await db.from('book_pledges').delete().eq('request_id', requestId).eq('user_id', user?.id);
     if (!error) toast.success('Pledge removed');
     fetchRequests();
   };

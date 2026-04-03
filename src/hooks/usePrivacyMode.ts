@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
 
 export function usePrivacyMode() {

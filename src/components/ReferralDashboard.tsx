@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
+const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { toast } from 'sonner';
@@ -42,9 +43,9 @@ const ReferralDashboard = () => {
     if (!user) return;
 
     const [codeRes, referralsRes, eligibleRes] = await Promise.all([
-      supabase.from('referral_codes').select('*').eq('user_id', user.id).single(),
-      supabase.from('referrals').select('*').eq('referrer_id', user.id).order('created_at', { ascending: false }),
-      supabase.rpc('can_generate_referral_code', { p_user_id: user.id }),
+      db.from('referral_codes').select('*').eq('user_id', user.id).single(),
+      db.from('referrals').select('*').eq('referrer_id', user.id).order('created_at', { ascending: false }),
+      db.rpc('can_generate_referral_code', { p_user_id: user.id }),
     ]);
 
     if (codeRes.data) setCode(codeRes.data as any);
