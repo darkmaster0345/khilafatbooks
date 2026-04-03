@@ -112,16 +112,18 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
       return;
     }
 
+    const rd = reviewData as any;
+
     // Upload images if any
-    if (reviewData && imageFiles.length > 0) {
+    if (rd && imageFiles.length > 0) {
       for (const file of imageFiles) {
         const ext = file.name.split('.').pop();
-        const path = `${reviewData.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        const path = `${rd.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
         const { error: upErr } = await supabase.storage.from('review-images').upload(path, file);
         if (!upErr) {
           const { data: urlData } = supabase.storage.from('review-images').getPublicUrl(path);
           await supabase.from('review_images').insert({
-            review_id: reviewData.id,
+            review_id: rd.id,
             image_url: urlData.publicUrl,
           } as any);
         }

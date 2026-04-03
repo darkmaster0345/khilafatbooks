@@ -5,20 +5,15 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { toLegacyProduct, type LegacyProduct, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
+import { toLegacyProduct, type LegacyProduct, type Product, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
 import { formatPKR } from '@/lib/currency';
 import { useCart } from '@/context/CartContext';
 
 interface SmartSuggestProps {
-  /** Category to find similar products in */
   category?: string;
-  /** Series to find related books */
   series?: string;
-  /** Product ID to exclude */
   excludeId?: string;
-  /** Context message: 'out_of_stock' | '404' | 'removed' */
   reason: 'out_of_stock' | '404' | 'removed';
-  /** Max suggestions */
   limit?: number;
 }
 
@@ -39,73 +34,65 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       setLoading(true);
       let products: any[] = [];
 
-      // Strategy 1: Same series (highest relevance)
       if (series) {
         const { data } = await supabase
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
-          .eq('series', series)
-          .eq('in_stock', true)
-          .neq('id', excludeId || '')
+          .eq('series', series as any)
+          .eq('in_stock', true as any)
+          .neq('id', (excludeId || '') as any)
           .order('series_order', { ascending: true })
           .limit(limit);
         if (data && data.length > 0) products = data;
       }
 
-      // Strategy 2: Same category, sorted by popularity (reviews + rating)
       if (products.length < limit && category) {
         const { data } = await supabase
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
-          .eq('category', category)
-          .eq('in_stock', true)
-          .neq('id', excludeId || '')
+          .eq('category', category as any)
+          .eq('in_stock', true as any)
+          .neq('id', (excludeId || '') as any)
           .order('reviews', { ascending: false })
           .order('rating', { ascending: false })
           .limit(limit - products.length);
         if (data) {
-          const existingIds = new Set(products.map(p => p.id));
-          products = [...products, ...data.filter(p => !existingIds.has(p.id))];
+          const existingIds = new Set(products.map((p: any) => p.id));
+          products = [...products, ...(data as any[]).filter((p: any) => !existingIds.has(p.id))];
         }
       }
 
-      // Strategy 3: Fallback to top-rated across all categories
       if (products.length < limit) {
         const { data } = await supabase
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
-          .eq('in_stock', true)
-          .neq('id', excludeId || '')
+          .eq('in_stock', true as any)
+          .neq('id', (excludeId || '') as any)
           .order('reviews', { ascending: false })
           .order('rating', { ascending: false })
           .limit(limit - products.length);
         if (data) {
-          const existingIds = new Set(products.map(p => p.id));
-          products = [...products, ...data.filter(p => !existingIds.has(p.id))];
+          const existingIds = new Set(products.map((p: any) => p.id));
+          products = [...products, ...(data as any[]).filter((p: any) => !existingIds.has(p.id))];
         }
       }
 
-      // Calculate "popularity" score for social proof
       const popMap: Record<string, number> = {};
-      const totalReviews = products.reduce((s, p) => s + (p.reviews || 0), 0) || 1;
-      products.forEach(p => {
+      const totalReviews = products.reduce((s: number, p: any) => s + (p.reviews || 0), 0) || 1;
+      products.forEach((p: any) => {
         const rawPct = ((p.reviews || 0) / totalReviews) * 100;
-        // Scale to 70-95% range for believable social proof
         popMap[p.id] = Math.min(95, Math.max(70, Math.round(rawPct * 3 + 70)));
       });
       setPopularityMap(popMap);
 
-      // Fetch order counts to boost popularity scores
       if (products.length > 0) {
-        const productIds = products.map(p => p.id);
         const { count } = await supabase
           .from('orders')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'approved');
+          .eq('status', 'approved' as any);
         
         if (count && count > 0) {
-          // Adjust scores based on total order volume
-          products.forEach(p => {
+          products.forEach((p: any) => {
             const boost = Math.min(10, Math.floor((p.reviews || 0) / 5));
             popMap[p.id] = Math.min(95, (popMap[p.id] || 80) + boost);
           });
@@ -113,7 +100,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
         }
       }
 
-      setSuggestions(products.slice(0, limit).map(p => toLegacyProduct(p as any)));
+      setSuggestions(products.slice(0, limit).map((p: any) => toLegacyProduct(p as Product)));
       setLoading(false);
     };
 
@@ -142,7 +129,6 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       transition={{ duration: 0.4, delay: 0.2 }}
       className="rounded-2xl border border-primary/20 bg-primary/5 p-6"
     >
-      {/* Header with social proof */}
       <div className="flex items-center gap-3 mb-4">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15">
           <Sparkles className="h-5 w-5 text-primary" />
@@ -158,7 +144,6 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
         </div>
       </div>
 
-      {/* Suggestion cards */}
       <div className="space-y-3">
         {suggestions.map((product, index) => {
           const popularity = popularityMap[product.id] || 80;
@@ -182,6 +167,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
                   alt={product.name} 
                   className="h-18 w-18 rounded-lg object-cover"
                   style={{ width: 72, height: 72 }}
+                  loading="lazy"
                 />
                 {isTop && (
                   <Badge className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-[9px] px-1.5 shadow-sm">
@@ -208,7 +194,6 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-1">
-                  {/* Popularity bar */}
                   <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
                     <div 
                       className="h-full rounded-full bg-primary transition-all duration-700"
@@ -224,7 +209,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
               <Button
                 size="sm"
                 onClick={() => addItem(product)}
-                className={`h-9 shrink-0 gap-1.5 ${isTop ? '' : 'variant-outline'}`}
+                className={`h-9 shrink-0 gap-1.5`}
                 variant={isTop ? 'default' : 'outline'}
               >
                 <ShoppingCart className="h-3.5 w-3.5" />

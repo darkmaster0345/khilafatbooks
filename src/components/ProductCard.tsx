@@ -51,7 +51,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
       <Link to={`/books/${product.slug}`} className="relative aspect-[4/5] overflow-hidden bg-muted">
         <img
           src={product.image}
-          alt={`${product.name} ${product.author ? `by ${product.author}` : ""} — Islamic book available at Khilafat Books`}
+          alt={`${product.name} — Islamic book available at Khilafat Books`}
           width="400"
           height="500"
           className="h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-[0.92]"

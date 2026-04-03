@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { LegacyProduct } from '@/hooks/useProducts';
 import { toast } from 'sonner';
 
-type LoyaltyTier = 'talib' | 'muallim' | 'alim';
+export type LoyaltyTier = 'talib' | 'muallim' | 'alim';
 
 export interface CartItem {
   product: LegacyProduct;
