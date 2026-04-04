@@ -15,7 +15,7 @@ const VerseOfTheDay = () => {
 
   useEffect(() => {
     const fetchVerse = async () => {
-      const { data } = await supabase
+      const { data } = await db
         .from('daily_verses')
         .select('verse_arabic, verse_english, reference')
         .limit(100);

@@ -98,7 +98,7 @@ const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
       updated_at: new Date().toISOString(),
     };
 
-    const { data: existing } = await supabase
+    const { data: existing } = await db
       .from('abandoned_carts')
       .select('id')
       .eq('user_id', user.id)
@@ -142,7 +142,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile } = await db
         .from('profiles')
         .select('loyalty_tier, total_spent')
         .eq('user_id', user.id)

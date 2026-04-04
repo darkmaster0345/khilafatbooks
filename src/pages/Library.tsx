@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
@@ -49,7 +50,7 @@ const Library = () => {
   }, [user, authLoading]);
 
   const fetchLibrary = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('user_library')
       .select('*')
       .eq('user_id', user?.id)
@@ -64,7 +65,7 @@ const Library = () => {
   };
 
   const updateStatus = async (itemId: string, status: ReadingStatus) => {
-    const { error } = await supabase
+    const { error } = await db
       .from('user_library')
       .update({
         status,
@@ -82,7 +83,7 @@ const Library = () => {
   };
 
   const saveNotes = async (itemId: string) => {
-    const { error } = await supabase
+    const { error } = await db
       .from('user_library')
       .update({ notes: noteText })
       .eq('id', itemId);
@@ -97,7 +98,7 @@ const Library = () => {
   };
 
   const removeFromLibrary = async (itemId: string) => {
-    const { error } = await supabase
+    const { error } = await db
       .from('user_library')
       .delete()
       .eq('id', itemId);
@@ -209,9 +210,9 @@ const Library = () => {
                   className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
                 >
                   <div className="relative aspect-[4/3] bg-muted overflow-hidden">
-                    {item.product?.image && (
+                    {item.product?.image_url && (
                       <img
-                        src={item.product.image}
+                        src={item.product.image_url}
                         alt={item.product.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />

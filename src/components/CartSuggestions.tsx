@@ -39,7 +39,7 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
 
       setLoadingSeries(true);
 
-      const { data: cartProducts } = await supabase
+      const { data: cartProducts } = await db
         .from('products')
         .select('id, series, series_order, bundle_discount')
         .in('id', cartProductIds as string[])
@@ -58,7 +58,7 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
         return;
       }
 
-      const { data: related } = await supabase
+      const { data: related } = await db
         .from('products')
         .select('id, name, price, series, series_order, bundle_discount, image_url, category, in_stock')
         .in('series', seriesNames as string[])

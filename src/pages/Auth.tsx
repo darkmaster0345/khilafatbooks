@@ -25,7 +25,7 @@ const Auth = () => {
     if (mode === 'signin') {
       await signIn(email, password);
     } else {
-      await signUp(email, password, { full_name: fullName, phone });
+      await signUp(email, password, fullName);
     }
   };
 

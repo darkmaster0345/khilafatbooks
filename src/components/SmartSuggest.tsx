@@ -36,7 +36,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       let products: any[] = [];
 
       if (series) {
-        const { data } = await supabase
+        const { data } = await db
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('series', series as any)
@@ -48,7 +48,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       }
 
       if (products.length < limit && category) {
-        const { data } = await supabase
+        const { data } = await db
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('category', category as any)
@@ -64,7 +64,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       }
 
       if (products.length < limit) {
-        const { data } = await supabase
+        const { data } = await db
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('in_stock', true as any)
@@ -87,7 +87,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       setPopularityMap(popMap);
 
       if (products.length > 0) {
-        const { count } = await supabase
+        const { count } = await db
           .from('orders')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'approved' as any);

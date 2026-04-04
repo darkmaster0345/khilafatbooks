@@ -83,7 +83,7 @@ export function useProducts() {
     queryKey: ['products'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .neq('is_hidden', true)

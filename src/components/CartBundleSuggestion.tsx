@@ -21,7 +21,7 @@ const CartBundleSuggestion = ({ cartItems }: Props) => {
       const cartIds = cartItems.map(i => i.product.id);
       if (cartIds.length === 0) return;
 
-      const { data: cartProducts } = await supabase
+      const { data: cartProducts } = await db
         .from('products')
         .select(PRODUCT_PUBLIC_COLUMNS)
         .in('id', cartIds as string[])
@@ -34,7 +34,7 @@ const CartBundleSuggestion = ({ cartItems }: Props) => {
 
       const result: { series: string; missing: Product[]; discount: number }[] = [];
       for (const series of seriesNames) {
-        const { data: seriesProducts } = await supabase
+        const { data: seriesProducts } = await db
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('series', series as string)

@@ -22,7 +22,7 @@ export function useNotifications() {
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user) return [];
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
@@ -41,7 +41,7 @@ export function useNotifications() {
   // Realtime subscription
   useEffect(() => {
     if (!user) return;
-    const channel = supabase
+    const channel = db
       .channel(`user-notifications-${user.id}`)
       .on('postgres_changes', {
         event: 'INSERT',

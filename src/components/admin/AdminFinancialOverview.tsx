@@ -80,7 +80,7 @@ const AdminFinancialOverview = () => {
     setLoading(true);
     try {
       // Fetch delivered orders
-      const { data: orders, error: ordersError } = await supabase
+      const { data: orders, error: ordersError } = await db
         .from('orders')
         .select('total, book_cost, shipping_cost')
         .eq('status', 'delivered');
@@ -88,7 +88,7 @@ const AdminFinancialOverview = () => {
       if (ordersError) throw ordersError;
 
       // Fetch expenses
-      const { data: expensesData, error: expensesError } = await supabase
+      const { data: expensesData, error: expensesError } = await db
         .from('expenses')
         .select('*')
         .order('created_at', { ascending: false });
@@ -96,7 +96,7 @@ const AdminFinancialOverview = () => {
       if (expensesError) throw expensesError;
 
       // Fetch privacy mode revenue (count profiles who paid)
-      const { count: privacyPaidCount, error: privacyError } = await supabase
+      const { count: privacyPaidCount, error: privacyError } = await db
         .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('privacy_paid', true);
@@ -144,7 +144,7 @@ const AdminFinancialOverview = () => {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from('expenses')
         .insert([{
           category: newExpense.category as any,

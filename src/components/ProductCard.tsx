@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatPKR } from '@/lib/currency';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from '@/lib/productImages';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 32 },
@@ -49,14 +50,25 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
     >
       {/* Image area */}
       <Link to={`/books/${product.slug}`} className="relative aspect-[4/5] overflow-hidden bg-muted">
-        <img
-          src={product.image}
-          alt={`${product.name} — Islamic book available at Khilafat Books`}
-          width="400"
-          height="500"
-          className="h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-[0.92]"
-          loading="lazy"
-        />
+        {(() => {
+          const optimizedSrc = resolveProductImage(product.image, 640);
+          const srcSet = getProductSrcSet(product.image);
+          const placeholder = getProductPlaceholder(product.image);
+          return (
+            <img
+              src={optimizedSrc}
+              srcSet={srcSet || undefined}
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+              alt={`${product.name} — Islamic book available at Khilafat Books`}
+              width="400"
+              height="500"
+              className="h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-[0.92]"
+              loading="lazy"
+              decoding="async"
+              style={placeholder ? { backgroundImage: `url(${placeholder})`, backgroundSize: 'cover' } : undefined}
+            />
+          );
+        })()}
 
         {/* Hover overlay with quick actions */}
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-foreground/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-400" />

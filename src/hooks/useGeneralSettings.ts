@@ -32,7 +32,7 @@ export const useGeneralSettings = () => {
   const { data: settings = DEFAULT_SETTINGS, isLoading } = useQuery({
     queryKey: ['general-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('store_settings')
         .select('value')
         .eq('key', 'general')

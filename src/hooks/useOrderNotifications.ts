@@ -29,7 +29,7 @@ export function useOrderNotifications() {
       }
     };
 
-    const channel = supabase
+    const channel = db
       .channel('admin-order-notifications')
       .on(
         'postgres_changes',

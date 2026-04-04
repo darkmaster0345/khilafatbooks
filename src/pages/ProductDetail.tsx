@@ -26,6 +26,7 @@ import SmartSuggest from '@/components/SmartSuggest';
 import StickyAddToCart from '@/components/StickyAddToCart';
 import WhatsAppIcon from '@/components/WhatsAppIcon';
 import { slugify } from '@/lib/utils';
+import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from '@/lib/productImages';
 
 const ProductDetail = () => {
   const { slug } = useParams();
@@ -49,7 +50,6 @@ const ProductDetail = () => {
 
   useEffect(() => {
     if (product) {
-      import('@/lib/analytics').then(m => m.trackViewContent(product));
       setActiveImage(product.image);
     }
   }, [product]);
@@ -102,12 +102,18 @@ const ProductDetail = () => {
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
             <div className="aspect-square rounded-3xl overflow-hidden bg-card border border-border shadow-md">
               <img
-                src={activeImage || product.image}
+                src={resolveProductImage(activeImage || product.image, 1200)}
+                srcSet={getProductSrcSet(activeImage || product.image) || undefined}
+                sizes="(max-width: 1024px) 100vw, 50vw"
                 alt={product.name}
                 className="w-full h-full object-cover transition-all duration-500"
-                fetchpriority="high"
+                fetchPriority="high"
                 loading="eager"
                 decoding="sync"
+                style={(() => {
+                  const ph = getProductPlaceholder(activeImage || product.image);
+                  return ph ? { backgroundImage: `url(${ph})`, backgroundSize: 'cover' } : undefined;
+                })()}
               />
             </div>
 

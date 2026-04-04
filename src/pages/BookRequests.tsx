@@ -44,7 +44,7 @@ const BookRequests = () => {
   const [pledging, setPledging] = useState<string | null>(null);
 
   const fetchRequests = async () => {
-    const { data: reqs } = await supabase
+    const { data: reqs } = await db
       .from('book_requests')
       .select('*')
       .in('status', ['voting', 'funded', 'fulfilled'])
@@ -62,7 +62,7 @@ const BookRequests = () => {
 
     let userPledges: string[] = [];
     if (user) {
-      const { data: myPledges } = await supabase
+      const { data: myPledges } = await db
         .from('book_pledges')
         .select('request_id')
         .eq('user_id', user.id)
@@ -86,7 +86,7 @@ const BookRequests = () => {
   useEffect(() => {
     fetchRequests();
 
-    const channel = supabase
+    const channel = db
       .channel('book-pledges-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'book_pledges' }, () => {
         fetchRequests();

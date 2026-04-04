@@ -59,7 +59,7 @@ const LiveActivityFeed = () => {
 
   // Subscribe to realtime
   useEffect(() => {
-    const channel = supabase
+    const channel = db
       .channel('admin-activity-feed')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders' }, (payload) => {
         const o = payload.new as any;
