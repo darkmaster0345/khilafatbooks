@@ -1,65 +1,102 @@
-import { SEOHead } from '@/components/SEOHead';
-import { Breadcrumb } from '@/components/Breadcrumb';
-import { productSchema } from '@/lib/seo-schemas';
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  Star, ShoppingCart, Truck, Download, Heart,
-  ArrowLeft, Share2, ShieldCheck, AlertTriangle,
-  Bell, CheckCircle2, Users, BadgeCheck, Gift, Link2
+  Star,
+  ShoppingCart,
+  ArrowLeft,
+  BadgeCheck,
+  Truck,
+  Download,
+  Gift,
+  Link2,
+  AlertTriangle,
+  BellRing,
+  Eye
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
-import { useCart } from '@/context/CartContext';
-import { formatPKR } from '@/lib/currency';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/use-toast';
+import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
+import { toLegacyProduct, type LegacyProduct, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
+import { useCart } from '@/context/CartContext';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import { formatPKR } from '@/lib/currency';
+import { Breadcrumb } from '@/components/Breadcrumb';
+import ProductCard from '@/components/ProductCard';
 import ProductReviews from '@/components/ProductReviews';
 import RecentlyViewed from '@/components/RecentlyViewed';
-import ProductCard from '@/components/ProductCard';
-import ProductSkeleton from '@/components/ProductSkeleton';
+import { SEOHead } from '@/components/SEOHead';
+import { productSchema } from '@/lib/seo-schemas';
+import WhatsAppIcon from '@/components/WhatsAppIcon';
+import BrandedLoader from '@/components/BrandedLoader';
 import SmartSuggest from '@/components/SmartSuggest';
 import StickyAddToCart from '@/components/StickyAddToCart';
-import WhatsAppIcon from '@/components/WhatsAppIcon';
-import { slugify } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from '@/lib/productImages';
+import LeadCaptureModal from '@/components/LeadCaptureModal';
 
 const ProductDetail = () => {
-  const { slug } = useParams();
-  const { products, loading } = useProducts();
-  const { addItem } = useCart();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [expanded, setExpanded] = useState(false);
-  const [notifyRequested, setNotifyRequested] = useState(false);
+  const { slug } = useParams<{ slug: string }>();
+  const [product, setProduct] = useState<LegacyProduct | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<LegacyProduct[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [leadModalOpen, setLeadModalOpen] = useState(false);
+  const { addItem } = useCart();
+  const { toast } = useToast();
   const addToCartRef = useRef<HTMLButtonElement>(null);
 
-  // Fix: The Product type from Supabase doesn't have a 'slug' field, so we use slugify(p.name)
-  const found = products.find(p => slugify(p.name) === slug);
-  const product = found ? toLegacyProduct(found) : null;
-
-  const relatedProducts = products
-    .filter(p => p.category === product?.category && p.id !== product?.id)
-    .map(toLegacyProduct)
-    .slice(0, 4);
-
   useEffect(() => {
-    if (product) {
-      setActiveImage(product.image);
-    }
-  }, [product]);
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await db
+          .from('products')
+          .select(PRODUCT_PUBLIC_COLUMNS)
+          .eq('is_hidden', false)
+          .order('created_at', { ascending: false });
 
-  if (loading) return <div className="container mx-auto px-4 py-12"><ProductSkeleton /></div>;
+        if (error) throw error;
+
+        const found = data?.find((p: any) =>
+          p.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '') === slug
+        );
+
+        if (found) {
+          const legacy = toLegacyProduct(found);
+          setProduct(legacy);
+          setActiveImage(legacy.image);
+
+          const { data: related } = await db
+            .from('products')
+            .select(PRODUCT_PUBLIC_COLUMNS)
+            .eq('category', found.category)
+            .neq('id', found.id)
+            .limit(4);
+
+          if (related) setRelatedProducts(related.map((p: any) => toLegacyProduct(p)));
+        }
+      } catch (err) {
+        console.error('Error fetching product:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+    window.scrollTo(0, 0);
+  }, [slug]);
+
+  if (loading) return <BrandedLoader />;
+
   if (!product) {
     return (
-      <main className="container mx-auto px-4 py-32 text-center">
-        <h1 className="text-2xl font-bold">Product not found</h1>
-        <Button asChild className="mt-4"><Link to="/shop">Back to Shop</Link></Button>
+      <main className="container mx-auto px-4 py-20 text-center">
+        <h1 className="font-display text-3xl font-bold">Product not found</h1>
+        <p className="mt-4 text-muted-foreground">The product you're looking for doesn't exist or has been removed.</p>
+        <Button asChild className="mt-8 rounded-xl"><Link to="/shop">Back to Shop</Link></Button>
       </main>
     );
   }
@@ -100,20 +137,17 @@ const ProductDetail = () => {
 
         <div className="grid gap-12 lg:grid-cols-2 mb-20">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="space-y-4">
-            <div className="aspect-square rounded-3xl overflow-hidden bg-card border border-border shadow-md">
-              <img
+            <div className="aspect-[2/3] rounded-3xl overflow-hidden bg-card border border-border shadow-md">
+              <OptimizedImage
                 src={resolveProductImage(activeImage || product.image, 1200)}
                 srcSet={getProductSrcSet(activeImage || product.image) || undefined}
+                placeholder={getProductPlaceholder(activeImage || product.image)}
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 alt={product.name}
                 className="w-full h-full object-cover transition-all duration-500"
                 fetchPriority="high"
                 loading="eager"
                 decoding="sync"
-                style={(() => {
-                  const ph = getProductPlaceholder(activeImage || product.image);
-                  return ph ? { backgroundImage: `url(${ph})`, backgroundSize: 'cover' } : undefined;
-                })()}
               />
             </div>
 
@@ -123,7 +157,7 @@ const ProductDetail = () => {
                   <button
                     key={idx}
                     onClick={() => setActiveImage(img)}
-                    className={`aspect-square rounded-xl border-2 transition-all overflow-hidden ${activeImage === img ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                    className={`aspect-[2/3] rounded-xl border-2 transition-all overflow-hidden ${activeImage === img ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'}`}
                   >
                     <img src={img} alt={`${product.name} gallery ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                   </button>
@@ -161,25 +195,20 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {!product.inStock && (
-              <div className="mt-6 p-6 rounded-2xl bg-destructive/5 border border-destructive/10 space-y-4">
-                <div className="flex items-center gap-2 text-destructive font-bold">
-                  <AlertTriangle className="h-5 w-5" /> Out of Stock
-                </div>
-                <Button
-                  variant="outline"
-                  disabled={notifyRequested}
-                  onClick={() => {
-                    toast({ title: 'Subscribed!', description: "We'll notify you when this is back." });
-                    setNotifyRequested(true);
-                  }}
-                  className="w-full gap-2 rounded-xl"
-                >
-                  <Bell className="h-4 w-4" /> {notifyRequested ? 'Notification Set' : 'Notify Me'}
-                </Button>
-                <SmartSuggest reason="out_of_stock" category={product.category} excludeId={product.id} limit={2} />
+            <div className="mt-6 p-6 rounded-2xl bg-primary/5 border border-primary/10 space-y-4">
+              <div className="flex items-center gap-2 text-primary font-bold">
+                <BellRing className="h-5 w-5" /> Coming Soon
               </div>
-            )}
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We are currently preparing our inventory. Join the waitlist to be notified immediately when this book becomes available.
+              </p>
+              <Button
+                onClick={() => setLeadModalOpen(true)}
+                className="w-full gap-2 h-14 rounded-2xl text-lg font-bold shadow-xl hover:shadow-2xl transition-all gold-gradient border-0 text-foreground"
+              >
+                <BellRing className="h-5 w-5" /> Notify Me When Available
+              </Button>
+            </div>
 
             <div className="mt-8">
               <p className={`text-muted-foreground leading-relaxed ${!expanded ? 'line-clamp-4' : ''}`}>
@@ -206,47 +235,39 @@ const ProductDetail = () => {
               </div>
             </div>
 
-            <Button
-              ref={addToCartRef}
-              size="lg"
-              onClick={() => addItem(product)}
-              disabled={!product.inStock}
-              className="mt-10 h-14 rounded-2xl text-lg font-bold shadow-xl hover:shadow-2xl transition-all"
-            >
-              <ShoppingCart className="h-5 w-5 mr-2" /> Add to Cart — {formatPKR(product.price)}
-            </Button>
-
-            <div className="mt-6 flex items-center gap-3">
+            <div className="mt-10 flex flex-col sm:flex-row items-center gap-3">
               <button
                 onClick={() => {
                   const url = window.location.href;
                   const text = `Check out this book on Khilafat Books: ${product.name}\n\n${url}`;
                   window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
                 }}
-                className="flex-1 flex items-center justify-center gap-2 h-11 rounded-xl bg-[#25D366] text-white font-bold hover:bg-[#128C7E] transition-colors"
+                className="w-full flex items-center justify-center gap-2 h-14 rounded-2xl bg-[#25D366] text-white font-bold hover:bg-[#128C7E] transition-colors"
               >
-                <WhatsAppIcon className="h-5 w-5" /> WhatsApp
+                <WhatsAppIcon className="h-6 w-6" /> Share on WhatsApp
               </button>
-              <Button
-                variant="outline"
-                className="h-11 px-4 rounded-xl"
-                onClick={() => {
-                  navigator.clipboard.writeText(window.location.href);
-                  toast({ title: 'Link copied!' });
-                }}
-              >
-                <Link2 className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                className="h-11 gap-2 px-4 rounded-xl"
-                onClick={() => {
-                   addItem(product);
-                   toast({ title: 'Gift added!', description: 'Toggle "Send as Gift" at checkout.' });
-                }}
-              >
-                <Gift className="h-4 w-4" />
-              </Button>
+              <div className="flex w-full sm:w-auto gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1 h-14 px-6 rounded-2xl"
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    toast({ title: 'Link copied!' });
+                  }}
+                >
+                  <Link2 className="h-5 w-5" />
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 h-14 gap-2 px-6 rounded-2xl"
+                  onClick={() => {
+                     setLeadModalOpen(true);
+                     toast({ title: 'Gift Interest Noted!', description: 'We will notify you when gifting is available for this item.' });
+                  }}
+                >
+                  <Gift className="h-5 w-5" />
+                </Button>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -260,16 +281,20 @@ const ProductDetail = () => {
               <h2 className="font-display text-3xl font-bold">You May Also Like</h2>
               <p className="text-muted-foreground mt-2">More from "${product.category}"</p>
             </div>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
               {relatedProducts.map((p, i) => (
                 <ProductCard key={p.id} product={p} index={i} />
               ))}
             </div>
           </section>
         )}
-
-        <StickyAddToCart product={product} triggerRef={addToCartRef} />
       </main>
+
+      <LeadCaptureModal
+        open={leadModalOpen}
+        onOpenChange={setLeadModalOpen}
+        product={{ id: product.id, name: product.name }}
+      />
     </>
   );
 };

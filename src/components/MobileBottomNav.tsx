@@ -1,20 +1,17 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, ShoppingCart, BookOpen, Heart } from 'lucide-react';
-import { useCart } from '@/context/CartContext';
+import { Home, Search, Heart, User } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { motion } from 'framer-motion';
 
 const MobileBottomNav = () => {
   const location = useLocation();
-  const { totalItems } = useCart();
   const { user } = useAuth();
 
   const tabs = [
     { to: '/', icon: Home, label: 'Home' },
     { to: '/shop', icon: Search, label: 'Shop' },
-    { to: '/cart', icon: ShoppingCart, label: 'Cart', badge: totalItems },
     { to: '/wishlist', icon: Heart, label: 'Wishlist' },
-    { to: user ? '/library' : '/auth', icon: BookOpen, label: user ? 'Library' : 'Sign in' },
+    { to: user ? '/orders' : '/auth', icon: User, label: user ? 'Account' : 'Sign in' },
   ];
 
   return (
@@ -43,11 +40,6 @@ const MobileBottomNav = () => {
               )}
               <div className="relative">
                 <tab.icon className={`h-5 w-5 ${isActive ? 'stroke-[2.5]' : ''}`} />
-                {tab.badge != null && tab.badge > 0 && (
-                  <span className="absolute -right-2 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full gold-gradient text-[8px] font-bold text-foreground">
-                    {tab.badge}
-                  </span>
-                )}
               </div>
               <span>{tab.label}</span>
             </Link>

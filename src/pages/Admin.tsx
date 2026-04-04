@@ -1,36 +1,57 @@
-import { SEOHead } from '@/components/SEOHead';
 import { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 import {
-  LayoutDashboard, ShoppingBag, Truck, Package, BarChart3, Calculator,
-  CreditCard, Tag, Users, Puzzle, Settings, BookOpen,
-  ChevronLeft, ChevronRight, LogOut, Store, Menu, Shield, Mail,
+  LayoutDashboard,
+  ShoppingBag,
+  Package,
+  Settings,
+  BarChart3,
+  Users,
+  CreditCard,
+  Truck,
+  Tag,
+  Puzzle,
+  LogOut,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  Store,
+  BookOpen,
+  Shield,
+  Mail,
+  Calculator,
+  UserCheck
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { Navigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
+import { useOrderNotifications } from '@/hooks/useOrderNotifications';
+import { SEOHead } from '@/components/SEOHead';
+
+// Admin Components
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import AdminOrders from '@/components/admin/AdminOrders';
-import AdminShipping from '@/components/admin/AdminShipping';
 import AdminProducts from '@/components/admin/AdminProducts';
 import AdminAnalytics from '@/components/admin/AdminAnalytics';
-import AdminFinancialOverview from '@/components/admin/AdminFinancialOverview';
+import AdminAudience from '@/components/admin/AdminAudience';
+import AdminSettings from '@/components/admin/AdminSettings';
+import AdminPlugins from '@/components/admin/AdminPlugins';
 import AdminPayments from '@/components/admin/AdminPayments';
 import AdminDiscounts from '@/components/admin/AdminDiscounts';
-import AdminAudience from '@/components/admin/AdminAudience';
-import AdminPlugins from '@/components/admin/AdminPlugins';
-import AdminSettings from '@/components/admin/AdminSettings';
+import AdminShipping from '@/components/admin/AdminShipping';
+import AdminFinancialOverview from '@/components/admin/AdminFinancialOverview';
 import AdminBookRequests from '@/components/admin/AdminBookRequests';
 import AdminSecurity from '@/components/admin/AdminSecurity';
 import AdminNewsletter from '@/components/admin/AdminNewsletter';
+import AdminWaitlist from '@/components/admin/AdminWaitlist';
 import logo from '@/assets/logo.png';
 
-type Section = 'dashboard' | 'orders' | 'shipping' | 'products' | 'analytics' | 'finances' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests' | 'security' | 'newsletter';
+type Section = 'dashboard' | 'waitlist' | 'orders' | 'shipping' | 'products' | 'analytics' | 'finances' | 'payments' | 'discounts' | 'audience' | 'plugins' | 'settings' | 'book-requests' | 'security' | 'newsletter';
 
 const navItems: { id: Section; label: string; icon: any }[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { id: 'waitlist', label: 'Waitlist/Leads', icon: UserCheck },
   { id: 'orders', label: 'Orders', icon: ShoppingBag },
   { id: 'shipping', label: 'Shipping', icon: Truck },
   { id: 'products', label: 'Products', icon: Package },
@@ -48,6 +69,7 @@ const navItems: { id: Section; label: string; icon: any }[] = [
 
 const sectionComponents: Record<Section, React.FC<{ onNavigate?: (section: Section) => void }>> = {
   dashboard: AdminDashboard,
+  waitlist: AdminWaitlist,
   orders: AdminOrders,
   shipping: AdminShipping,
   products: AdminProducts,
@@ -79,13 +101,19 @@ const Admin = () => {
 
   useEffect(() => {
     const fetchBadges = async () => {
-      const { data: orders } = await db.from('orders').select('status').eq('status', 'pending');
-      const { data: products } = await db.from('products').select('stock_quantity').lt('stock_quantity', 5);
+      try {
+        const { data: orders } = await db.from('orders').select('status').eq('status', 'pending');
+        const { data: products } = await db.from('products').select('stock_quantity').lt('stock_quantity', 5);
+        const { count: waitlistCount } = await db.from('waitlist').select('*', { count: 'exact', head: true });
 
-      setBadges({
-        orders: orders?.length || 0,
-        products: products?.length || 0,
-      });
+        setBadges({
+          orders: orders?.length || 0,
+          products: products?.length || 0,
+          waitlist: waitlistCount || 0,
+        });
+      } catch (err) {
+        console.error('Error fetching admin badges:', err);
+      }
     };
 
     fetchBadges();
@@ -94,6 +122,7 @@ const Admin = () => {
       .channel('admin-badges')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchBadges())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchBadges())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'waitlist' }, () => fetchBadges())
       .subscribe();
 
     return () => {
