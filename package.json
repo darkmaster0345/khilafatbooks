@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "build:dev": "vite build",
     "prebuild": "tsx scripts/generate-sitemap-routes.ts",
     "build": "vite build && tsx scripts/generate-snapshots.ts",
     "build:ci": "vite build",
