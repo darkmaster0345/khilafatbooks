@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatPKR } from '@/lib/currency';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from '@/lib/productImages';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 32 },
