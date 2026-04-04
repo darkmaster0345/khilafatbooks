@@ -210,9 +210,9 @@ const Library = () => {
                   className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow group"
                 >
                   <div className="relative aspect-[4/3] bg-muted overflow-hidden">
-                    {item.product?.image && (
+                    {item.product?.image_url && (
                       <img
-                        src={item.product.image}
+                        src={item.product.image_url}
                         alt={item.product.name}
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
