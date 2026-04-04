@@ -141,7 +141,7 @@ const OrderDetail = () => {
           <div className="lg:col-span-2 space-y-6">
             <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-foreground mb-6">Order Status</h2>
-              <OrderTrackingTimeline status={order.status} />
+              <OrderTrackingTimeline status={order.status} shippingStatus={order.shipping_status || null} />
             </div>
 
             <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">

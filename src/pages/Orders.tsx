@@ -192,7 +192,7 @@ const Orders = () => {
                           </div>
 
                           <div className="bg-muted/30 rounded-xl p-4">
-                             <OrderTrackingTimeline status={order.status} />
+                             <OrderTrackingTimeline status={order.status} shippingStatus={order.shipping_status || null} />
                           </div>
                         </div>
 
