@@ -2,7 +2,7 @@ import { SEOHead } from '@/components/SEOHead';
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Package, MapPin, Phone, Mail,
+  ArrowLeft, Package, MapPin, Phone, Mail, User,
   CreditCard, Truck, Calendar, Clock, CheckCircle2,
   Download, Loader2, ExternalLink
 } from 'lucide-react';

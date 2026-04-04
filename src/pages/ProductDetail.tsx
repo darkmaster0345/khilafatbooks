@@ -26,6 +26,7 @@ import SmartSuggest from '@/components/SmartSuggest';
 import StickyAddToCart from '@/components/StickyAddToCart';
 import WhatsAppIcon from '@/components/WhatsAppIcon';
 import { slugify } from '@/lib/utils';
+import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from '@/lib/productImages';
 
 const ProductDetail = () => {
   const { slug } = useParams();
