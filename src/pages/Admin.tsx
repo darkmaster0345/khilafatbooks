@@ -90,7 +90,7 @@ const Admin = () => {
 
     fetchBadges();
 
-    const ordersChannel = supabase
+    const ordersChannel = db
       .channel('admin-badges')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => fetchBadges())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => fetchBadges())

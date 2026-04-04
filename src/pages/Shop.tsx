@@ -42,7 +42,7 @@ const Shop = () => {
     else setLoadingMore(true);
 
     try {
-      let query = supabase
+      let query = db
         .from('products')
         .select(PRODUCT_PUBLIC_COLUMNS)
         .neq('is_hidden', true);

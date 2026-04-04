@@ -60,7 +60,7 @@ const Orders = () => {
 
   const fetchOrders = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('orders')
         .select('*')
         .eq('user_id', user?.id)

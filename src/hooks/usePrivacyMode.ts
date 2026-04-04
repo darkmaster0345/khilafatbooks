@@ -14,7 +14,7 @@ export function usePrivacyMode() {
       setLoading(false);
       return;
     }
-    supabase
+    db
       .from('profiles')
       .select('privacy_mode, privacy_paid')
       .eq('user_id', user.id)
@@ -30,7 +30,7 @@ export function usePrivacyMode() {
 
   const activatePrivacy = useCallback(async () => {
     if (!user) return false;
-    const { error } = await supabase
+    const { error } = await db
       .from('profiles')
       .update({ privacy_mode: true, privacy_paid: true } as any)
       .eq('user_id', user.id);
@@ -44,7 +44,7 @@ export function usePrivacyMode() {
 
   const deactivatePrivacy = useCallback(async () => {
     if (!user) return false;
-    const { error } = await supabase
+    const { error } = await db
       .from('profiles')
       .update({ privacy_mode: false } as any)
       .eq('user_id', user.id);

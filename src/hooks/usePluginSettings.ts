@@ -31,7 +31,7 @@ export const usePluginSettings = () => {
   const { data: plugins = DEFAULT_PLUGINS, isLoading } = useQuery({
     queryKey: ['plugin-settings'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('store_settings')
         .select('value')
         .eq('key', 'plugins')
@@ -47,7 +47,7 @@ export const usePluginSettings = () => {
   const toggleMutation = useMutation({
     mutationFn: async ({ name, enabled }: { name: PluginName; enabled: boolean }) => {
       const updated = { ...plugins, [name]: enabled };
-      const { error } = await supabase
+      const { error } = await db
         .from('store_settings')
         .upsert({ key: 'plugins', value: updated as any }, { onConflict: 'key' });
       if (error) throw error;

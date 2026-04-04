@@ -34,7 +34,7 @@ const AdminShipping = () => {
   }, []);
 
   const fetchOrders = async () => {
-    const { data } = await supabase
+    const { data } = await db
       .from('orders')
       .select('*')
       .eq('status', 'approved')

@@ -31,7 +31,7 @@ const AdminBookRequests = () => {
   const fetchRequests = async () => {
     setLoading(true);
     try {
-      const { data: reqs } = await supabase
+      const { data: reqs } = await db
         .from('book_requests')
         .select('*')
         .order('created_at', { ascending: false });
@@ -42,7 +42,7 @@ const AdminBookRequests = () => {
       }
 
       const requestIds = reqs.map((r: any) => r.id);
-      const { data: pledges } = await supabase
+      const { data: pledges } = await db
         .from('book_pledges')
         .select('request_id')
         .in('request_id', requestIds);

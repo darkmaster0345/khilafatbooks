@@ -56,7 +56,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       setLoading(true);
 
       // Fetch DB wishlist
-      const { data: dbItems } = await supabase
+      const { data: dbItems } = await db
         .from('wishlists')
         .select('product_id')
         .eq('user_id', user.id);
@@ -77,7 +77,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Fetch full product data for all wishlist items
       if (dbProductIds.size > 0) {
         const { PRODUCT_PUBLIC_COLUMNS } = await import('@/hooks/useProducts');
-        const { data: products } = await supabase
+        const { data: products } = await db
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .in('id', Array.from(dbProductIds));

@@ -77,7 +77,7 @@ const AdminSecurity = () => {
   const fetchSecurityData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: eventsData } = await supabase
+      const { data: eventsData } = await db
         .from('security_events')
         .select('*')
         .order('created_at', { ascending: false })
@@ -130,7 +130,7 @@ const AdminSecurity = () => {
     fetchSecurityData();
 
     // Subscribe to realtime security events
-    const channel = supabase
+    const channel = db
       .channel('security-events-realtime')
       .on(
         'postgres_changes',

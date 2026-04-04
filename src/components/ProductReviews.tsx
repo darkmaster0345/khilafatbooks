@@ -46,7 +46,7 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
   }, [productId]);
 
   const fetchReviews = async () => {
-    const { data } = await supabase
+    const { data } = await db
       .from('reviews')
       .select('id, reviewer_name, rating, comment, created_at, verified_purchase')
       .eq('product_id', productId as any)
@@ -56,7 +56,7 @@ const ProductReviews = ({ productId, productRating, productReviews }: Props) => 
     if (data) {
       // Fetch images for each review
       const reviewIds = data.map((r: any) => r.id);
-      const { data: images } = await supabase
+      const { data: images } = await db
         .from('review_images')
         .select('review_id, image_url')
         .in('review_id', reviewIds);

@@ -61,7 +61,7 @@ const ReferralDashboard = () => {
     setGenerating(true);
 
     // Get user profile for name
-    const { data: profile } = await supabase
+    const { data: profile } = await db
       .from('profiles')
       .select('full_name')
       .eq('user_id', user.id)
@@ -74,7 +74,7 @@ const ReferralDashboard = () => {
 
     const referralCode = `KB-${username}`;
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('referral_codes')
       .insert({ user_id: user.id, code: referralCode } as any)
       .select()
@@ -83,7 +83,7 @@ const ReferralDashboard = () => {
     if (error) {
       // Code might already exist, try with random suffix
       const fallbackCode = `KB-${username}${Math.floor(Math.random() * 99)}`;
-      const { data: d2, error: e2 } = await supabase
+      const { data: d2, error: e2 } = await db
         .from('referral_codes')
         .insert({ user_id: user.id, code: fallbackCode } as any)
         .select()

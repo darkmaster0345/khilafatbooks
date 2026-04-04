@@ -49,7 +49,7 @@ const Library = () => {
   }, [user, authLoading]);
 
   const fetchLibrary = async () => {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('user_library')
       .select('*')
       .eq('user_id', user?.id)
@@ -64,7 +64,7 @@ const Library = () => {
   };
 
   const updateStatus = async (itemId: string, status: ReadingStatus) => {
-    const { error } = await supabase
+    const { error } = await db
       .from('user_library')
       .update({
         status,
@@ -82,7 +82,7 @@ const Library = () => {
   };
 
   const saveNotes = async (itemId: string) => {
-    const { error } = await supabase
+    const { error } = await db
       .from('user_library')
       .update({ notes: noteText })
       .eq('id', itemId);
@@ -97,7 +97,7 @@ const Library = () => {
   };
 
   const removeFromLibrary = async (itemId: string) => {
-    const { error } = await supabase
+    const { error } = await db
       .from('user_library')
       .delete()
       .eq('id', itemId);

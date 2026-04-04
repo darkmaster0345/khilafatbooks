@@ -29,7 +29,7 @@ const DiscountCodeInput = ({ subtotal, onApply, applied }: Props) => {
     if (!code.trim()) return;
     setLoading(true);
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('discounts')
       .select('*')
       .eq('code', code.trim().toUpperCase() as any)

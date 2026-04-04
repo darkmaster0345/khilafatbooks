@@ -38,7 +38,7 @@ const NewsletterSignup = ({ variant = 'footer' }: NewsletterSignupProps) => {
     setLoading(true);
     sessionStorage.setItem('newsletter_last_submit', Date.now().toString());
     try {
-      const { error } = await supabase
+      const { error } = await db
         .from('newsletter_subscribers' as any)
         .insert({ email: email.trim().toLowerCase() } as any);
 
