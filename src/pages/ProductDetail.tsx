@@ -49,7 +49,6 @@ const ProductDetail = () => {
 
   useEffect(() => {
     if (product) {
-      import('@/lib/analytics').then(m => m.trackViewContent(product));
       setActiveImage(product.image);
     }
   }, [product]);
