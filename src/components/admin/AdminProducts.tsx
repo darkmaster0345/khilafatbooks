@@ -32,7 +32,6 @@ const AdminProducts = () => {
   const [selected, setSelected] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
-  const [migrating, setMigrating] = useState(false);
   const { toast } = useToast();
 
   const [form, setForm] = useState({
@@ -46,7 +45,8 @@ const AdminProducts = () => {
     in_stock: true,
     is_new: false,
     is_halal: false,
-    image_url: ''
+    image_url: '',
+    digital_file_url: ''
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -89,6 +89,7 @@ const AdminProducts = () => {
     try {
       setSaving(true);
       let finalImageUrl = form.image_url;
+      let finalDigitalUrl = form.digital_file_url;
 
       if (imageFile) {
         const fileExt = imageFile.name.split('.').pop();
@@ -99,7 +100,16 @@ const AdminProducts = () => {
         finalImageUrl = publicUrl;
       }
 
-      const payload = { ...form, image_url: finalImageUrl };
+      if (digitalFile) {
+        const fileExt = digitalFile.name.split('.').pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const { error: uploadError } = await db.storage.from('digital-products').upload(fileName, digitalFile);
+        if (uploadError) throw uploadError;
+        const { data: { publicUrl } } = db.storage.from('digital-products').getPublicUrl(fileName);
+        finalDigitalUrl = publicUrl;
+      }
+
+      const payload = { ...form, image_url: finalImageUrl, digital_file_url: finalDigitalUrl };
 
       if (mode === 'add') {
         const { error } = await db.from('products').insert([payload]);
@@ -135,21 +145,12 @@ const AdminProducts = () => {
     }
   };
 
-  const migrateToCloudinary = async () => {
-    toast({ title: 'Migration started', description: 'Syncing local assets to Cloudinary...' });
-    setMigrating(true);
-    // Simulation for now
-    setTimeout(() => {
-      setMigrating(false);
-      toast({ title: 'Migration complete', description: 'All assets optimized.' });
-    }, 2000);
-  };
-
   const openAdd = () => {
     setMode('add');
     setSelected(null);
     setImagePreview(null);
     setImageFile(null);
+    setDigitalFile(null);
     setForm({
       name: '',
       name_ar: '',
@@ -161,7 +162,8 @@ const AdminProducts = () => {
       in_stock: true,
       is_new: false,
       is_halal: false,
-      image_url: ''
+      image_url: '',
+      digital_file_url: ''
     });
   };
 
@@ -170,6 +172,7 @@ const AdminProducts = () => {
     setSelected(product);
     setImagePreview(product.image_url);
     setImageFile(null);
+    setDigitalFile(null);
     setForm({
       name: product.name,
       name_ar: product.name_ar || '',
@@ -181,18 +184,19 @@ const AdminProducts = () => {
       in_stock: product.in_stock,
       is_new: product.is_new,
       is_halal: product.is_halal,
-      image_url: product.image_url
+      image_url: product.image_url,
+      digital_file_url: product.digital_file_url || ''
     });
   };
 
   const allCategories = ['All', ...PRODUCT_CATEGORIES];
   const filtered = products.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase()) || p.category.toLowerCase().includes(search.toLowerCase());
+    const nameMatch = (p.name || '').toLowerCase().includes(search.toLowerCase());
+    const categoryMatch = (p.category || '').toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = nameMatch || categoryMatch;
     const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
-
-  const localImageProducts = products.filter(p => p.image_url && !p.image_url.includes('cloudinary'));
 
   if (mode !== 'list') {
     return (
@@ -302,8 +306,11 @@ const AdminProducts = () => {
                 <div className="mt-2">
                   <input ref={digitalInputRef} type="file" onChange={handleDigitalFileChange} className="hidden" />
                   <Button type="button" variant="outline" size="sm" onClick={() => digitalInputRef.current?.click()} className="gap-1">
-                    <Download className="h-3 w-3" /> {digitalFile ? digitalFile.name : 'Select Digital File'}
+                    <Download className="h-3 w-3" /> {digitalFile ? digitalFile.name : (form.digital_file_url ? 'Change Digital File' : 'Select Digital File')}
                   </Button>
+                  {form.digital_file_url && !digitalFile && (
+                    <p className="text-[10px] text-primary mt-1 flex items-center gap-1"><Download className="h-2.5 w-2.5" /> File already linked</p>
+                  )}
                 </div>
               </div>
             )}
@@ -328,11 +335,6 @@ const AdminProducts = () => {
           <p className="text-sm text-muted-foreground">Manage your store's items and digital assets.</p>
         </div>
         <div className="flex gap-2">
-          {localImageProducts.length > 0 && (
-            <Button variant="outline" onClick={migrateToCloudinary} disabled={migrating} className="gap-2 rounded-xl">
-              <Cloud className="h-4 w-4" /> {migrating ? '...' : `CDN Sync (${localImageProducts.length})`}
-            </Button>
-          )}
           <Button onClick={openAdd} className="gap-2 rounded-xl shadow-md"><Plus className="h-4 w-4" /> Add New</Button>
         </div>
       </div>

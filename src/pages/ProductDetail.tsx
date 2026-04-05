@@ -72,6 +72,7 @@ const ProductDetail = () => {
           const { data: related } = await db
             .from('products')
             .select(PRODUCT_PUBLIC_COLUMNS)
+            .eq('is_hidden', false)
             .eq('category', found.category)
             .neq('id', found.id)
             .limit(4);
