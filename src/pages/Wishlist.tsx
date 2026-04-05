@@ -1,16 +1,20 @@
 import { SEOHead } from '@/components/SEOHead';
 import { useWishlist } from '@/context/WishlistContext';
 import { Heart, ShoppingBag, ArrowRight, Trash2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useCart } from '@/context/CartContext';
+import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import ProductCard from '@/components/ProductCard';
 
 const Wishlist = () => {
+  const { user, loading: authLoading } = useAuth();
   const { wishlist, removeFromWishlist } = useWishlist();
   const { addItem } = useCart();
+
+  if (!authLoading && !user) return <Navigate to="/auth" replace />;
 
   return (
     <>

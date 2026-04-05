@@ -28,7 +28,7 @@ const EASYPAISA_ACCOUNT = '03352706540';
 const Checkout = () => {
   const navigate = useNavigate();
   const { items, subtotal, shipping, total, clearCart, zakatEnabled, zakatAmount } = useCart();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { isPluginEnabled } = usePluginSettings();
   const [step, setStep] = useState<'details' | 'payment'>('details');
@@ -61,8 +61,9 @@ const Checkout = () => {
   const [selectedReward, setSelectedReward] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!authLoading && !user) navigate('/auth', { replace: true });
     if (items.length === 0) navigate('/shop');
-  }, [items, navigate]);
+  }, [items, navigate, user, authLoading]);
 
   const validateReferralCode = async () => {
     if (!referralCode.trim() || !user) return;
@@ -147,8 +148,7 @@ const Checkout = () => {
           return;
         }
 
-        const { data: { publicUrl } } = db.storage.from('payment-proofs').getPublicUrl(fileName);
-        screenshotUrl = publicUrl;
+        screenshotUrl = fileName;
       }
 
       const orderItems = items.map(item => ({
