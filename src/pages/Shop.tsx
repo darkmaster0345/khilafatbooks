@@ -185,7 +185,7 @@ const Shop = () => {
 
       {/* Results */}
       {loading ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="rounded-xl border border-border bg-card animate-pulse">
               <div className="aspect-[4/5] bg-muted" />
@@ -215,7 +215,7 @@ const Shop = () => {
             </motion.div>
           ) : (
             <>
-              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {filtered.map((product, i) => (
                   <div key={product.id} className="relative group/card">
                     <ProductCard product={product} index={i} />

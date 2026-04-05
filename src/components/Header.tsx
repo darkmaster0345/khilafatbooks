@@ -120,13 +120,13 @@ const Header = () => {
         <div className="flex items-center gap-2">
           {user ? (
             <div className="hidden md:flex items-center gap-2">
-              <Link to="/orders" className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
+              <Link to="/orders" className="hidden md:hidden items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                   <User className="h-3 w-3 text-primary" />
                 </div>
                 <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">My Orders</span>
               </Link>
-              <Link to="/library" className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
+              <Link to="/library" className="hidden md:hidden items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                   <BookOpen className="h-3 w-3 text-primary" />
                 </div>
@@ -161,7 +161,7 @@ const Header = () => {
             )}
           </Link>
 
-          <Link to="/cart" aria-label={`Cart${totalItems > 0 ? ` (${totalItems} items)` : ''}`} className="relative flex h-10 w-10 items-center justify-center rounded-lg hover:bg-muted/60 transition-colors">
+          <Link to="/cart" className="hidden">
             <ShoppingCart className="h-5 w-5 text-foreground" />
             {totalItems > 0 && (
               <motion.span

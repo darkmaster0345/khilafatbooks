@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useProducts, toLegacyProduct, type LegacyProduct, type Product } from '@/hooks/useProducts';
 import { useCart, type CartItem } from '@/context/CartContext';
+import OptimizedImage from "./OptimizedImage";
+import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from "@/lib/productImages";
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
 import { formatPKR } from '@/lib/currency';
@@ -140,7 +142,7 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                     >
                       <Link to={`/books/${slugify(sp.name)}`} className="shrink-0">
                         {sp.image_url ? (
-                          <img src={sp.image_url} alt={sp.name} className="h-14 w-14 rounded-lg object-cover" loading="lazy" />
+                          <OptimizedImage src={resolveProductImage(sp.image_url, 120)} alt={sp.name} className="h-14 w-14 rounded-lg" />
                         ) : (
                           <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center">
                             <BookOpen className="h-6 w-6 text-muted-foreground/40" />
@@ -204,7 +206,7 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
                 className="flex items-center gap-3 rounded-xl border border-border bg-card p-3 hover:shadow-sm transition-shadow"
               >
                 <Link to={`/books/${product.slug}`} className="shrink-0">
-                  <img src={product.image} alt={product.name} className="h-16 w-16 rounded-lg object-cover" loading="lazy" />
+                  <OptimizedImage src={resolveProductImage(product.image, 160)} alt={product.name} className="h-16 w-16 rounded-lg" />
                 </Link>
                 <div className="flex-1 min-w-0">
                   <Link to={`/books/${product.slug}`} className="text-sm font-medium text-foreground hover:text-primary transition-colors line-clamp-1">
