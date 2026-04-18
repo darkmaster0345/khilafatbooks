@@ -1,0 +1,27 @@
+project_id = "ebormxtkzertyxgszbip"
+
+[auth]
+site_url = "https://khilafatbooks.vercel.app"
+additional_redirect_urls = [
+  "https://khilafatbooks.vercel.app/*",
+  "http://localhost:8080/*",
+  "https://khilafatbooks.vercel.app/auth/callback"
+]
+
+[functions.ai-chat]
+verify_jwt = false
+
+[functions.download-digital-product]
+verify_jwt = false
+
+[functions.send-order-email]
+verify_jwt = false
+
+[functions.upload-image]
+verify_jwt = false
+
+[functions.cart-recovery]
+verify_jwt = false
+
+[functions.send-newsletter]
+verify_jwt = false

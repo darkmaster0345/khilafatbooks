@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /orders/
+Disallow: /order-details/
+Disallow: /cart/
+
+Sitemap: https://khilafatbooks.vercel.app/sitemap.xml

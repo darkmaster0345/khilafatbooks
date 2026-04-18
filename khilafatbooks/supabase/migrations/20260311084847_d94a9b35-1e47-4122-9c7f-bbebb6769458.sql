@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Anyone can lookup active codes" ON public.referral_codes;
