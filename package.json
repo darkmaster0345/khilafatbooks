@@ -86,7 +86,14 @@
       "undici": "^6.24.0",
       "flatted": "^3.4.2",
       "dompurify": "^3.3.2"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@swc/core",
+      "core-js",
+      "esbuild",
+      "sharp",
+      "workerd"
+    ]
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",

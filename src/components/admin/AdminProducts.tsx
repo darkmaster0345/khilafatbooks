@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { formatPKR } from '@/lib/currency';
 import OptimizedImage from '../OptimizedImage';
 import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from '@/lib/productImages';
+import { useProducts } from '@/hooks/useProducts';
 
 const db = supabase as any;
 
@@ -24,8 +25,7 @@ const PRODUCT_CATEGORIES = [
 ];
 
 const AdminProducts = () => {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products, loading, refetch } = useProducts({ includeHidden: true });
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [mode, setMode] = useState<'list' | 'add' | 'edit'>('list');
@@ -54,23 +54,6 @@ const AdminProducts = () => {
   const [digitalFile, setDigitalFile] = useState<File | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const digitalInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await db.from('products').select('*').order('created_at', { ascending: false });
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (err: any) {
-      toast({ title: 'Fetch failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -112,17 +95,17 @@ const AdminProducts = () => {
       const payload = { ...form, image_url: finalImageUrl, digital_file_url: finalDigitalUrl };
 
       if (mode === 'add') {
-        const { error } = await db.from('products').insert([payload]);
+        const { error } = await db.from('products').insert([payload] as any);
         if (error) throw error;
         toast({ title: 'Product created', description: 'Item has been added to catalog.' });
       } else {
-        const { error } = await db.from('products').update(payload).eq('id', selected.id);
+        const { error } = await db.from('products').update(payload as any).eq('id', selected.id as any);
         if (error) throw error;
         toast({ title: 'Product updated', description: 'Changes saved successfully.' });
       }
 
       setMode('list');
-      fetchProducts();
+      refetch();
     } catch (err: any) {
       toast({ title: 'Save failed', description: err.message, variant: 'destructive' });
     } finally {
@@ -134,9 +117,9 @@ const AdminProducts = () => {
     if (!confirm('Are you sure you want to delete this product?')) return;
     try {
       setDeleting(id);
-      const { error } = await db.from('products').delete().eq('id', id);
+      const { error } = await supabase.from('products').delete().eq('id', id as any);
       if (error) throw error;
-      setProducts(products.filter(p => p.id !== id));
+      refetch();
       toast({ title: 'Product deleted' });
     } catch (err: any) {
       toast({ title: 'Delete failed', description: err.message, variant: 'destructive' });

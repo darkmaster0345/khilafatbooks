@@ -33,6 +33,9 @@ export interface Product {
 // Cleaned up safe columns to select for public-facing product queries
 export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,ethical_source,rating,reviews,in_stock,stock_quantity,low_stock_threshold,series,series_order,bundle_discount,is_hidden,created_at,updated_at' as const;
 
+// Minimal columns for high-performance list views
+export const PRODUCT_MINIMAL_COLUMNS = 'id,name,name_ar,price,original_price,image_url,category,type,is_new,is_halal,rating,reviews,in_stock,is_hidden' as const;
+
 // Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
   id: string;
@@ -78,29 +81,35 @@ export function toLegacyProduct(p: Product): LegacyProduct {
   };
 }
 
-export function useProducts() {
+export function useProducts(options: { includeHidden?: boolean; minimal?: boolean } = {}) {
+  const { includeHidden = false, minimal = false } = options;
+
   const { data: products = [], isLoading, error, refetch } = useQuery({
-    queryKey: ['products'],
+    queryKey: ['products', includeHidden, minimal],
     queryFn: async () => {
       try {
-        const { data, error } = await db
+        let query = db
           .from('products')
-          .select(PRODUCT_PUBLIC_COLUMNS)
-          .neq('is_hidden', true)
-          .order('created_at', { ascending: false });
+          .select(minimal ? PRODUCT_MINIMAL_COLUMNS : PRODUCT_PUBLIC_COLUMNS);
+
+        if (!includeHidden) {
+          query = query.or('is_hidden.is.null,is_hidden.eq.false');
+        }
+
+        const { data, error } = await query.order('created_at', { ascending: false });
 
         if (error) {
           console.error('Supabase error fetching products:', error);
           throw error;
         }
-        return data as Product[];
+        return data as any as Product[];
       } catch (err) {
         console.error('Failed to fetch products:', err);
         throw err;
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 0, // If we hit RLS/permission issues we want UI to stop loading immediately.
+    retry: 0,
   });
 
   return { products, loading: isLoading, error, refetch };

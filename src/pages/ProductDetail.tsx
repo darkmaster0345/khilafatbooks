@@ -55,7 +55,7 @@ const ProductDetail = () => {
         const { data, error } = await db
           .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
-          .eq('is_hidden', false)
+          .or('is_hidden.is.null,is_hidden.eq.false')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -72,7 +72,7 @@ const ProductDetail = () => {
           const { data: related } = await db
             .from('products')
             .select(PRODUCT_PUBLIC_COLUMNS)
-            .eq('is_hidden', false)
+            .or('is_hidden.is.null,is_hidden.eq.false')
             .eq('category', found.category)
             .neq('id', found.id)
             .limit(4);

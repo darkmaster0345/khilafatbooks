@@ -10,7 +10,7 @@ import ProductCard from '@/components/ProductCard';
 import ProductQuickView from '@/components/ProductQuickView';
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
-import { PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
+import { PRODUCT_MINIMAL_COLUMNS, PRODUCT_PUBLIC_COLUMNS } from '@/hooks/useProducts';
 import { toLegacyProduct, LegacyProduct, Product, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 
 const PAGE_SIZE = 12;
@@ -44,8 +44,8 @@ const Shop = () => {
     try {
       let query = db
         .from('products')
-        .select(PRODUCT_PUBLIC_COLUMNS)
-        .neq('is_hidden', true);
+        .select(PRODUCT_MINIMAL_COLUMNS)
+        .or('is_hidden.is.null,is_hidden.eq.false');
 
       if (search) query = query.ilike('name', `%${search}%`);
       if (selectedCategory !== 'All') query = query.eq('category', selectedCategory);
@@ -64,7 +64,7 @@ const Shop = () => {
         console.error('Error fetching products:', error);
         if (!append) setProducts([]);
       } else if (data) {
-        setProducts(prev => append ? [...prev, ...data] : data);
+        setProducts(prev => append ? [...prev, ...(data as any as Product[])] : (data as any as Product[]));
         setHasMore(data.length === PAGE_SIZE);
       }
     } catch (err) {
