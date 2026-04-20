@@ -39,29 +39,45 @@ const AdminAnalytics = () => {
   const [cartStats, setCartStats] = useState<AbandonedCartStats>({ total: 0, reminded: 0, recovered: 0, expired: 0, recoveredRevenue: 0 });
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<'7d' | '30d' | 'all'>('30d');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => { try {
-      // Fetch orders
-      const { data: ordersData } = await db.from('orders').select('*').order('created_at', { ascending: true });
-      if (ordersData) setOrders(ordersData as unknown as Order[]);
+    let mounted = true;
+    const fetchData = async () => { 
+      try {
+        setError(null);
+        // Fetch orders
+        const { data: ordersData, error: ordersError } = await db.from('orders').select('*').order('created_at', { ascending: true });
+        if (ordersError) throw ordersError;
+        if (ordersData && mounted) setOrders(ordersData as unknown as Order[]);
 
-      // Fetch abandoned cart stats
-      const { data: carts } = await db.from('abandoned_carts').select('status, cart_total, recovered_at');
-      if (carts) {
-        const stats: AbandonedCartStats = { total: carts.length, reminded: 0, recovered: 0, expired: 0, recoveredRevenue: 0 };
-        (carts as any[]).forEach(c => {
-          if (c.status === 'reminded') stats.reminded++;
-          else if (c.status === 'recovered') { stats.recovered++; stats.recoveredRevenue += c.cart_total || 0; }
-          else if (c.status === 'expired') stats.expired++;
-        });
-        setCartStats(stats);
+        // Fetch abandoned cart stats
+        const { data: carts, error: cartsError } = await db.from('abandoned_carts').select('status, cart_total, recovered_at');
+        if (cartsError) throw cartsError;
+        
+        if (carts && mounted) {
+          const stats: AbandonedCartStats = { total: carts.length, reminded: 0, recovered: 0, expired: 0, recoveredRevenue: 0 };
+          (carts as any[]).forEach(c => {
+            if (c.status === 'reminded') stats.reminded++;
+            else if (c.status === 'recovered') { stats.recovered++; stats.recoveredRevenue += c.cart_total || 0; }
+            else if (c.status === 'expired') stats.expired++;
+          });
+          setCartStats(stats);
+        }
+
+      } catch (err: any) { 
+        console.error('Analytics Fetch Error:', err); 
+        if (mounted) setError(err.message || 'Failed to load analytics.');
+      } finally {
+        if (mounted) setLoading(false); 
       }
-
-      setLoading(false); } catch (err) { console.error(err); setLoading(false); }
     };
     fetchData();
+    return () => { mounted = false; };
   }, []);
+
+  if (loading) return <p className="text-muted-foreground p-8">Loading analytics...</p>;
+  if (error) return <div className="p-8 text-destructive border border-destructive/20 rounded-lg m-4 bg-destructive/5"><h3 className="font-bold mb-2">Error loading analytics</h3><p className="text-sm">{error}</p></div>;
 
   const now = new Date();
   const filteredOrders = orders.filter(o => {

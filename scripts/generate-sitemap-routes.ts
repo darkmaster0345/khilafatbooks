@@ -10,15 +10,26 @@ const __dirname = path.dirname(__filename)
 dotenv.config()
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_VITE_SUPABASE_PUBLISHABLE_KEY
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_VITE_SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("YOUR_NEW_PUBLISHABLE_KEY_HERE")) {
-  console.error('Supabase credentials missing. Using empty routes.')
+// Validate credentials to prevent build crashes in CI when env vars are unpopulated or dummy values
+const isValidUrl = (url: string | undefined): boolean => {
+  if (!url) return false
+  try {
+    new URL(url)
+    return url.startsWith('http')
+  } catch {
+    return false
+  }
+}
+
+if (!isValidUrl(SUPABASE_URL) || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes("YOUR_")) {
+  console.error('Supabase credentials missing or invalid. Using empty routes.')
   fs.writeFileSync(path.resolve(__dirname, '../src/sitemap-routes.json'), JSON.stringify([]))
   process.exit(0)
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+const supabase = createClient(SUPABASE_URL as string, SUPABASE_ANON_KEY)
 
 const slugify = (text: string) => {
   return text
