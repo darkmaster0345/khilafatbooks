@@ -2,7 +2,7 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/((?!_prerendered|assets|robots.txt|sitemap.xml|favicon.ico|.*\..*).*)",
+      "source": "/((?!_prerendered|assets|robots.txt|sitemap.xml|favicon.ico|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],
