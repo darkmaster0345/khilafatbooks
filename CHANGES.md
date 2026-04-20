@@ -33,3 +33,12 @@
 
 ---
 **Biggest Remaining Risk**: Sub-dependencies of build-time tools like `wrangler` and `@prerenderer` still contain moderate vulnerabilities that cannot be easily updated without potentially breaking the build pipeline; these should be monitored for upstream patches.
+
+## 8. Security Audit — Critical & High Remediations (2026-04-20)
+- **AI Chat Protection**: Secured the `ai-chat` Edge Function by removing the publishable key fallback and enforcing strict JWT authentication. Unauthenticated requests now return 401 immediately.
+- **Registration Abuse Fix**: Mitigated open registration abuse by integrating reCAPTCHA v3 on the frontend and routing all new signups through a secure `signup` Edge Function that verifies CAPTCHA tokens before calling Supabase Auth.
+- **Subresource Integrity (SRI)**: Added `integrity` and `crossorigin` attributes to the Contentsquare script in `index.html` to prevent potential supply-chain attacks.
+- **Nonce-based CSP**: Configured `vite-plugin-csp` to inject cryptographic nonces into the Content-Security-Policy and all script tags. Updated `vercel.json` to enforce a stricter policy by removing `'unsafe-inline'` and `'unsafe-eval'` from script-src.
+- **Performance Optimization**: Implemented code splitting using `React.lazy()` and Framer Motion's `LazyMotion` to reduce initial bundle size and mitigate potential client-side DoS risks.
+- **Security Policy**: Added a `security.txt` file at `.well-known/security.txt` to provide clear contact information for vulnerability reporting.
+- **Supabase Hardening**: Generated `supabase_security_fixes.sql` to enable RLS on all sensitive tables, enforce strict ownership-based policies, and restrict CORS origins to the production domain.
