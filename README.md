@@ -57,7 +57,7 @@ A full-featured e-commerce platform built for the Pakistani Muslim market, offer
 | **Hosting** | Vercel (Production) + Cloudflare (DNS) |
 | **Email** | Resend API |
 | **Images** | Cloudinary (Storage & Optimization) |
-| **Analytics** | Groq AI + Microsoft Clarity + Contentsquare |
+| **Analytics** | Groq AI + Microsoft Clarity |
 
 ---
 

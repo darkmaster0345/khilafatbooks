@@ -18,11 +18,10 @@ import PageTransition from "@/components/PageTransition";
 import MaintenanceModal from "@/components/MaintenanceModal";
 import { usePluginSettings } from "@/hooks/usePluginSettings";
 
-// Eagerly load critical components
-import Index from "./pages/Index";
-import ProductDetail from "./pages/ProductDetail";
-
-// Lazy-loaded routes
+// PERF FIX (Finding 5.1): All routes are lazy-loaded for code splitting.
+// Index and ProductDetail were previously eagerly imported (~1 MB bundle hit).
+const Index = lazy(() => import("./pages/Index"));
+const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Shop = lazy(() => import("./pages/Shop"));
 const Cart = lazy(() => import("./pages/Cart"));
 const Checkout = lazy(() => import("./pages/Checkout"));

@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { MessageCircle, X, Send, Loader2, Bot, User, Sparkles } from 'lucide-react';
+import { MessageCircle, X, Send, Loader2, Bot, User, Sparkles, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 const db = supabase as any;
 
 type Msg = { role: 'user' | 'assistant'; content: string };
@@ -17,14 +18,20 @@ async function streamChat({
   onDone: () => void;
   onError: (msg: string) => void;
 }) {
+  // SECURITY FIX (Finding 3.2): Require a valid user session.
+  // Never fall back to the publishable/anon key — that allows unauthenticated
+  // LLM access and cost abuse.
   const { data: { session } } = await db.auth.getSession();
-  const sessionToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  if (!session?.access_token) {
+    onError('Please sign in to use the AI assistant.');
+    return;
+  }
 
   const resp = await fetch(CHAT_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${sessionToken}`,
+      Authorization: `Bearer ${session.access_token}`,
     },
     body: JSON.stringify({ messages }),
   });
@@ -65,6 +72,7 @@ async function streamChat({
 }
 
 const AIChatWidget = () => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState('');
@@ -207,21 +215,31 @@ const AIChatWidget = () => {
               )}
             </div>
 
-            {/* Input */}
+            {/* Input / Auth Gate */}
             <div className="border-t border-border px-4 py-3">
-              <form onSubmit={e => { e.preventDefault(); send(); }} className="flex gap-2">
-                <input
-                  value={input}
-                  onChange={e => setInput(e.target.value)}
-                  placeholder="Ask about products..."
-                  className="flex-1 h-10 px-4 rounded-xl bg-muted border-none text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                  maxLength={300}
-                  disabled={loading}
-                />
-                <Button type="submit" size="sm" disabled={loading || !input.trim()} className="h-10 w-10 p-0 rounded-xl">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
+              {user ? (
+                <form onSubmit={e => { e.preventDefault(); send(); }} className="flex gap-2">
+                  <input
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    placeholder="Ask about products..."
+                    className="flex-1 h-10 px-4 rounded-xl bg-muted border-none text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                    maxLength={300}
+                    disabled={loading}
+                  />
+                  <Button type="submit" size="sm" disabled={loading || !input.trim()} className="h-10 w-10 p-0 rounded-xl">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+              ) : (
+                <a
+                  href="/auth"
+                  className="flex items-center justify-center gap-2 w-full h-10 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                >
+                  <LogIn className="h-4 w-4" />
+                  Sign in to chat
+                </a>
+              )}
             </div>
           </motion.div>
         )}

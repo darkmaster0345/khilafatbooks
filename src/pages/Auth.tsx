@@ -1,5 +1,5 @@
 import { SEOHead } from '@/components/SEOHead';
-import { useState, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
@@ -11,6 +11,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
+import HCaptcha from '@hcaptcha/react-hcaptcha';
+
+// SECURITY FIX (Finding 3.3): hCaptcha site key — add VITE_HCAPTCHA_SITE_KEY to your .env
+// Get your site key at https://dashboard.hcaptcha.com/
+const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
 
 const Auth = () => {
   const { user, signIn, loading: authLoading } = useAuth();
@@ -19,35 +24,9 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  const [internalLoading, setInternalLoading] = useState(false);
-
-  const { executeRecaptcha } = useGoogleReCaptcha();
-
-  const handleSignUp = useCallback(async () => {
-    if (!executeRecaptcha) {
-      toast.error("reCAPTCHA not initialized");
-      return;
-    }
-
-    setInternalLoading(true);
-    try {
-      const token = await executeRecaptcha('signup');
-
-      const { data, error } = await supabase.functions.invoke('signup', {
-        body: { email, password, fullName, phone, captchaToken: token }
-      });
-
-      if (error) throw error;
-
-      toast.success("Account created successfully! Please check your email for verification.");
-      setMode('signin');
-    } catch (err: any) {
-      console.error("Signup error:", err);
-      toast.error(err.message || "Failed to create account");
-    } finally {
-      setInternalLoading(false);
-    }
-  }, [executeRecaptcha, email, password, fullName, phone]);
+  // SECURITY FIX (Finding 3.3): captcha state for signup abuse prevention
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const captchaRef = useRef<HCaptcha>(null);
 
   if (user) return <Navigate to="/" replace />;
 
@@ -56,11 +35,16 @@ const Auth = () => {
     if (mode === 'signin') {
       await signIn(email, password);
     } else {
-      await handleSignUp();
+      // Require a captcha token before signup to prevent bot registration
+      if (!captchaToken) return;
+      await signUp(email, password, fullName, captchaToken);
+      // Reset captcha after attempt (success or failure)
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     }
   };
 
-  const loading = authLoading || internalLoading;
+  const loading = authLoading;
 
   return (
     <>
@@ -140,7 +124,23 @@ const Auth = () => {
               />
             </div>
 
-            <Button disabled={loading} className="w-full h-12 rounded-xl gold-gradient border-0 text-foreground font-bold shadow-lg mt-2">
+            {/* SECURITY (Finding 3.3): hCaptcha widget — only shown during signup */}
+            {mode === 'signup' && (
+              <div className="flex justify-center mt-1">
+                <HCaptcha
+                  ref={captchaRef}
+                  sitekey={HCAPTCHA_SITE_KEY}
+                  onVerify={(token) => setCaptchaToken(token)}
+                  onExpire={() => setCaptchaToken(null)}
+                  theme="auto"
+                />
+              </div>
+            )}
+
+            <Button
+              disabled={loading || (mode === 'signup' && !captchaToken)}
+              className="w-full h-12 rounded-xl gold-gradient border-0 text-foreground font-bold shadow-lg mt-2"
+            >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : mode === 'signin' ? 'Sign In' : 'Create Account'}
             </Button>
           </form>

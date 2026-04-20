@@ -180,7 +180,9 @@ function buildGeminiContents(
 }
 
 // ---------------------------------------------------------------------------
-// Security Audit (2026): Strictly validates user JWT before processing.
+// SECURITY FIX (Finding 3.2): Strict JWT-only authentication.
+// The anon/publishable key fallback has been REMOVED. Only valid user JWTs
+// are accepted. Requests without a proper session are rejected with 401.
 // Entry point
 // ---------------------------------------------------------------------------
 
@@ -192,7 +194,7 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // origin validation check
+  // Origin validation
   const isAllowed = !origin ||
                     ALLOWED_ORIGINS.includes(origin) ||
                     origin.endsWith(".vercel.app") ||
@@ -206,6 +208,7 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // SECURITY: Require a valid Bearer JWT. Reject immediately if missing.
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -214,9 +217,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { createClient } = await import(
-      "https://esm.sh/@supabase/supabase-js@2.95.3"
-    );
+    // SECURITY: Validate the JWT against Supabase Auth using only the ANON key.
+    // Do NOT fall back to the publishable key — that would bypass session checks.
     const userClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
@@ -247,7 +249,6 @@ Deno.serve(async (req) => {
       throw new Error(`Missing environment variables: ${missing.join(", ")}`);
     }
 
-
     if (!messages || !Array.isArray(messages)) {
       throw new Error("Invalid request: 'messages' array is required");
     }
@@ -260,7 +261,6 @@ Deno.serve(async (req) => {
     let useFallback = false;
 
     try {
-      // Call Gemini using the non-streaming generateContent endpoint as requested
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
@@ -285,11 +285,9 @@ Deno.serve(async (req) => {
         const errorData = await geminiRes.json().catch(() => ({}));
         console.error("Gemini API error:", errorData);
 
-        // Check for rate limit or server errors to trigger fallback
         const isQuotaError = geminiRes.status === 429 ||
                             errorData.error?.message?.includes("quota") ||
                             errorData.error?.message?.includes("rate limit");
-
         const isServerError = [500, 502, 503, 504].includes(geminiRes.status);
 
         if ((isQuotaError || isServerError) && GROQ_API_KEY) {

@@ -8,7 +8,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, captchaToken?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -117,13 +117,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [checkAdminStatus]);
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+  const signUp = async (email: string, password: string, fullName: string, captchaToken?: string) => {
     const { error } = await db.auth.signUp({
       email,
       password,
       options: {
         data: { full_name: fullName },
         emailRedirectTo: `${window.location.origin}/auth`,
+        // SECURITY (Finding 3.3): hCaptcha token — validated server-side by Supabase Auth.
+        // Enable hCaptcha in Supabase Dashboard → Authentication → Settings → Enable Captcha.
+        ...(captchaToken ? { captchaToken } : {}),
       },
     });
     return { error };

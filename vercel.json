@@ -12,7 +12,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' 'strict-dynamic' 'nonce-CSP_NONCE_PLACEHOLDER' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com https://lh3.googleusercontent.com https://api.dicebear.com https://www.google-analytics.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://res.cloudinary.com https://www.google-analytics.com https://www.googletagmanager.com https://connect.facebook.net; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://connect.facebook.net https://js.hcaptcha.com https://newassets.hcaptcha.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://newassets.hcaptcha.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com https://lh3.googleusercontent.com https://api.dicebear.com https://www.google-analytics.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://res.cloudinary.com https://www.google-analytics.com https://www.googletagmanager.com https://connect.facebook.net https://hcaptcha.com https://*.hcaptcha.com; frame-src https://newassets.hcaptcha.com https://hcaptcha.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
         },
         {
           "key": "X-Frame-Options",
