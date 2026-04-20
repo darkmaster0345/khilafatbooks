@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
 import { resolveProductImage } from '@/lib/productImages';
@@ -83,6 +84,18 @@ export function toLegacyProduct(p: Product): LegacyProduct {
 
 export function useProducts(options: { includeHidden?: boolean; minimal?: boolean } = {}) {
   const { includeHidden = false, minimal = false } = options;
+  const queryClient = useQueryClient();
+
+  // When auth state changes (user logs in/out), invalidate the products cache
+  // so the query re-runs with the new session credentials.
+  useEffect(() => {
+    const { data: { subscription } } = db.auth.onAuthStateChange((event: string) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [queryClient]);
 
   const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ['products', includeHidden, minimal],
@@ -109,7 +122,7 @@ export function useProducts(options: { includeHidden?: boolean; minimal?: boolea
       }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 0,
+    retry: 1,
   });
 
   return { products, loading: isLoading, error, refetch };
