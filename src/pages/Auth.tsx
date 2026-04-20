@@ -1,5 +1,5 @@
 import { SEOHead } from '@/components/SEOHead';
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
@@ -8,15 +8,46 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mail, Lock, User, Phone, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
+import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 
 const Auth = () => {
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, signIn, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
+  const [internalLoading, setInternalLoading] = useState(false);
+
+  const { executeRecaptcha } = useGoogleReCaptcha();
+
+  const handleSignUp = useCallback(async () => {
+    if (!executeRecaptcha) {
+      toast.error("reCAPTCHA not initialized");
+      return;
+    }
+
+    setInternalLoading(true);
+    try {
+      const token = await executeRecaptcha('signup');
+
+      const { data, error } = await supabase.functions.invoke('signup', {
+        body: { email, password, fullName, phone, captchaToken: token }
+      });
+
+      if (error) throw error;
+
+      toast.success("Account created successfully! Please check your email for verification.");
+      setMode('signin');
+    } catch (err: any) {
+      console.error("Signup error:", err);
+      toast.error(err.message || "Failed to create account");
+    } finally {
+      setInternalLoading(false);
+    }
+  }, [executeRecaptcha, email, password, fullName, phone]);
 
   if (user) return <Navigate to="/" replace />;
 
@@ -25,9 +56,11 @@ const Auth = () => {
     if (mode === 'signin') {
       await signIn(email, password);
     } else {
-      await signUp(email, password, fullName);
+      await handleSignUp();
     }
   };
+
+  const loading = authLoading || internalLoading;
 
   return (
     <>
