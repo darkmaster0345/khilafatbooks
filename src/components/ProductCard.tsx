@@ -145,11 +145,13 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
           </button>
 
           {/* Availability badge */}
-          <div className="absolute right-3 bottom-3 group-hover:bottom-16 transition-all duration-400 z-10">
-            <Badge className="bg-background/80 backdrop-blur-md text-foreground text-[10px] border-border/50 font-semibold shadow-lg px-2.5 py-1">
-              Coming Soon
-            </Badge>
-          </div>
+          {!product.inStock && (
+            <div className="absolute right-3 bottom-3 group-hover:bottom-16 transition-all duration-400 z-10">
+              <Badge variant="destructive" className="backdrop-blur-md text-destructive-foreground text-[10px] border-0 font-semibold shadow-lg px-2.5 py-1">
+                Sold Out
+              </Badge>
+            </div>
+          )}
         </Link>
 
         {/* Content */}

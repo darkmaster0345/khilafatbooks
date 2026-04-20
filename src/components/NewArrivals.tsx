@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -8,13 +9,16 @@ import { ProductSkeletonGrid } from '@/components/ProductSkeleton';
 const NewArrivals = () => {
   const { products, loading } = useProducts();
   
-  const fourteenDaysAgo = new Date();
-  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+  const fourteenDaysAgo = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 14);
+    return d;
+  }, []);
   
-  const newProducts = products
+  const newProducts = useMemo(() => products
     .filter(p => new Date(p.created_at) >= fourteenDaysAgo)
     .slice(0, 4)
-    .map(toLegacyProduct);
+    .map(toLegacyProduct), [products, fourteenDaysAgo]);
 
   if (!loading && newProducts.length === 0) return null;
 

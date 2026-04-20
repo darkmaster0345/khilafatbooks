@@ -87,26 +87,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     initializeAuth();
 
-    const { data: { subscription } } = db.auth.onAuthStateChange(async (_event, session) => {
+    const { data: { subscription } } = db.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
       if (window.location.hash.includes("access_token=")) {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
 
+      // Batch these updates
+      const newUser = session?.user ?? null;
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(newUser);
 
       if (typeof window !== 'undefined') {
-        (window as any).__kbUser = session?.user ?? null;
+        (window as any).__kbUser = newUser;
       }
 
-      if (session?.user) {
+      // Only show loading if we actually need to perform a check
+      if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
         setLoading(true);
         await checkAdminStatus(session.user);
         setLoading(false);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         setIsAdmin(false);
+        setLoading(false);
+      } else {
+        // For events like TOKEN_REFRESHED, we don't necessarily need to toggle loading
         setLoading(false);
       }
     });

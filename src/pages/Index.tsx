@@ -10,7 +10,7 @@ import { OrganizationJsonLd, LocalBusinessJsonLd } from '@/components/JsonLd';
 import BookDiscoveryQuiz from '@/components/BookDiscoveryQuiz';
 import NewArrivals from '@/components/NewArrivals';
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import ProductCard from '@/components/ProductCard';
 import { ProductSkeletonGrid } from '@/components/ProductSkeleton';
@@ -39,7 +39,7 @@ const categories = [
 
 const Index = () => {
   const { products, loading } = useProducts();
-  const featured = products.slice(0, 6).map(toLegacyProduct);
+  const featured = useMemo(() => products.slice(0, 6).map(toLegacyProduct), [products]);
   const { items } = useCart();
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({

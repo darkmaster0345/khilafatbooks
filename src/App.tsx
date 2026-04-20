@@ -18,8 +18,7 @@ import PageTransition from "@/components/PageTransition";
 import MaintenanceModal from "@/components/MaintenanceModal";
 import { usePluginSettings } from "@/hooks/usePluginSettings";
 
-// PERF FIX (Finding 5.1): All routes are lazy-loaded for code splitting.
-// Index and ProductDetail were previously eagerly imported (~1 MB bundle hit).
+// Routes
 const Index = lazy(() => import("./pages/Index"));
 const ProductDetail = lazy(() => import("./pages/ProductDetail"));
 const Shop = lazy(() => import("./pages/Shop"));
@@ -40,19 +39,26 @@ const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 
-// Lazy-loaded heavy widgets
+// Widgets
 const WhatsAppWidget = lazy(() => import("@/components/WhatsAppWidget"));
 const AIChatWidget = lazy(() => import("@/components/AIChatWidget"));
 const ExitIntentDialog = lazy(() => import("@/components/ExitIntentDialog"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const AppLayout = () => {
   const location = useLocation();
-  const isAdmin = location.pathname.startsWith('/admin');
+  const isAdminPath = location.pathname.startsWith('/admin');
   const { isPluginEnabled } = usePluginSettings();
 
-  if (isAdmin) {
+  if (isAdminPath) {
     return (
       <Suspense fallback={<BrandedLoader />}>
         <Admin />
@@ -115,14 +121,8 @@ const App = () => (
               <Toaster />
               <Sonner />
               <BrowserRouter>
-                <Suspense fallback={<BrandedLoader />}>
-                  <Routes>
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="*" element={<AppLayout />} />
-                  </Routes>
-                </Suspense>
+                <AppLayout />
               </BrowserRouter>
-              
             </WishlistProvider>
           </CartProvider>
         </AuthProvider>
