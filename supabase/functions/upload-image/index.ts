@@ -54,9 +54,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Only allow admins to upload images
-    const { data: roleData } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
-    if (!roleData) {
+    // Only allow admins to upload images (JWT-based check, RPC functions deleted)
+    const isAdmin = user.app_metadata?.role === "admin";
+    if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

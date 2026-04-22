@@ -119,17 +119,17 @@ const Header = () => {
         <div className="flex items-center gap-2">
           {user ? (
             <div className="hidden md:flex items-center gap-2">
-              <Link to="/orders" className="hidden md:hidden items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
+              <Link to="/profile" className="flex items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                   <User className="h-3 w-3 text-primary" />
                 </div>
-                <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">My Orders</span>
+                <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">Profile</span>
               </Link>
-              <Link to="/library" className="hidden md:hidden items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
+              <Link to="/orders" className="hidden md:hidden items-center gap-2 rounded-lg bg-muted/50 px-3 py-1.5 hover:bg-muted transition-colors">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                   <BookOpen className="h-3 w-3 text-primary" />
                 </div>
-                <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">My Library</span>
+                <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">My Orders</span>
               </Link>
               <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1 text-xs text-muted-foreground hover:text-destructive h-8" title="Sign Out">
                 <LogOut className="h-3 w-3" />
@@ -235,17 +235,30 @@ const Header = () => {
                 )}
               </Link>
               {user && (
-                <Link
-                  to="/orders"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
-                    location.pathname === '/orders'
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-foreground hover:bg-muted'
-                  }`}
-                >
-                  My Orders
-                </Link>
+                <>
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors flex items-center gap-2 ${
+                      location.pathname === '/profile'
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <User className="h-4 w-4" /> My Profile
+                  </Link>
+                  <Link
+                    to="/orders"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
+                      location.pathname === '/orders'
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    My Orders
+                  </Link>
+                </>
               )}
               {showAdminLink && (
                 <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-4 py-2.5 text-sm font-medium text-accent hover:bg-muted">

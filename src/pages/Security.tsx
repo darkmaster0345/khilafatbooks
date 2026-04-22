@@ -211,7 +211,7 @@ const Security = () => {
             <ol className="list-decimal pl-6 mb-4">
               <li><strong>Do not exploit</strong> the vulnerability or access others' data</li>
               <li><strong>Do not share</strong> the vulnerability publicly until it's fixed</li>
-              <li><strong>Email us immediately</strong> at <a href="mailto:security@khilafatbooks.com" className="text-primary hover:underline">security@khilafatbooks.com</a></li>
+              <li><strong>Email us immediately</strong> at <a href="mailto:ubaid0345@proton.me" className="text-primary hover:underline">ubaid0345@proton.me</a></li>
               <li>Include detailed steps to reproduce the issue</li>
               <li>Allow us reasonable time to investigate and fix before disclosing publicly</li>
             </ol>
@@ -244,8 +244,8 @@ const Security = () => {
               For security-related inquiries or to report issues:
             </p>
             <div className="space-y-2">
-              <p><strong>General Security:</strong> <a href="mailto:security@khilafatbooks.com" className="text-primary hover:underline">security@khilafatbooks.com</a></p>
-              <p><strong>General Support:</strong> <a href="mailto:support@khilafatbooks.com" className="text-primary hover:underline">support@khilafatbooks.com</a></p>
+              <p><strong>General Security:</strong> <a href="mailto:ubaid0345@proton.me" className="text-primary hover:underline">ubaid0345@proton.me</a></p>
+              <p><strong>General Support:</strong> <a href="mailto:ubaid0345@proton.me" className="text-primary hover:underline">ubaid0345@proton.me</a></p>
               <p><strong>WhatsApp:</strong> +92 345 2867726</p>
             </div>
           </section>

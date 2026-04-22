@@ -57,8 +57,8 @@ Deno.serve(async (req) => {
 
     const userId = user.id;
 
-    // Check if user is admin
-    const { data: isAdmin } = await userClient.rpc("is_admin");
+    // Check if user is admin (JWT-based check, RPC functions deleted)
+    const isAdmin = user.app_metadata?.role === "admin";
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden: Admin access required" }), {
         status: 403,

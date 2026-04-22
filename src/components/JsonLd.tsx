@@ -151,7 +151,7 @@ export const LocalBusinessJsonLd = () => (
       '@id': BASE_URL,
       url: BASE_URL,
       telephone: '+92 345 2867726',
-      email: 'support@khilafatbooks.com',
+      email: 'ubaid0345@proton.me',
       priceRange: 'PKR',
       address: {
         '@type': 'PostalAddress',

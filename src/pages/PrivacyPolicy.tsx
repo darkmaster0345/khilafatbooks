@@ -170,7 +170,7 @@ const PrivacyPolicy = () => {
               <li><strong>Right to Withdraw Consent:</strong> Withdraw previously given consent</li>
             </ul>
             <p className="text-sm text-blue-700 dark:text-blue-300">
-              To exercise these rights, visit your <a href="/profile" className="underline">Profile Settings</a> or contact us at support@khilafatbooks.com.
+              To exercise these rights, visit your <a href="/profile" className="underline">Profile Settings</a> or contact us at ubaid0345@proton.me.
             </p>
           </section>
 
@@ -220,7 +220,7 @@ const PrivacyPolicy = () => {
               <p><strong>Data Protection Officer</strong><br />
               Khilafat Books<br />
               Main Rashid Minhas Road, Karachi, Pakistan<br />
-              Email: <a href="mailto:privacy@khilafatbooks.com" className="text-primary hover:underline">privacy@khilafatbooks.com</a><br />
+              Email: <a href="mailto:ubaid0345@proton.me" className="text-primary hover:underline">ubaid0345@proton.me</a><br />
               WhatsApp: +92 345 2867726</p>
             </div>
           </section>

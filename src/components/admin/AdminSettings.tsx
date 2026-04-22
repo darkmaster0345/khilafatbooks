@@ -18,7 +18,7 @@ const AdminSettings = () => {
     free_shipping_threshold: '5000',
     shipping_fee: '500',
     whatsapp_number: '923352706540',
-    store_email: 'support@khilafatbooks.com',
+    store_email: 'ubaid0345@proton.me',
     zakat_enabled: true,
     zakat_rate: '2.5',
     order_prefix: 'KB',

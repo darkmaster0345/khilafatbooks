@@ -27,7 +27,7 @@ const Forbidden = () => {
           </Button>
         </div>
         <p className="mt-8 text-sm text-muted-foreground">
-          Need help? <a href="mailto:support@khilafatbooks.com" className="text-primary hover:underline">Contact Support</a>
+          Need help? <a href="mailto:ubaid0345@proton.me" className="text-primary hover:underline">Contact Support</a>
         </p>
       </div>
     </>

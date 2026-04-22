@@ -34,7 +34,7 @@ const InternalServerError = () => {
         <div className="mt-8 p-4 bg-muted rounded-xl max-w-md">
           <p className="text-sm text-muted-foreground">
             If the problem persists, please contact us at{' '}
-            <a href="mailto:support@khilafatbooks.com" className="text-primary hover:underline">support@khilafatbooks.com</a>
+            <a href="mailto:ubaid0345@proton.me" className="text-primary hover:underline">ubaid0345@proton.me</a>
             {' '}or WhatsApp: +92 345 2867726
           </p>
         </div>

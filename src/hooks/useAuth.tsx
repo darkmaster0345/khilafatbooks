@@ -30,20 +30,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // 1. Check signed app metadata first.
-      if (u.app_metadata?.role === 'admin') {
-        setIsAdmin(true);
-        return true;
-      }
-
-      // 2. Check RPC as last resort.
-      const { data, error } = await db.rpc('is_admin');
-      if (error) {
-        console.error('Error checking admin status via RPC:', error);
-      }
-      const isRpcAdmin = !!data;
-      setIsAdmin(isRpcAdmin);
-      return isRpcAdmin;
+      // JWT-based admin check only
+      const isJwtAdmin = u.app_metadata?.role === 'admin';
+      setIsAdmin(isJwtAdmin);
+      return isJwtAdmin;
     } catch (err) {
       console.error('Unexpected error in checkAdminStatus:', err);
       setIsAdmin(false);

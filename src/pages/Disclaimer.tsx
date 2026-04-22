@@ -147,7 +147,7 @@ const Disclaimer = () => {
             <p className="mt-4">
               <strong>Khilafat Books</strong><br />
               Main Rashid Minhas Road, Karachi, Pakistan<br />
-              Email: support@khilafatbooks.com<br />
+              Email: ubaid0345@proton.me<br />
               WhatsApp: +92 345 2867726
             </p>
           </section>

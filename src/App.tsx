@@ -45,6 +45,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Disclaimer = lazy(() => import("./pages/Disclaimer"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const Security = lazy(() => import("./pages/Security"));
+const Profile = lazy(() => import("./pages/Profile"));
 
 // Widgets
 const WhatsAppWidget = lazy(() => import("@/components/WhatsAppWidget"));
@@ -104,6 +105,7 @@ const AppLayout = () => {
                 <Route path="/disclaimer" element={<PageTransition><Disclaimer /></PageTransition>} />
                 <Route path="/cookie-policy" element={<PageTransition><CookiePolicy /></PageTransition>} />
                 <Route path="/security" element={<PageTransition><Security /></PageTransition>} />
+                <Route path="/profile" element={<PageTransition><Profile /></PageTransition>} />
                 <Route path="/403" element={<PageTransition><Forbidden /></PageTransition>} />
                 <Route path="/500" element={<PageTransition><InternalServerError /></PageTransition>} />
                 <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />

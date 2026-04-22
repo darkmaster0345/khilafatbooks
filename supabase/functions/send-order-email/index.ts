@@ -82,13 +82,11 @@ Deno.serve(async (req) => {
     if (authError || !user) throw new Error("Unauthorized");
 
     let requireOwnership = false;
+    const isAdminUser = user.app_metadata?.role === "admin";
     if (newStatus === 'pending') {
-      const { data: adminCheck } = await userClient.rpc("is_admin");
-      const isAdminUser = !!adminCheck;
       if (!isAdminUser) requireOwnership = true;
     } else {
-      const { data: adminCheck } = await userClient.rpc("is_admin");
-      if (!adminCheck) {
+      if (!isAdminUser) {
         return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
