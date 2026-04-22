@@ -146,9 +146,7 @@ const Admin = () => {
 
   if (!user) return <Navigate to="/auth" replace />;
 
-  const isHardcodedAdmin = user.email?.toLowerCase() === 'arifubaid0345@gmail.com';
-
-  if (!isAdmin && !isHardcodedAdmin) {
+  if (!isAdmin) {
     return <Navigate to="/auth" replace />;
   }
 

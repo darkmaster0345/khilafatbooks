@@ -30,20 +30,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // 1. Check hardcoded fallback
-      const email = u.email?.toLowerCase();
-      if (email === 'arifubaid0345@gmail.com') {
+      // 1. Check signed app metadata first.
+      if (u.app_metadata?.role === 'admin') {
         setIsAdmin(true);
         return true;
       }
 
-      // 2. Check metadata
-      if (u.app_metadata?.role === 'admin' || u.user_metadata?.role === 'admin') {
-        setIsAdmin(true);
-        return true;
-      }
-
-      // 3. Check RPC as last resort
+      // 2. Check RPC as last resort.
       const { data, error } = await db.rpc('is_admin');
       if (error) {
         console.error('Error checking admin status via RPC:', error);
@@ -68,10 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         setSession(session);
         setUser(session?.user ?? null);
-
-        if (typeof window !== 'undefined') {
-          (window as any).__kbUser = session?.user ?? null;
-        }
 
         if (session?.user) {
           await checkAdminStatus(session.user);
@@ -98,10 +87,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const newUser = session?.user ?? null;
       setSession(session);
       setUser(newUser);
-
-      if (typeof window !== 'undefined') {
-        (window as any).__kbUser = newUser;
-      }
 
       // Only show loading if we actually need to perform a check
       if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {

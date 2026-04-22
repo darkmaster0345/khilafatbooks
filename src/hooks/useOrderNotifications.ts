@@ -30,7 +30,7 @@ export function useOrderNotifications() {
     };
 
     const channel = db
-      .channel('admin-order-notifications')
+      .channel(`admin-orders-${crypto.randomUUID()}`)
       .on(
         'postgres_changes',
         {
@@ -42,7 +42,7 @@ export function useOrderNotifications() {
           const order = payload.new as any;
           playSound();
           toast({
-            title: '🛒 New Order!',
+            title: 'New Order',
             description: `${order.customer_name} placed an order for ${formatPKR(order.total)}`,
           });
         }

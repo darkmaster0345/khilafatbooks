@@ -295,13 +295,9 @@ Deno.serve(async (req) => {
           useFallback = true;
         } else {
           return new Response(
-            JSON.stringify({
-              error: "Gemini API Error",
-              details: errorData.error?.message || "Internal service error",
-              status: geminiRes.status
-            }),
+            JSON.stringify({ error: "AI service temporarily unavailable" }),
             {
-              status: geminiRes.status === 401 ? 401 : 502,
+              status: 502,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
             },
           );
@@ -340,11 +336,7 @@ Deno.serve(async (req) => {
           const errorData = await groqRes.json().catch(() => ({}));
           console.error("Groq API error:", errorData);
           return new Response(
-            JSON.stringify({
-              error: "AI Service Error",
-              details: "Both primary and fallback AI services failed.",
-              status: groqRes.status
-            }),
+            JSON.stringify({ error: "AI service temporarily unavailable" }),
             {
               status: 502,
               headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -357,10 +349,7 @@ Deno.serve(async (req) => {
       } catch (err) {
         console.error("Groq fallback error:", err);
         return new Response(
-          JSON.stringify({
-            error: "AI Service Error",
-            details: "An error occurred while calling the fallback service.",
-          }),
+          JSON.stringify({ error: "AI service temporarily unavailable" }),
           {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -373,9 +362,7 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error("chat error:", err);
     return new Response(
-      JSON.stringify({
-        error: err instanceof Error ? err.message : "Unknown error",
-      }),
+      JSON.stringify({ error: "Request failed" }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

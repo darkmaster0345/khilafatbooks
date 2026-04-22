@@ -28,8 +28,7 @@ const Header = () => {
   const { wishlist } = useWishlist();
   const { user, signOut, isAdmin } = useAuth();
 
-  const isOwnerAdmin = user?.email?.toLowerCase() === 'arifubaid0345@gmail.com';
-  const showAdminLink = isAdmin || isOwnerAdmin;
+  const showAdminLink = isAdmin;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);

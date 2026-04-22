@@ -8,17 +8,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mail, Lock, User, Phone, ArrowRight, Loader2, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGoogleReCaptcha } from 'react-google-recaptcha-v3';
 import { toast } from 'sonner';
 import logo from '@/assets/logo.png';
 import HCaptcha from '@hcaptcha/react-hcaptcha';
 
 // SECURITY FIX (Finding 3.3): hCaptcha site key — add VITE_HCAPTCHA_SITE_KEY to your .env
 // Get your site key at https://dashboard.hcaptcha.com/
-const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY || '10000000-ffff-ffff-ffff-000000000001';
+const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
 
 const Auth = () => {
-  const { user, signIn, loading: authLoading } = useAuth();
+  const { user, signIn, signUp, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,6 +34,10 @@ const Auth = () => {
     if (mode === 'signin') {
       await signIn(email, password);
     } else {
+      if (!HCAPTCHA_SITE_KEY) {
+        toast.error('Signup is temporarily unavailable. Captcha is not configured.');
+        return;
+      }
       // Require a captcha token before signup to prevent bot registration
       if (!captchaToken) return;
       await signUp(email, password, fullName, captchaToken);
@@ -127,13 +130,19 @@ const Auth = () => {
             {/* SECURITY (Finding 3.3): hCaptcha widget — only shown during signup */}
             {mode === 'signup' && (
               <div className="flex justify-center mt-1">
-                <HCaptcha
-                  ref={captchaRef}
-                  sitekey={HCAPTCHA_SITE_KEY}
-                  onVerify={(token) => setCaptchaToken(token)}
-                  onExpire={() => setCaptchaToken(null)}
-                  theme="auto"
-                />
+                {HCAPTCHA_SITE_KEY ? (
+                  <HCaptcha
+                    ref={captchaRef}
+                    sitekey={HCAPTCHA_SITE_KEY}
+                    onVerify={(token) => setCaptchaToken(token)}
+                    onExpire={() => setCaptchaToken(null)}
+                    theme="auto"
+                  />
+                ) : (
+                  <p className="text-xs text-destructive text-center">
+                    Captcha is not configured. Signup is currently disabled.
+                  </p>
+                )}
               </div>
             )}
 

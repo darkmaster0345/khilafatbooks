@@ -17,25 +17,29 @@ export interface Product {
   type: string;
   is_new: boolean;
   is_halal: boolean;
-  ethical_source: string | null;
+  ethical_source?: string | null;
   rating: number;
   reviews: number;
   in_stock: boolean;
-  stock_quantity: number;
-  low_stock_threshold: number;
+  stock_quantity?: number;
+  low_stock_threshold?: number;
   series: string | null;
   series_order: number | null;
-  bundle_discount: number | null;
-  is_hidden: boolean;
+  bundle_discount?: number | null;
+  is_hidden?: boolean;
+  digital_file_url?: string | null;
   created_at: string;
   updated_at: string;
 }
 
-// Cleaned up safe columns to select for public-facing product queries
-export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,ethical_source,rating,reviews,in_stock,stock_quantity,low_stock_threshold,series,series_order,bundle_discount,is_hidden,created_at,updated_at' as const;
+// Public product columns intentionally exclude internal inventory/admin metadata.
+export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
 
 // Minimal columns for high-performance list views
-export const PRODUCT_MINIMAL_COLUMNS = 'id,name,name_ar,price,original_price,image_url,category,type,is_new,is_halal,rating,reviews,in_stock,is_hidden' as const;
+export const PRODUCT_MINIMAL_COLUMNS = 'id,name,name_ar,price,original_price,image_url,category,type,is_new,is_halal,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
+
+// Admin queries can include non-public product metadata.
+export const PRODUCT_ADMIN_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,ethical_source,rating,reviews,in_stock,stock_quantity,low_stock_threshold,series,series_order,bundle_discount,is_hidden,digital_file_url,created_at,updated_at' as const;
 
 // Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
@@ -101,9 +105,15 @@ export function useProducts(options: { includeHidden?: boolean; minimal?: boolea
     queryKey: ['products', includeHidden, minimal],
     queryFn: async () => {
       try {
+        const selectedColumns = includeHidden
+          ? PRODUCT_ADMIN_COLUMNS
+          : minimal
+            ? PRODUCT_MINIMAL_COLUMNS
+            : PRODUCT_PUBLIC_COLUMNS;
+
         let query = db
           .from('products')
-          .select(minimal ? PRODUCT_MINIMAL_COLUMNS : PRODUCT_PUBLIC_COLUMNS);
+          .select(selectedColumns);
 
         if (!includeHidden) {
           query = query.or('is_hidden.is.null,is_hidden.eq.false');

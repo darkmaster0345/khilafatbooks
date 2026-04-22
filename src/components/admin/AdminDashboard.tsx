@@ -23,7 +23,7 @@ interface AdminDashboardProps {
 const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const { products } = useProducts();
+  const { products } = useProducts({ includeHidden: true });
 
   useEffect(() => {
     const fetchOrders = async () => {

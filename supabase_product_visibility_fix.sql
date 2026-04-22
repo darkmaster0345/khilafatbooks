@@ -47,12 +47,10 @@ BEGIN
         USING (
           (auth.jwt() ->> 'email') = 'arifubaid0345@gmail.com'
           OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
-          OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
         )
         WITH CHECK (
           (auth.jwt() ->> 'email') = 'arifubaid0345@gmail.com'
           OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
-          OR (auth.jwt() -> 'user_metadata' ->> 'role') = 'admin'
         );
     $policy$;
   END IF;
