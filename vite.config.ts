@@ -3,7 +3,6 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import sitemap from 'vite-plugin-sitemap';
 import sitemapRoutes from './src/sitemap-routes.json';
-import csp from 'vite-plugin-csp';
 
 const SITE_URL = process.env.VITE_SITE_URL || 'https://khilafatbooks.vercel.app';
 
@@ -22,21 +21,6 @@ export default defineConfig(({ mode }) => ({
       hostname: SITE_URL,
       dynamicRoutes: sitemapRoutes,
       outDir: 'dist',
-    }),
-    csp({
-      policy: {
-        'default-src': ["'self'"],
-        'script-src': ["'self'", "https://www.googletagmanager.com", "https://www.google-analytics.com", "https://connect.facebook.net", "https://t.contentsquare.net"],
-        'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        'font-src': ["'self'", "https://fonts.gstatic.com"],
-        'img-src': ["'self'", "data:", "blob:", "https://*.supabase.co", "https://res.cloudinary.com", "https://lh3.googleusercontent.com", "https://api.dicebear.com", "https://www.google-analytics.com"],
-        'connect-src': ["'self'", "https://*.supabase.co", "wss://*.supabase.co", "https://res.cloudinary.com", "https://www.google-analytics.com", "https://www.googletagmanager.com", "https://connect.facebook.net"],
-        'frame-src': ["'none'"],
-        'frame-ancestors': ["'none'"],
-        'object-src': ["'none'"],
-        'base-uri': ["'self'"],
-        'form-action': ["'self'"],
-      }
     }),
   ],
   resolve: {
