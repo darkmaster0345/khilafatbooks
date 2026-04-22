@@ -50,6 +50,11 @@ const AdminProducts = () => {
     in_stock: true,
     is_new: false,
     is_halal: false,
+    is_used: false,
+    condition_description: '',
+    stock_quantity: 0,
+    low_stock_threshold: 5,
+    reviews_enabled: true,
     image_url: '',
     digital_file_url: ''
   });
@@ -161,6 +166,11 @@ const AdminProducts = () => {
       in_stock: true,
       is_new: false,
       is_halal: false,
+      is_used: false,
+      condition_description: '',
+      stock_quantity: 0,
+      low_stock_threshold: 5,
+      reviews_enabled: true,
       image_url: '',
       digital_file_url: ''
     });
@@ -183,7 +193,12 @@ const AdminProducts = () => {
       in_stock: product.in_stock,
       is_new: product.is_new,
       is_halal: product.is_halal,
-      image_url: product.image_url,
+      is_used: product.is_used || false,
+      condition_description: product.condition_description || '',
+      stock_quantity: product.stock_quantity || 0,
+      low_stock_threshold: product.low_stock_threshold || 5,
+      reviews_enabled: product.reviews_enabled !== false,
+      image_url: product.image_url || '',
       digital_file_url: product.digital_file_url || ''
     });
   };
@@ -275,6 +290,54 @@ const AdminProducts = () => {
                 <input type="checkbox" checked={form.in_stock} onChange={e => setForm({ ...form, in_stock: e.target.checked })} className="rounded border-input" />
                 <span className="text-sm font-medium">In Stock</span>
               </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.reviews_enabled} onChange={e => setForm({ ...form, reviews_enabled: e.target.checked })} className="rounded border-input" />
+                <span className="text-sm font-medium">Enable Reviews</span>
+              </label>
+            </div>
+
+            <div className="border-t border-border pt-5 mt-2">
+              <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Inventory Management
+              </p>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Stock Quantity</label>
+                  <Input type="number" min="0" value={form.stock_quantity} onChange={e => setForm({ ...form, stock_quantity: parseInt(e.target.value) || 0 })} className="mt-1" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Low Stock Alert At</label>
+                  <Input type="number" min="0" value={form.low_stock_threshold} onChange={e => setForm({ ...form, low_stock_threshold: parseInt(e.target.value) || 0 })} className="mt-1" />
+                </div>
+                <div className="flex items-end">
+                  <p className="text-xs text-muted-foreground pb-2">
+                    Auto: Out of stock when quantity = 0
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-border pt-5 mt-2">
+              <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                <Package className="h-4 w-4 text-amber-500" />
+                Used/Pre-Loved Book
+              </p>
+              <label className="flex items-center gap-2 cursor-pointer mb-3">
+                <input type="checkbox" checked={form.is_used} onChange={e => setForm({ ...form, is_used: e.target.checked })} className="rounded border-input" />
+                <span className="text-sm font-medium">This is a used/pre-owned book</span>
+              </label>
+              {form.is_used && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground">Condition Description</label>
+                  <textarea
+                    value={form.condition_description}
+                    onChange={e => setForm({ ...form, condition_description: e.target.value })}
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]"
+                    placeholder="Describe the condition of the used book (e.g., 'Like new, minor wear on corners')..."
+                  />
+                </div>
+              )}
             </div>
           </div>
 

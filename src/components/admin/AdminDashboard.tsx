@@ -7,6 +7,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { Button } from '@/components/ui/button';
 import LiveActivityFeed from './LiveActivityFeed';
+import LowStockAlert from './LowStockAlert';
 
 interface Order {
   id: string;
@@ -278,6 +279,9 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* Low Stock Alerts */}
+      <LowStockAlert />
 
       {/* Live Activity Feed */}
       <LiveActivityFeed />

@@ -17,12 +17,15 @@ export interface Product {
   type: string;
   is_new: boolean;
   is_halal: boolean;
+  is_used?: boolean;
+  condition_description?: string | null;
   ethical_source?: string | null;
   rating: number;
   reviews: number;
   in_stock: boolean;
   stock_quantity?: number;
   low_stock_threshold?: number;
+  reviews_enabled?: boolean;
   series: string | null;
   series_order: number | null;
   bundle_discount?: number | null;
@@ -33,13 +36,13 @@ export interface Product {
 }
 
 // Public product columns intentionally exclude internal inventory/admin metadata.
-export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
+export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,is_used,condition_description,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
 
 // Minimal columns for high-performance list views
-export const PRODUCT_MINIMAL_COLUMNS = 'id,name,name_ar,price,original_price,image_url,category,type,is_new,is_halal,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
+export const PRODUCT_MINIMAL_COLUMNS = 'id,name,name_ar,price,original_price,image_url,category,type,is_new,is_halal,is_used,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
 
 // Admin queries can include non-public product metadata.
-export const PRODUCT_ADMIN_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,ethical_source,rating,reviews,in_stock,stock_quantity,low_stock_threshold,series,series_order,bundle_discount,is_hidden,digital_file_url,created_at,updated_at' as const;
+export const PRODUCT_ADMIN_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,is_used,condition_description,ethical_source,rating,reviews,in_stock,stock_quantity,low_stock_threshold,reviews_enabled,series,series_order,bundle_discount,is_hidden,digital_file_url,created_at,updated_at' as const;
 
 // Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
