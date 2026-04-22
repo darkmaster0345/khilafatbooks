@@ -114,7 +114,10 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // Sync to DB if logged in
     if (user) {
-      db.from('wishlists').insert({ user_id: user.id, product_id: product.id } as any).then();
+      db.from('wishlists').insert({ user_id: user.id, product_id: product.id } as any)
+        .then(({ error }) => {
+          if (error) console.error('Failed to add to wishlist:', error);
+        });
     }
   }, [user]);
 
@@ -123,7 +126,10 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
     // Sync to DB if logged in
     if (user) {
-      db.from('wishlists').delete().eq('user_id', user.id).eq('product_id', productId).then();
+      db.from('wishlists').delete().eq('user_id', user.id).eq('product_id', productId)
+        .then(({ error }) => {
+          if (error) console.error('Failed to remove from wishlist:', error);
+        });
     }
   }, [user]);
 
