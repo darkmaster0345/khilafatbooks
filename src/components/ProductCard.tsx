@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from '@/lib/productImages';
 import OptimizedImage from './OptimizedImage';
 import LeadCaptureModal from './LeadCaptureModal';
+import UsedTag from './UsedTag';
 
 const cardVariants = {
   hidden: { opacity: 0, y: 32 },
@@ -114,6 +115,9 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             )}
             {product.isNew && (
               <Badge className="bg-accent text-accent-foreground text-[10px] font-semibold shadow-md">New</Badge>
+            )}
+            {product.isUsed && (
+              <UsedTag conditionDescription={product.conditionDescription} className="text-[10px]" />
             )}
             {product.type === 'digital' && (
               <Badge variant="secondary" className="text-[10px] shadow-md backdrop-blur-md bg-secondary/90">

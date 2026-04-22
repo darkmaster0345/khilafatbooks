@@ -60,6 +60,8 @@ export interface LegacyProduct {
   type: 'physical' | 'digital';
   isNew?: boolean;
   isHalal?: boolean;
+  isUsed?: boolean;
+  conditionDescription?: string;
   ethicalSource?: string;
   rating: number;
   reviews: number;
@@ -82,6 +84,8 @@ export function toLegacyProduct(p: Product): LegacyProduct {
     type: p.type as 'physical' | 'digital',
     isNew: p.is_new || undefined,
     isHalal: p.is_halal || undefined,
+    isUsed: p.is_used || undefined,
+    conditionDescription: p.condition_description || undefined,
     ethicalSource: p.ethical_source || undefined,
     rating: p.rating,
     reviews: p.reviews,

@@ -29,6 +29,7 @@ import RecentlyViewed from '@/components/RecentlyViewed';
 import { SEOHead } from '@/components/SEOHead';
 import { productSchema } from '@/lib/seo-schemas';
 import WhatsAppIcon from '@/components/WhatsAppIcon';
+import UsedTag from '@/components/UsedTag';
 import BrandedLoader from '@/components/BrandedLoader';
 import SmartSuggest from '@/components/SmartSuggest';
 import StickyAddToCart from '@/components/StickyAddToCart';
@@ -221,6 +222,12 @@ const ProductDetail = () => {
             </div>
 
             <div className="mt-10 space-y-3">
+              {product.isUsed && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-50 border border-amber-200">
+                  <UsedTag conditionDescription={product.conditionDescription} className="animate-none" />
+                  <span className="text-sm font-bold text-amber-800">Pre-Loved Book</span>
+                </div>
+              )}
               {product.isHalal && (
                 <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/5 border border-primary/10">
                   <BadgeCheck className="h-5 w-5 text-primary" />
