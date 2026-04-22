@@ -23,21 +23,24 @@ interface AdminDashboardProps {
 const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const { products } = useProducts({ includeHidden: true });
+  const [error, setError] = useState<string | null>(null);
+  const { products, isError: productsError, error: productsErrorMsg } = useProducts({ includeHidden: true });
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
+        setError(null);
         const { data, error } = await db.from('orders').select('*').order('created_at', { ascending: false });
         if (error) {
-          // Keep dashboard usable even if RLS blocks this query.
           console.error('Error fetching orders for dashboard:', error);
+          setError(error.message);
           setOrders([]);
         } else if (data) {
           setOrders(data as unknown as Order[]);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Unexpected error fetching orders for dashboard:', err);
+        setError(err?.message || 'Failed to fetch orders');
         setOrders([]);
       } finally {
         setLoading(false);
@@ -279,6 +282,24 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
       {/* Live Activity Feed */}
       <LiveActivityFeed />
 
+      {/* Data Error Banner */}
+      {(error || productsError) && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div>
+              <h3 className="font-semibold text-destructive">Data Access Error</h3>
+              <p className="text-sm text-destructive/80 mt-1">
+                {error || (productsErrorMsg as any)?.message || 'Failed to load data. Check Supabase RLS policies.'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Admin users need SELECT permissions on products and orders tables.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Recent Orders */}
       <div className="rounded-lg border border-border bg-card p-5">
         <div className="flex items-center justify-between mb-4">
@@ -287,6 +308,8 @@ const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
         </div>
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
+        ) : error ? (
+          <p className="text-sm text-destructive py-8 text-center">Failed to load orders: {error}</p>
         ) : orders.length === 0 ? (
           <p className="text-sm text-muted-foreground py-8 text-center">No orders yet.</p>
         ) : (

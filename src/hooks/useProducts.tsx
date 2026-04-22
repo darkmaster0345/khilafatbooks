@@ -135,41 +135,36 @@ export function useProducts(options: { includeHidden?: boolean; minimal?: boolea
     return () => subscription.unsubscribe();
   }, [queryClient]);
 
-  const { data: products = [], isLoading, error, refetch } = useQuery({
+  const { data: products = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['products', includeHidden, minimal],
     queryFn: async () => {
-      try {
-        const selectedColumns = includeHidden
-          ? PRODUCT_ADMIN_COLUMNS
-          : minimal
-            ? PRODUCT_MINIMAL_COLUMNS
-            : PRODUCT_PUBLIC_COLUMNS;
+      const selectedColumns = includeHidden
+        ? PRODUCT_ADMIN_COLUMNS
+        : minimal
+          ? PRODUCT_MINIMAL_COLUMNS
+          : PRODUCT_PUBLIC_COLUMNS;
 
-        let query = db
-          .from('products')
-          .select(selectedColumns);
+      let query = db
+        .from('products')
+        .select(selectedColumns);
 
-        if (!includeHidden) {
-          query = query.or('is_hidden.is.null,is_hidden.eq.false');
-        }
-
-        const { data, error } = await query.order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Supabase error fetching products:', error);
-          throw error;
-        }
-        return data as any as Product[];
-      } catch (err) {
-        console.error('Failed to fetch products:', err);
-        throw err;
+      if (!includeHidden) {
+        query = query.or('is_hidden.is.null,is_hidden.eq.false');
       }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase error fetching products:', error);
+        throw error;
+      }
+      return data as any as Product[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,
   });
 
-  return { products, loading: isLoading, error, refetch };
+  return { products, loading: isLoading, isError, error, refetch };
 }
 
 export const PRODUCT_CATEGORIES = [

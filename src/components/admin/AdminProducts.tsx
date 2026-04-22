@@ -25,7 +25,7 @@ const PRODUCT_CATEGORIES = [
 ];
 
 const AdminProducts = () => {
-  const { products, loading, refetch } = useProducts({ includeHidden: true });
+  const { products, loading, isError, error, refetch } = useProducts({ includeHidden: true });
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [mode, setMode] = useState<'list' | 'add' | 'edit'>('list');
@@ -351,6 +351,13 @@ const AdminProducts = () => {
 
       {loading ? (
         <div className="py-20 text-center"><Loader2 className="h-8 w-8 animate-spin mx-auto text-primary/30" /></div>
+      ) : isError ? (
+        <div className="py-20 text-center border-2 border-dashed border-destructive/30 rounded-3xl bg-destructive/5">
+          <Package className="h-10 w-10 text-destructive/50 mx-auto mb-3" />
+          <p className="text-destructive font-medium mb-2">Failed to load products</p>
+          <p className="text-sm text-muted-foreground mb-4">{(error as any)?.message || 'Check RLS policies in Supabase'}</p>
+          <Button onClick={() => refetch()} variant="outline" size="sm">Retry</Button>
+        </div>
       ) : filtered.length === 0 ? (
         <div className="py-20 text-center border-2 border-dashed border-border rounded-3xl">
           <Package className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
