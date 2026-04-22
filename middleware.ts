@@ -6,16 +6,77 @@ const BOT_AGENTS = [
   'ahrefsbot', 'semrushbot', 'mj12bot',
 ]
 
+// SECURITY FIX (VULNERABILITY 6): Admin route protection
+// Protect /admin routes server-side - return 403 for non-admins
+async function checkAdminAccess(request: Request): Promise<boolean> {
+  const authHeader = request.headers.get('Authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return false
+  }
+
+  const token = authHeader.replace('Bearer ', '')
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase environment variables in middleware')
+    return false
+  }
+
+  try {
+    // Verify the JWT token with Supabase
+    const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'ApiKey': supabaseKey,
+      },
+    })
+
+    if (!response.ok) {
+      return false
+    }
+
+    const userData = await response.json()
+
+    // Check admin status via app_metadata or user_roles
+    const isAdmin =
+      userData.app_metadata?.role === 'admin' ||
+      userData.role === 'admin' ||
+      (userData.user_metadata?.is_admin === true)
+
+    return isAdmin
+  } catch (error) {
+    console.error('Error checking admin access:', error)
+    return false
+  }
+}
+
 /**
  * Vercel Edge Middleware (Standard Web API)
  *
- * This middleware detects search engine bots and rewrites them to
- * pre-rendered static HTML snapshots for SEO.
+ * This middleware:
+ * 1. Detects search engine bots and rewrites them to pre-rendered static HTML snapshots
+ * 2. Protects /admin routes server-side - returns 403 for non-admins
  */
-export default function middleware(request: Request) {
+export default async function middleware(request: Request) {
   const url = new URL(request.url)
   const pathname = url.pathname
   const ua = request.headers.get('user-agent')?.toLowerCase() ?? ''
+
+  // SECURITY FIX (VULNERABILITY 6): Admin route protection
+  if (pathname.startsWith('/admin')) {
+    const isAdmin = await checkAdminAccess(request)
+    if (!isAdmin) {
+      // Return 403 Forbidden for admin routes when not authenticated as admin
+      return new Response('Forbidden - Admin access required', {
+        status: 403,
+        headers: {
+          'Content-Type': 'text/plain',
+          'X-Admin-Required': 'true',
+        },
+      })
+    }
+  }
 
   // Bot Detection & Prerendering Rewrite
   const isBot = BOT_AGENTS.some(bot => ua.includes(bot))

@@ -22,6 +22,120 @@ const getCorsHeaders = (origin: string | null) => {
 };
 
 // ---------------------------------------------------------------------------
+// Rate Limiting (In-Memory)
+// Limits: 10 req/min, 50 req/hour, 100 req/day per user
+// ---------------------------------------------------------------------------
+
+interface RateLimitEntry {
+  minuteCount: number;
+  hourCount: number;
+  dayCount: number;
+  minuteReset: number;
+  hourReset: number;
+  dayReset: number;
+}
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
+
+const MINUTE_LIMIT = 10;
+const HOUR_LIMIT = 50;
+const DAY_LIMIT = 100;
+
+function checkRateLimit(userId: string): { allowed: boolean; retryAfter?: number; message?: string } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+
+  if (!entry) {
+    // First request
+    rateLimitMap.set(userId, {
+      minuteCount: 1,
+      hourCount: 1,
+      dayCount: 1,
+      minuteReset: now + 60 * 1000,
+      hourReset: now + 60 * 60 * 1000,
+      dayReset: now + 24 * 60 * 60 * 1000,
+    });
+    return { allowed: true };
+  }
+
+  // Reset counters if time has passed
+  if (now > entry.minuteReset) {
+    entry.minuteCount = 0;
+    entry.minuteReset = now + 60 * 1000;
+  }
+  if (now > entry.hourReset) {
+    entry.hourCount = 0;
+    entry.hourReset = now + 60 * 60 * 1000;
+  }
+  if (now > entry.dayReset) {
+    entry.dayCount = 0;
+    entry.dayReset = now + 24 * 60 * 60 * 1000;
+  }
+
+  // Check limits
+  if (entry.dayCount >= DAY_LIMIT) {
+    const retryAfter = Math.ceil((entry.dayReset - now) / 1000);
+    return { allowed: false, retryAfter, message: "Daily limit exceeded" };
+  }
+  if (entry.hourCount >= HOUR_LIMIT) {
+    const retryAfter = Math.ceil((entry.hourReset - now) / 1000);
+    return { allowed: false, retryAfter, message: "Hourly limit exceeded" };
+  }
+  if (entry.minuteCount >= MINUTE_LIMIT) {
+    const retryAfter = Math.ceil((entry.minuteReset - now) / 1000);
+    return { allowed: false, retryAfter, message: "Rate limit exceeded" };
+  }
+
+  // Increment counters
+  entry.minuteCount++;
+  entry.hourCount++;
+  entry.dayCount++;
+
+  return { allowed: true };
+}
+
+// ---------------------------------------------------------------------------
+// Input Validation
+// ---------------------------------------------------------------------------
+
+const MAX_MESSAGE_LENGTH = 500;
+const MAX_MESSAGES = 20;
+
+function validateInput(messages: unknown): { valid: boolean; error?: string } {
+  if (!messages || !Array.isArray(messages)) {
+    return { valid: false, error: "Invalid request: messages array required" };
+  }
+
+  if (messages.length > MAX_MESSAGES) {
+    return { valid: false, error: `Too many messages. Maximum ${MAX_MESSAGES} allowed.` };
+  }
+
+  for (const msg of messages) {
+    if (!msg || typeof msg !== "object") {
+      return { valid: false, error: "Invalid message format" };
+    }
+
+    const content = (msg as any).content;
+    let text = "";
+
+    if (typeof content === "string") {
+      text = content;
+    } else if (Array.isArray(content)) {
+      text = content
+        .filter((p: any) => p.type === "text")
+        .map((p: any) => p.text ?? "")
+        .join("");
+    }
+
+    if (text.length > MAX_MESSAGE_LENGTH) {
+      return { valid: false, error: `Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.` };
+    }
+  }
+
+  return { valid: true };
+}
+
+// ---------------------------------------------------------------------------
 // Product catalog cache
 // ---------------------------------------------------------------------------
 
@@ -234,7 +348,39 @@ Deno.serve(async (req) => {
       });
     }
 
+    // SECURITY: Rate limiting per user
+    const rateLimitResult = checkRateLimit(user.id);
+    if (!rateLimitResult.allowed) {
+      console.warn(`Rate limit exceeded for user ${user.id}: ${rateLimitResult.message}`);
+      return new Response(
+        JSON.stringify({
+          error: rateLimitResult.message,
+          retryAfter: rateLimitResult.retryAfter,
+        }),
+        {
+          status: 429,
+          headers: {
+            ...corsHeaders,
+            "Content-Type": "application/json",
+            "Retry-After": String(rateLimitResult.retryAfter || 60),
+          },
+        },
+      );
+    }
+
     const { messages } = await req.json();
+
+    // SECURITY: Input validation
+    const validationResult = validateInput(messages);
+    if (!validationResult.valid) {
+      return new Response(
+        JSON.stringify({ error: validationResult.error }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
 
     const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
     const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");

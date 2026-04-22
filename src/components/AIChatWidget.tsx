@@ -152,7 +152,7 @@ const AIChatWidget = () => {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-primary-foreground">Khilafat Assistant</h3>
-                  <p className="text-[10px] text-primary-foreground/70">AI-powered product finder</p>
+                  <p className="text-[10px] text-primary-foreground/70">Product finder</p>
                 </div>
               </div>
               <button onClick={() => setOpen(false)} className="text-primary-foreground/70 hover:text-primary-foreground transition-colors p-1">

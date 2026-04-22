@@ -17,13 +17,14 @@ import HCaptcha from '@hcaptcha/react-hcaptcha';
 const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
 
 const Auth = () => {
-  const { user, signIn, signUp, loading: authLoading } = useAuth();
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const { user, signIn, signUp, resetPassword, loading: authLoading } = useAuth();
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
-  // SECURITY FIX (Finding 3.3): captcha state for signup abuse prevention
+  const [resetSent, setResetSent] = useState(false);
+  // SECURITY FIX (Finding 3.3): captcha state for signup/password reset abuse prevention
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<HCaptcha>(null);
 
@@ -33,7 +34,7 @@ const Auth = () => {
     e.preventDefault();
     if (mode === 'signin') {
       await signIn(email, password);
-    } else {
+    } else if (mode === 'signup') {
       if (!HCAPTCHA_SITE_KEY) {
         toast.error('Signup is temporarily unavailable. Captcha is not configured.');
         return;
@@ -42,6 +43,23 @@ const Auth = () => {
       if (!captchaToken) return;
       await signUp(email, password, fullName, captchaToken);
       // Reset captcha after attempt (success or failure)
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
+    } else if (mode === 'forgot') {
+      if (!HCAPTCHA_SITE_KEY) {
+        toast.error('Password reset is temporarily unavailable. Captcha is not configured.');
+        return;
+      }
+      // Require a captcha token before password reset to prevent abuse
+      if (!captchaToken) return;
+      const { error } = await resetPassword(email);
+      if (!error) {
+        setResetSent(true);
+        toast.success('Password reset link sent to your email');
+      } else {
+        toast.error(error.message || 'Failed to send reset link');
+      }
+      // Reset captcha after attempt
       captchaRef.current?.resetCaptcha();
       setCaptchaToken(null);
     }
@@ -62,9 +80,13 @@ const Auth = () => {
             <Link to="/" className="inline-block mb-6">
               <img src={logo} alt="Khilafat Books" className="h-16 w-16 rounded-2xl shadow-md mx-auto object-contain" />
             </Link>
-            <h1 className="text-3xl font-bold font-display">{mode === 'signin' ? 'Welcome Back' : 'Join the Ummah'}</h1>
+            <h1 className="text-3xl font-bold font-display">
+              {mode === 'signin' ? 'Welcome Back' : mode === 'signup' ? 'Join the Ummah' : 'Reset Password'}
+            </h1>
             <p className="text-muted-foreground mt-2 text-sm">
-              {mode === 'signin' ? 'Access your library and track orders' : 'Start your journey of knowledge with us'}
+              {mode === 'signin' ? 'Access your library and track orders' : 
+               mode === 'signup' ? 'Start your journey of knowledge with us' : 
+               'Enter your email to receive a reset link'}
             </p>
           </div>
 
@@ -114,21 +136,23 @@ const Auth = () => {
               />
             </div>
 
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                required
-                autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-                className="pl-10 h-12 rounded-xl"
-              />
-            </div>
+            {mode !== 'forgot' && (
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required={mode !== 'forgot'}
+                  autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+                  className="pl-10 h-12 rounded-xl"
+                />
+              </div>
+            )}
 
-            {/* SECURITY (Finding 3.3): hCaptcha widget — only shown during signup */}
-            {mode === 'signup' && (
+            {/* SECURITY (Finding 3.3): hCaptcha widget — shown during signup and password reset */}
+            {(mode === 'signup' || mode === 'forgot') && (
               <div className="flex justify-center mt-1">
                 {HCAPTCHA_SITE_KEY ? (
                   <HCaptcha
@@ -147,10 +171,13 @@ const Auth = () => {
             )}
 
             <Button
-              disabled={loading || (mode === 'signup' && !captchaToken)}
+              disabled={loading || ((mode === 'signup' || mode === 'forgot') && !captchaToken)}
               className="w-full h-12 rounded-xl gold-gradient border-0 text-foreground font-bold shadow-lg mt-2"
             >
-              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : mode === 'signin' ? 'Sign In' : 'Create Account'}
+              {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 
+               mode === 'signin' ? 'Sign In' : 
+               mode === 'signup' ? 'Create Account' : 
+               'Send Reset Link'}
             </Button>
           </form>
 
@@ -182,9 +209,21 @@ const Auth = () => {
             Continue with Google
           </button>
 
-          <div className="mt-8 text-center text-sm">
+          <div className="mt-8 text-center text-sm space-y-2">
+            {mode === 'signin' && (
+              <p className="text-muted-foreground">
+                <button
+                  onClick={() => setMode('forgot')}
+                  className="text-primary font-bold hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </p>
+            )}
             <p className="text-muted-foreground">
-              {mode === 'signin' ? "Don't have an account?" : "Already have an account?"}
+              {mode === 'signin' ? "Don't have an account?" : 
+               mode === 'signup' ? "Already have an account?" :
+               "Remember your password?"}
               <button
                 onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
                 className="ml-1.5 text-primary font-bold hover:underline"

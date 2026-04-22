@@ -43,6 +43,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const WhatsAppWidget = lazy(() => import("@/components/WhatsAppWidget"));
 const AIChatWidget = lazy(() => import("@/components/AIChatWidget"));
 const ExitIntentDialog = lazy(() => import("@/components/ExitIntentDialog"));
+const CookieConsent = lazy(() => import('@/components/CookieConsent'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -106,6 +107,7 @@ const AppLayout = () => {
         <ExitIntentDialog />
         {isPluginEnabled('whatsapp_notifications') && <WhatsAppWidget />}
         {isPluginEnabled('ai_chat') && <AIChatWidget />}
+        <CookieConsent />
       </Suspense>
     </div>
   );

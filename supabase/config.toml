@@ -9,7 +9,7 @@ additional_redirect_urls = [
 ]
 
 [functions.ai-chat]
-verify_jwt = false
+verify_jwt = true
 
 [functions.download-digital-product]
 verify_jwt = false

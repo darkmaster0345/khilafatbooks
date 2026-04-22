@@ -11,12 +11,18 @@ CREATE POLICY "admin_can_manage_products"
   FOR ALL
   TO authenticated
   USING (
-    (auth.jwt() ->> 'email') = 'arifubaid0345@gmail.com'
-    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+    OR EXISTS (
+      SELECT 1 FROM public.user_roles
+      WHERE user_id = auth.uid() AND role = 'admin'
+    )
   )
   WITH CHECK (
-    (auth.jwt() ->> 'email') = 'arifubaid0345@gmail.com'
-    OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+    (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
+    OR EXISTS (
+      SELECT 1 FROM public.user_roles
+      WHERE user_id = auth.uid() AND role = 'admin'
+    )
   );
 
 -- Fix 2 & 3: Ensure the exposed users view is dropped and doesn't leak auth.users data
@@ -39,6 +45,5 @@ AS $$
   SELECT EXISTS (
     SELECT 1 FROM public.user_roles
     WHERE user_id = auth.uid() AND role = 'admin'
-  ) OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin'
-  OR (auth.jwt() ->> 'email') = 'arifubaid0345@gmail.com';
+  ) OR (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin';
 $$;
