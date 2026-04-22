@@ -21,8 +21,9 @@ const CartBundleSuggestion = ({ cartItems }: Props) => {
       const cartIds = cartItems.map(i => i.product.id);
       if (cartIds.length === 0) return;
 
+      // Use public_products view
       const { data: cartProducts } = await db
-        .from('products')
+        .from('public_products')
         .select(PRODUCT_PUBLIC_COLUMNS)
         .in('id', cartIds as string[])
         .not('series', 'is', null);
@@ -34,11 +35,11 @@ const CartBundleSuggestion = ({ cartItems }: Props) => {
 
       const result: { series: string; missing: Product[]; discount: number }[] = [];
       for (const series of seriesNames) {
+        // Use public_products view
         const { data: seriesProducts } = await db
-          .from('products')
+          .from('public_products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('series', series as string)
-          .eq('is_hidden', false as any)
           .order('series_order', { ascending: true });
 
         if (!seriesProducts) continue;

@@ -38,9 +38,10 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       setLoading(true);
       let products: any[] = [];
 
+      // Use public_products view
       if (series) {
         const { data } = await db
-          .from('products')
+          .from('public_products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('series', series as any)
           .neq('id', (excludeId || '') as any)
@@ -51,7 +52,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
 
       if (products.length < limit && category) {
         const { data } = await db
-          .from('products')
+          .from('public_products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .eq('category', category as any)
           .neq('id', (excludeId || '') as any)
@@ -66,7 +67,7 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
 
       if (products.length < limit) {
         const { data } = await db
-          .from('products')
+          .from('public_products')
           .select(PRODUCT_PUBLIC_COLUMNS)
           .neq('id', (excludeId || '') as any)
           .order('reviews', { ascending: false })

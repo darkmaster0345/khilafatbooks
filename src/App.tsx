@@ -8,6 +8,8 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { AuthProvider } from "@/hooks/useAuth";
+import { CSRFProvider } from '@/context/CSRFContext';
+import { CookieConsentProvider } from '@/components/CookieConsent';
 import { AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -117,17 +119,21 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <AppLayout />
-              </BrowserRouter>
-            </WishlistProvider>
-          </CartProvider>
-        </AuthProvider>
+        <CSRFProvider>
+          <CookieConsentProvider>
+            <AuthProvider>
+              <CartProvider>
+                <WishlistProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <AppLayout />
+                  </BrowserRouter>
+                </WishlistProvider>
+              </CartProvider>
+            </AuthProvider>
+          </CookieConsentProvider>
+        </CSRFProvider>
       </TooltipProvider>
     </QueryClientProvider>
   </ErrorBoundary>

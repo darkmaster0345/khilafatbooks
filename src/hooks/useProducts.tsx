@@ -86,6 +86,40 @@ export function toLegacyProduct(p: Product): LegacyProduct {
   };
 }
 
+export function usePublicProducts(options?: { category?: string; featured?: boolean }) {
+  const queryClient = useQueryClient();
+
+  const { data: products = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['public_products', options?.category, options?.featured],
+    queryFn: async () => {
+      // Use public_products view which excludes internal fields
+      let query = db
+        .from('public_products')
+        .select(PRODUCT_PUBLIC_COLUMNS);
+
+      if (options?.category) {
+        query = query.eq('category', options.category);
+      }
+
+      if (options?.featured) {
+        query = query.eq('is_new', true);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Supabase error fetching products:', error);
+        throw error;
+      }
+      return data as any as Product[];
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    retry: 1,
+  });
+
+  return { products, loading: isLoading, error, refetch };
+}
+
 export function useProducts(options: { includeHidden?: boolean; minimal?: boolean } = {}) {
   const { includeHidden = false, minimal = false } = options;
   const queryClient = useQueryClient();

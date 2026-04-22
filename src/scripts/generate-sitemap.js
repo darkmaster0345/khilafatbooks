@@ -45,11 +45,10 @@ async function generateSitemap() {
     '/return-policy',
   ];
 
-  // Fetch product names and updated_at to generate consistent slugs and lastmod
+  // Use public_products view to fetch only public-safe product data
   const { data: products, error } = await supabase
-    .from('products')
-    .select('name, updated_at')
-    .eq('is_hidden', false);
+    .from('public_products')
+    .select('name, updated_at');
 
   if (error) {
     console.error('Error fetching products:', error);

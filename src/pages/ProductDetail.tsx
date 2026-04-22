@@ -52,10 +52,10 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
+        // Use public_products view to exclude internal fields (shipping_cost, low_stock_threshold, etc.)
         const { data, error } = await db
-          .from('products')
+          .from('public_products')
           .select(PRODUCT_PUBLIC_COLUMNS)
-          .or('is_hidden.is.null,is_hidden.eq.false')
           .order('created_at', { ascending: false });
 
         if (error) throw error;
@@ -69,10 +69,10 @@ const ProductDetail = () => {
           setProduct(legacy);
           setActiveImage(legacy.image);
 
+          // Use public_products view for related products
           const { data: related } = await db
-            .from('products')
+            .from('public_products')
             .select(PRODUCT_PUBLIC_COLUMNS)
-            .or('is_hidden.is.null,is_hidden.eq.false')
             .eq('category', found.category)
             .neq('id', found.id)
             .limit(4);

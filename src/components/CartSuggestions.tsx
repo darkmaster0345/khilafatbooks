@@ -41,9 +41,10 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
 
       setLoadingSeries(true);
 
+      // Use public_products view
       const { data: cartProducts } = await db
-        .from('products')
-        .select('id, series, series_order, bundle_discount')
+        .from('public_products')
+        .select('id, series, series_order')
         .in('id', cartProductIds as string[])
         .not('series', 'is', null);
 
@@ -60,11 +61,11 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
         return;
       }
 
+      // Use public_products view
       const { data: related } = await db
-        .from('products')
-        .select('id, name, price, series, series_order, bundle_discount, image_url, category, in_stock')
+        .from('public_products')
+        .select('id, name, price, series, series_order, image_url, category, in_stock')
         .in('series', seriesNames as string[])
-        .eq('in_stock', true as any)
         .order('series_order', { ascending: true });
 
       if (related) {
