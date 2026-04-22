@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Cookie, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export function CookieConsent() {
+export default function CookieConsent() {
   const [showBanner, setShowBanner] = useState(false);
   const [consent, setConsent] = useState<boolean | null>(null);
 
