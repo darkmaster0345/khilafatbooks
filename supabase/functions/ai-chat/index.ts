@@ -1,4 +1,8 @@
+// @ts-ignore Deno imports
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.95.3";
+
+// Deno types for TypeScript
+/// <reference lib="deno.ns" />
 
 const ALLOWED_ORIGINS = [
   "https://khilafatbooks.vercel.app",
@@ -95,13 +99,37 @@ function checkRateLimit(userId: string): { allowed: boolean; retryAfter?: number
 }
 
 // ---------------------------------------------------------------------------
+// Islamic Jurisprudence (Fiqh) Content Filtering
+// ---------------------------------------------------------------------------
+
+const FIQH_KEYWORDS = [
+  "halal", "haram", "fiqh", "fatwa", "ruling", "islamic ruling",
+  "prayer method", "how to pray", "salat method", "wudu steps",
+  "fasting rules", "ramadan fasting", "zakat calculation",
+  "marriage ruling", "nikah rules", "divorce in islam", "talaq",
+  "riba", "interest", "bank interest", "loan interest",
+  "inheritance", "mirath", "islamic will",
+  "hajj steps", "umrah method", "pilgrimage ruling",
+  "food halal", "meat halal", "slaughter rules", "qurbani",
+  "salah", "namaz", "zuhr", "asr", "maghrib", "isha", "fajr",
+  "wajib", "sunnah", "mustahab", "makruh"
+];
+
+const FIQH_WARNING_MESSAGE = `This relates to Islamic jurisprudence (Fiqh). As an AI assistant, I cannot provide religious rulings or fatwas. For matters of Islamic law and religious guidance, please consult a qualified Islamic scholar (Mufti or Aalim). You may also browse our Fiqh and Islamic Law book collection for scholarly references.`;
+
+function containsFiqhKeywords(content: string): boolean {
+  const lowerContent = content.toLowerCase();
+  return FIQH_KEYWORDS.some(keyword => lowerContent.includes(keyword.toLowerCase()));
+}
+
+// ---------------------------------------------------------------------------
 // Input Validation
 // ---------------------------------------------------------------------------
 
 const MAX_MESSAGE_LENGTH = 500;
 const MAX_MESSAGES = 20;
 
-function validateInput(messages: unknown): { valid: boolean; error?: string } {
+function validateInput(messages: unknown): { valid: boolean; error?: string; isFiqh?: boolean } {
   if (!messages || !Array.isArray(messages)) {
     return { valid: false, error: "Invalid request: messages array required" };
   }
@@ -130,9 +158,14 @@ function validateInput(messages: unknown): { valid: boolean; error?: string } {
     if (text.length > MAX_MESSAGE_LENGTH) {
       return { valid: false, error: `Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters allowed.` };
     }
+
+    // Check for fiqh keywords in user messages
+    if ((msg as any).role === "user" && containsFiqhKeywords(text)) {
+      return { valid: true, isFiqh: true };
+    }
   }
 
-  return { valid: true };
+  return { valid: true, isFiqh: false };
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +205,7 @@ async function getProductCatalog(supabaseUrl: string, supabaseServiceKey: string
     : "No products available.";
 
   cacheTimestamp = now;
-  return cachedProducts;
+  return cachedProducts || "No products available.";
 }
 
 // ---------------------------------------------------------------------------
@@ -300,7 +333,8 @@ function buildGeminiContents(
 // Entry point
 // ---------------------------------------------------------------------------
 
-Deno.serve(async (req) => {
+// @ts-ignore Deno is available in Supabase Edge Runtime
+Deno.serve(async (req: Request) => {
   const origin = req.headers.get("Origin");
   const corsHeaders = getCorsHeaders(origin);
 
@@ -348,6 +382,14 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Type-safe environment variables
+    const getEnv = (name: string): string => {
+      // @ts-ignore Deno.env
+      const value = Deno.env.get(name);
+      if (!value) throw new Error(`Missing environment variable: ${name}`);
+      return value;
+    };
+
     // SECURITY: Rate limiting per user
     const rateLimitResult = checkRateLimit(user.id);
     if (!rateLimitResult.allowed) {
@@ -382,10 +424,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
-    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    // Check if message contains fiqh (Islamic jurisprudence) keywords
+    if (validationResult.isFiqh) {
+      return getSSEResponse(FIQH_WARNING_MESSAGE, corsHeaders);
+    }
+
+    const GEMINI_API_KEY = getEnv("GEMINI_API_KEY");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY"); // Optional fallback
+    const SUPABASE_URL = getEnv("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !GEMINI_API_KEY) {
       const missing = [];

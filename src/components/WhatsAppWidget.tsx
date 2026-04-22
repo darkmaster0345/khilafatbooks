@@ -1,8 +1,8 @@
 import WhatsAppIcon from '@/components/WhatsAppIcon';
 import { motion } from 'framer-motion';
 
-const WHATSAPP_NUMBER = '923352706540';
-const MESSAGE = 'Asalam-o-Alaikum Khilafat Books, I need help with my order.';
+const WHATSAPP_NUMBER = '923452867726';
+const MESSAGE = 'Assalamu Alaikum, I have a question...';
 
 const WhatsAppWidget = () => {
   const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(MESSAGE)}`;

@@ -9,7 +9,7 @@ import { CartProvider } from "@/context/CartContext";
 import { WishlistProvider } from "@/context/WishlistContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { CSRFProvider } from '@/context/CSRFContext';
-import { CookieConsentProvider } from '@/components/CookieConsent';
+import { ConsentProvider } from '@/components/CookieConsent';
 import { AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -32,6 +32,8 @@ const Wishlist = lazy(() => import("./pages/Wishlist"));
 const Orders = lazy(() => import("./pages/Orders"));
 const Library = lazy(() => import("./pages/Library"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Forbidden = lazy(() => import("./pages/Forbidden"));
+const InternalServerError = lazy(() => import("./pages/InternalServerError"));
 const BookRequests = lazy(() => import("./pages/BookRequests"));
 const FAQ = lazy(() => import("./pages/FAQ"));
 const OrderConfirmed = lazy(() => import("./pages/OrderConfirmed"));
@@ -40,12 +42,15 @@ const ShippingPolicy = lazy(() => import("./pages/ShippingPolicy"));
 const ReturnPolicy = lazy(() => import("./pages/ReturnPolicy"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const Disclaimer = lazy(() => import("./pages/Disclaimer"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const Security = lazy(() => import("./pages/Security"));
 
 // Widgets
 const WhatsAppWidget = lazy(() => import("@/components/WhatsAppWidget"));
 const AIChatWidget = lazy(() => import("@/components/AIChatWidget"));
 const ExitIntentDialog = lazy(() => import("@/components/ExitIntentDialog"));
-const CookieConsent = lazy(() => import('@/components/CookieConsent'));
+const CookieConsentBanner = lazy(() => import('@/components/CookieConsent'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,6 +101,11 @@ const AppLayout = () => {
                 <Route path="/return-policy" element={<PageTransition><ReturnPolicy /></PageTransition>} />
                 <Route path="/privacy-policy" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
                 <Route path="/terms-of-service" element={<PageTransition><TermsOfService /></PageTransition>} />
+                <Route path="/disclaimer" element={<PageTransition><Disclaimer /></PageTransition>} />
+                <Route path="/cookie-policy" element={<PageTransition><CookiePolicy /></PageTransition>} />
+                <Route path="/security" element={<PageTransition><Security /></PageTransition>} />
+                <Route path="/403" element={<PageTransition><Forbidden /></PageTransition>} />
+                <Route path="/500" element={<PageTransition><InternalServerError /></PageTransition>} />
                 <Route path="*" element={<PageTransition><NotFound /></PageTransition>} />
               </Routes>
             </Suspense>
@@ -109,7 +119,7 @@ const AppLayout = () => {
         <ExitIntentDialog />
         {isPluginEnabled('whatsapp_notifications') && <WhatsAppWidget />}
         {isPluginEnabled('ai_chat') && <AIChatWidget />}
-        <CookieConsent />
+        <CookieConsentBanner />
       </Suspense>
     </div>
   );
@@ -120,7 +130,7 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <CSRFProvider>
-          <CookieConsentProvider>
+          <ConsentProvider>
             <AuthProvider>
               <CartProvider>
                 <WishlistProvider>
@@ -132,7 +142,7 @@ const App = () => (
                 </WishlistProvider>
               </CartProvider>
             </AuthProvider>
-          </CookieConsentProvider>
+          </ConsentProvider>
         </CSRFProvider>
       </TooltipProvider>
     </QueryClientProvider>
