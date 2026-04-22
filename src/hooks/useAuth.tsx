@@ -129,8 +129,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    await db.auth.signOut();
-    setIsAdmin(false);
+    try {
+      const { error } = await db.auth.signOut();
+      if (error) throw error;
+      // Clear local state immediately
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
+      // Force redirect to home
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Sign out error:', err);
+      // Still clear state on error
+      setUser(null);
+      setSession(null);
+      setIsAdmin(false);
+    }
   };
 
   const resetPassword = async (email: string) => {
