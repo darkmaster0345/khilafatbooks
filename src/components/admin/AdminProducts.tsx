@@ -24,6 +24,11 @@ const PRODUCT_CATEGORIES = [
   'Digital Resources'
 ];
 
+const generateFileName = (file: File) => {
+  const ext = file.name.split('.').pop();
+  return `${crypto.randomUUID()}.${ext}`;
+};
+
 const AdminProducts = () => {
   const { products, loading, isError, error, refetch } = useProducts({ includeHidden: true });
   const [search, setSearch] = useState('');
@@ -58,10 +63,23 @@ const AdminProducts = () => {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Cleanup previous preview to prevent memory leak
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
   };
+
+  // Cleanup object URLs on unmount or mode change
+  useEffect(() => {
+    return () => {
+      if (imagePreview && imagePreview.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview, mode]);
 
   const handleDigitalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,8 +93,7 @@ const AdminProducts = () => {
       let finalDigitalUrl = form.digital_file_url;
 
       if (imageFile) {
-        const fileExt = imageFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+        const fileName = generateFileName(imageFile);
         const { error: uploadError } = await db.storage.from('product-images').upload(fileName, imageFile);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = db.storage.from('product-images').getPublicUrl(fileName);
@@ -84,8 +101,7 @@ const AdminProducts = () => {
       }
 
       if (digitalFile) {
-        const fileExt = digitalFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+        const fileName = generateFileName(digitalFile);
         const { error: uploadError } = await db.storage.from('digital-products').upload(fileName, digitalFile);
         if (uploadError) throw uploadError;
         const { data: { publicUrl } } = db.storage.from('digital-products').getPublicUrl(fileName);

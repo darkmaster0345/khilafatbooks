@@ -48,7 +48,7 @@ const Profile = () => {
         const { data, error } = await db
           .from('profiles')
           .select('*')
-          .eq('id', user.id)
+          .eq('user_id', user.id)
           .single();
         
         if (error) throw error;
@@ -91,7 +91,7 @@ const Profile = () => {
           city: formData.city,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id);
+        .eq('user_id', user.id);
       
       if (error) throw error;
       
