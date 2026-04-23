@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { CheckCircle2, Clock, Eye, XCircle, Search, FileDown, MessageSquare, Trash2, Plus, X, CheckSquare, Square, Gift } from 'lucide-react';
+import { CheckCircle2, Clock, Eye, XCircle, Search, FileDown, MessageSquare, Trash2, Plus, X, Gift } from 'lucide-react';
 import { motion } from 'framer-motion';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -8,29 +8,24 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useProducts } from '@/hooks/useProducts';
+import type { Tables, TablesInsert } from '@/integrations/supabase/types';
 
-interface Order {
-  id: string;
-  customer_name: string;
-  customer_phone: string;
-  customer_email: string | null;
-  items: any;
-  total: number;
-  subtotal: number;
-  shipping: number;
-  zakat_amount: number;
-  status: string;
-  payment_screenshot_url: string | null;
-  transaction_id: string | null;
-  delivery_address: string | null;
-  delivery_city: string | null;
-  created_at: string;
-  user_id: string;
+interface OrderItem {
+  id?: string;
+  image?: string;
+  name: string;
+  price: number;
+  quantity: number;
+  type: string;
+}
+
+interface Order extends Omit<Tables<'orders'>, 'items'> {
+  items: OrderItem[];
 }
 
 const statusColors: Record<string, string> = {
@@ -48,7 +43,7 @@ interface CustomOrderItem {
 
 const AdminOrders = () => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { products } = useProducts();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -75,26 +70,29 @@ const AdminOrders = () => {
   });
   const [orderItems, setOrderItems] = useState<CustomOrderItem[]>([{ name: '', quantity: 1, price: 0, type: 'physical' }]);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const { data, error } = await db.from('orders').select('*').order('created_at', { ascending: false });
       if (error) {
         toast({ title: 'Error loading orders', description: error.message, variant: 'destructive' });
         setOrders([]);
       } else if (data) {
-        setOrders(data as unknown as Order[]);
+        setOrders((data as Tables<'orders'>[]).map(order => ({
+          ...order,
+          items: Array.isArray(order.items) ? (order.items as unknown as OrderItem[]) : [],
+        })));
       }
-    } catch (err: any) {
-      toast({ title: 'Error loading orders', description: err?.message || String(err), variant: 'destructive' });
+    } catch (err: unknown) {
+      toast({ title: 'Error loading orders', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
       setOrders([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  useEffect(() => {
+    void fetchOrders();
+  }, [fetchOrders]);
 
   // Bulk selection handlers
   const toggleSelectAll = useCallback(() => {
@@ -128,7 +126,7 @@ const AdminOrders = () => {
     if (selectedIds.size === 0) return;
     setBulkProcessing(true);
     const ids = Array.from(selectedIds);
-    const { error } = await db.from('orders').update({ status: 'approved' } as any).in('id', ids);
+    const { error } = await db.from('orders').update({ status: 'approved' }).in('id', ids);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -182,6 +180,11 @@ const AdminOrders = () => {
   };
 
   const viewScreenshot = async (order: Order) => {
+    if (!isAdmin) {
+      toast({ title: 'Unauthorized', description: 'Admin access required.', variant: 'destructive' });
+      return;
+    }
+
     setSelectedOrder(order);
     if (order.payment_screenshot_url) {
       const { data } = await db.storage.from('payment-proofs').createSignedUrl(order.payment_screenshot_url, 300);
@@ -192,7 +195,7 @@ const AdminOrders = () => {
   };
 
   const updateStatus = async (orderId: string, status: string) => {
-    const { error } = await db.from('orders').update({ status } as any).eq('id', orderId);
+    const { error } = await db.from('orders').update({ status }).eq('id', orderId);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {
@@ -231,7 +234,7 @@ const AdminOrders = () => {
     const subtotal = validItems.reduce((s, i) => s + i.price * i.quantity, 0);
     const total = subtotal + newOrder.shipping;
 
-    const { error } = await db.from('orders').insert({
+    const payload: TablesInsert<'orders'> = {
       customer_name: newOrder.customer_name,
       customer_phone: newOrder.customer_phone,
       customer_email: newOrder.customer_email || null,
@@ -244,7 +247,9 @@ const AdminOrders = () => {
       status: newOrder.status,
       user_id: user!.id,
       zakat_amount: 0,
-    } as any);
+    };
+
+    const { error } = await db.from('orders').insert(payload);
 
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -297,7 +302,7 @@ const AdminOrders = () => {
       doc.text(splitAddress, margin, 77);
     }
 
-    const tableData = (Array.isArray(order.items) ? order.items : []).map((item: any) => [
+    const tableData = order.items.map((item) => [
       item.name,
       item.quantity.toString(),
       formatPKR(item.price),
@@ -313,7 +318,7 @@ const AdminOrders = () => {
       margin: { left: margin, right: margin }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    const finalY = ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 95) + 10;
     doc.setFontSize(10);
     doc.text('Subtotal:', 140, finalY);
     doc.text(formatPKR(order.subtotal), 190, finalY, { align: 'right' });
@@ -480,7 +485,7 @@ const AdminOrders = () => {
                         <p className="font-medium text-foreground">{order.customer_name}</p>
                         <p className="text-xs text-muted-foreground">{order.customer_phone}</p>
                       </div>
-                      {(order as any).is_gift && <Gift className="h-3.5 w-3.5 text-primary shrink-0" />}
+                      {order.is_gift && <Gift className="h-3.5 w-3.5 text-primary shrink-0" />}
                     </div>
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">{formatPKR(order.total)}</td>
@@ -656,19 +661,19 @@ const AdminOrders = () => {
               <div><span className="text-muted-foreground">TRX ID:</span> <span className="text-foreground">{selectedOrder.transaction_id || 'Not provided'}</span></div>
               <div><span className="text-muted-foreground">Status:</span> <Badge className={statusColors[selectedOrder.status] || 'bg-muted'}>{selectedOrder.status}</Badge></div>
 
-              {(selectedOrder as any).is_gift && (
+              {selectedOrder.is_gift && (
                 <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1">
                   <div className="flex items-center gap-1.5 text-primary font-medium text-xs">
                     <Gift className="h-3.5 w-3.5" /> Gift Order
                   </div>
-                  {(selectedOrder as any).gift_recipient_name && (
-                    <div className="text-xs"><span className="text-muted-foreground">For:</span> <span className="text-foreground">{(selectedOrder as any).gift_recipient_name}</span></div>
+                  {selectedOrder.gift_recipient_name && (
+                    <div className="text-xs"><span className="text-muted-foreground">For:</span> <span className="text-foreground">{selectedOrder.gift_recipient_name}</span></div>
                   )}
-                  {(selectedOrder as any).gift_message && (
-                    <div className="text-xs"><span className="text-muted-foreground">Message:</span> <span className="text-foreground italic">"{(selectedOrder as any).gift_message}"</span></div>
+                  {selectedOrder.gift_message && (
+                    <div className="text-xs"><span className="text-muted-foreground">Message:</span> <span className="text-foreground italic">"{selectedOrder.gift_message}"</span></div>
                   )}
-                  {(selectedOrder as any).gift_wrap && (
-                    <div className="text-xs text-muted-foreground">🎁 Gift wrapped (+{formatPKR((selectedOrder as any).gift_wrap_fee || 100)})</div>
+                  {selectedOrder.gift_wrap && (
+                    <div className="text-xs text-muted-foreground">🎁 Gift wrapped (+{formatPKR(selectedOrder.gift_wrap_fee || 100)})</div>
                   )}
                 </div>
               )}
@@ -676,7 +681,7 @@ const AdminOrders = () => {
               <div>
                 <p className="text-muted-foreground mb-1">Items:</p>
                 <ul className="space-y-1">
-                  {(Array.isArray(selectedOrder.items) ? selectedOrder.items : []).map((item: any, i: number) => (
+                  {selectedOrder.items.map((item, i) => (
                     <li key={i} className="text-foreground">{item.name} × {item.quantity} — {formatPKR(item.price * item.quantity)}</li>
                   ))}
                 </ul>

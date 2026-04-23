@@ -1,19 +1,19 @@
 import { SEOHead } from '@/components/SEOHead';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Navigate, Link } from 'react-router-dom';
-import { Book, BookOpen, CheckCircle2, Clock, Download, Plus, Trash2, StickyNote, Target, TrendingUp } from 'lucide-react';
+import { Book, BookOpen, CheckCircle2, Clock, Download, Trash2, StickyNote, Target, type LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import { useAuth } from '@/hooks/useAuth';
 import { useProducts } from '@/hooks/useProducts';
-import { formatPKR } from '@/lib/currency';
-import { slugify } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useDigitalDownload } from '@/hooks/useDigitalDownload';
+import type { Tables } from '@/integrations/supabase/types';
 
 type ReadingStatus = 'want_to_read' | 'reading' | 'completed';
 
@@ -27,7 +27,7 @@ interface LibraryItem {
   notes: string | null;
 }
 
-const statusConfig: Record<ReadingStatus, { label: string; icon: any; color: string }> = {
+const statusConfig: Record<ReadingStatus, { label: string; icon: LucideIcon; color: string }> = {
   want_to_read: { label: 'Want to Read', icon: Clock, color: 'bg-muted text-muted-foreground' },
   reading: { label: 'Reading', icon: BookOpen, color: 'bg-accent/20 text-accent-foreground' },
   completed: { label: 'Completed', icon: CheckCircle2, color: 'bg-primary/20 text-primary' },
@@ -36,6 +36,7 @@ const statusConfig: Record<ReadingStatus, { label: string; icon: any; color: str
 const Library = () => {
   const { user, loading: authLoading } = useAuth();
   const { products } = useProducts();
+  const { download } = useDigitalDownload();
   const { toast } = useToast();
   const [library, setLibrary] = useState<LibraryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,12 +45,7 @@ const Library = () => {
   const [noteText, setNoteText] = useState('');
   const [readingGoal, setReadingGoal] = useState(12);
 
-  useEffect(() => {
-    if (user) fetchLibrary();
-    else if (!authLoading) setLoading(false);
-  }, [user, authLoading]);
-
-  const fetchLibrary = async () => {
+  const fetchLibrary = useCallback(async () => {
     const { data, error } = await db
       .from('user_library')
       .select('*')
@@ -59,10 +55,15 @@ const Library = () => {
     if (error) {
       toast({ title: 'Error', description: 'Failed to load library', variant: 'destructive' });
     } else {
-      setLibrary(data || []);
+      setLibrary((data ?? []) as Tables<'user_library'>[] as LibraryItem[]);
     }
     setLoading(false);
-  };
+  }, [toast, user?.id]);
+
+  useEffect(() => {
+    if (user) void fetchLibrary();
+    else if (!authLoading) setLoading(false);
+  }, [user, authLoading, fetchLibrary]);
 
   const updateStatus = async (itemId: string, status: ReadingStatus) => {
     const { error } = await db
@@ -108,18 +109,6 @@ const Library = () => {
     } else {
       setLibrary(prev => prev.filter(i => i.id !== itemId));
       toast({ title: 'Removed', description: 'Book removed from library' });
-    }
-  };
-
-  const downloadDigital = async (productId: string) => {
-    const { data, error } = await db.functions.invoke('download-digital-product', {
-      body: { productId },
-    });
-
-    if (error || !data?.url) {
-      toast({ title: 'Error', description: 'Could not generate download link', variant: 'destructive' });
-    } else {
-      window.open(data.url, '_blank');
     }
   };
 
@@ -243,7 +232,7 @@ const Library = () => {
                           variant="outline"
                           size="sm" 
                           className="flex-1 rounded-lg text-xs gap-2"
-                          onClick={() => downloadDigital(item.product_id)}
+                          onClick={() => download(item.product_id, item.product?.name || 'your file')}
                         >
                           <Download className="h-3.5 w-3.5" /> Download
                         </Button>

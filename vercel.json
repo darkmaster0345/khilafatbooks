@@ -12,7 +12,7 @@
       "headers": [
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self' https://js.hcaptcha.com https://newassets.hcaptcha.com https://t.contentsquare.net 'sha256-LwEw6K9407abWeOzqByIsJTW8yX3Osyh1OLzfyNKj+s='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://newassets.hcaptcha.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com https://lh3.googleusercontent.com https://api.dicebear.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://res.cloudinary.com https://hcaptcha.com https://*.hcaptcha.com https://*.contentsquare.net; frame-src https://newassets.hcaptcha.com https://hcaptcha.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
+          "value": "default-src 'self'; script-src 'self' https://js.hcaptcha.com https://newassets.hcaptcha.com https://t.contentsquare.net 'sha256-fKIMLKyp2dUZmWWuU20SiaCQIiQcSgrmZl8Y5j6P1NM=' 'sha256-YaT+vzQISk8ta1LEbq3eYVvqjkuoBK1gbImW0LNwwMw='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://newassets.hcaptcha.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co https://res.cloudinary.com https://lh3.googleusercontent.com https://api.dicebear.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://res.cloudinary.com https://hcaptcha.com https://*.hcaptcha.com https://*.contentsquare.net; frame-src https://newassets.hcaptcha.com https://hcaptcha.com; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self';"
         },
         {
           "key": "X-Frame-Options",

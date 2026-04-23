@@ -1,10 +1,10 @@
 import { SEOHead } from '@/components/SEOHead';
-import { useEffect, useState } from 'react';
-import { ShoppingBag, Package, Truck, CheckCircle2, XCircle, Clock, ArrowRight, Gift, Download, ExternalLink } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { ShoppingBag, CheckCircle2, XCircle, Clock, ArrowRight, Download, type LucideIcon } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
@@ -14,29 +14,26 @@ import OrderTrackingTimeline from '@/components/OrderTrackingTimeline';
 import PrivacyModeCard from '@/components/PrivacyModeCard';
 import LoyaltyBadge from '@/components/LoyaltyBadge';
 import ReferralDashboard from '@/components/ReferralDashboard';
-import { toast } from 'sonner';
+import { useDigitalDownload } from '@/hooks/useDigitalDownload';
+import type { Tables } from '@/integrations/supabase/types';
 
-interface Order {
+interface OrderItem {
   id: string;
-  created_at: string;
-  status: string;
-  total: number;
-  items: any[];
-  shipping_status: string | null;
-  tracking_number: string | null;
+  image?: string;
+  name: string;
+  price: number;
+  quantity: number;
+  type: 'physical' | 'digital';
 }
 
-const statusIcons: Record<string, any> = {
+interface Order extends Omit<Tables<'orders'>, 'items'> {
+  items: OrderItem[];
+}
+
+const statusIcons: Record<string, LucideIcon> = {
   pending: Clock,
   approved: CheckCircle2,
   rejected: XCircle,
-};
-
-const shippingStatusIcons: Record<string, any> = {
-  pending: Package,
-  processing: Clock,
-  shipped: Truck,
-  delivered: CheckCircle2,
 };
 
 const statusColors: Record<string, string> = {
@@ -47,18 +44,11 @@ const statusColors: Record<string, string> = {
 
 const Orders = () => {
   const { user, loading: authLoading } = useAuth();
+  const { download } = useDigitalDownload();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      fetchOrders();
-    } else if (!authLoading) {
-      setLoading(false);
-    }
-  }, [user, authLoading]);
-
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       const { data, error } = await db
         .from('orders')
@@ -67,29 +57,24 @@ const Orders = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
-    } catch (err) {
+      setOrders(((data ?? []) as Tables<'orders'>[]).map(order => ({
+        ...order,
+        items: Array.isArray(order.items) ? (order.items as unknown as OrderItem[]) : [],
+      })));
+    } catch (err: unknown) {
       console.error('Error fetching orders:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const handleDownload = async (productId: string, productName: string) => {
-    try {
-      const { data, error } = await db.functions.invoke('download-digital-product', {
-        body: { productId },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        toast.success(`Opening ${productName}`);
-      }
-    } catch (err) {
-      toast.error('Failed to get download link');
+  useEffect(() => {
+    if (user) {
+      void fetchOrders();
+    } else if (!authLoading) {
+      setLoading(false);
     }
-  };
+  }, [user, authLoading, fetchOrders]);
 
   if (authLoading || loading) {
     return (
@@ -172,7 +157,7 @@ const Orders = () => {
 
                         <div className="grid gap-6 md:grid-cols-2">
                           <div className="space-y-3">
-                            {order.items.slice(0, 3).map((item: any, idx: number) => (
+                            {order.items.slice(0, 3).map((item, idx) => (
                               <div key={idx} className="flex items-center gap-3">
                                 <img src={item.image} alt={item.name} className="h-10 w-10 rounded-lg object-cover bg-muted" />
                                 <div className="flex-1 min-w-0">
@@ -180,7 +165,7 @@ const Orders = () => {
                                   <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
                                 </div>
                                 {item.type === 'digital' && (order.status === 'approved' || order.status === 'delivered') && (
-                                  <Button variant="ghost" size="sm" onClick={() => handleDownload(item.id, item.name)} className="h-8 text-primary hover:text-primary hover:bg-primary/5">
+                                  <Button variant="ghost" size="sm" onClick={() => download(item.id, item.name)} className="h-8 text-primary hover:text-primary hover:bg-primary/5">
                                     <Download className="h-3.5 w-3.5" />
                                   </Button>
                                 )}

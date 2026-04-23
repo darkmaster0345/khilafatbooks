@@ -1,5 +1,5 @@
 import { SEOHead } from '@/components/SEOHead';
-import { GIFT_WRAP_FEE, FREE_SHIPPING_THRESHOLD, SITE_URL } from '@/lib/constants';
+import { EASYPAISA_ACCOUNT, GIFT_WRAP_FEE, FREE_SHIPPING_THRESHOLD, SITE_URL } from '@/lib/constants';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,16 +18,22 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import DiscountCodeInput, { AppliedDiscount } from '@/components/DiscountCodeInput';
 import ReferralRewardModal from '@/components/ReferralRewardModal';
 import { usePluginSettings } from '@/hooks/usePluginSettings';
 
-const EASYPAISA_ACCOUNT = '03352706540';
+interface ReferralValidationResult {
+  valid: boolean;
+  message?: string;
+  reward_type?: string;
+  referral_code_id?: string;
+  discount_amount?: number;
+}
 
 const Checkout = () => {
   const navigate = useNavigate();
-  const { items, subtotal, shipping, total, clearCart, zakatEnabled, zakatAmount } = useCart();
+  const { items, subtotal, shipping, total, clearCart, zakatEnabled, zakatAmount, recoveryDiscount, recoveryCode } = useCart();
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const { isPluginEnabled } = usePluginSettings();
@@ -56,7 +62,7 @@ const Checkout = () => {
   const [discount, setDiscount] = useState<AppliedDiscount | null>(null);
   const [referralCode, setReferralCode] = useState('');
   const [referralLoading, setReferralLoading] = useState(false);
-  const [referralValidation, setReferralValidation] = useState<any>(null);
+  const [referralValidation, setReferralValidation] = useState<ReferralValidationResult | null>(null);
   const [showRewardModal, setShowRewardModal] = useState(false);
   const [selectedReward, setSelectedReward] = useState<string | null>(null);
 
@@ -67,6 +73,10 @@ const Checkout = () => {
 
   const validateReferralCode = async () => {
     if (!referralCode.trim() || !user) return;
+    if (discount?.code?.startsWith('COMEBACK') || recoveryDiscount > 0) {
+      toast({ title: 'Unavailable', description: 'Recovery discounts cannot be combined with referral rewards.', variant: 'destructive' });
+      return;
+    }
     setReferralLoading(true);
     try {
       const { data, error } = await db.rpc('validate_referral_code', {
@@ -80,7 +90,7 @@ const Checkout = () => {
         return;
       }
 
-      const res = data as any;
+      const res = data as ReferralValidationResult;
       if (res.valid) {
         setReferralValidation(res);
         if (res.reward_type === 'both') {
@@ -91,7 +101,7 @@ const Checkout = () => {
       } else {
         toast({ title: 'Not eligible', description: res.message || 'Code is valid but you are not eligible.', variant: 'destructive' });
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error(err);
     } finally {
       setReferralLoading(false);
@@ -137,7 +147,7 @@ const Checkout = () => {
       let screenshotUrl = '';
       if (screenshotFile) {
         const fileExt = screenshotFile.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+        const fileName = `${user?.id}/${crypto.randomUUID()}.${fileExt}`;
         const { error: uploadError } = await db.storage
           .from('payment-proofs')
           .upload(fileName, screenshotFile);
@@ -172,6 +182,8 @@ const Checkout = () => {
         p_items: orderItems,
         p_zakat_enabled: zakatEnabled,
         p_discount_code: discount?.code,
+        p_recovery_discount: recoveryDiscount,
+        p_recovery_code: recoveryCode,
         p_referral_code_id: referralValidation?.referral_code_id,
         p_referred_reward_type: selectedReward,
         p_is_gift: isGift,
@@ -200,6 +212,8 @@ const Checkout = () => {
   const discountVal = discount ? (discount.type === 'percentage' ? (subtotal * discount.value) / 100 : discount.value) : 0;
   const referralDiscount = (selectedReward === 'discount' && referralValidation) ? referralValidation.discount_amount : 0;
   const grandTotal = Math.max(0, total + giftWrapFee - discountVal - referralDiscount);
+  const hasRecoveryDiscount = recoveryDiscount > 0 || discount?.code?.startsWith('COMEBACK');
+  const hasReferralReward = !!selectedReward || !!referralValidation;
 
   const canContinue = () => {
     if (!phone || !name) return false;
@@ -314,9 +328,12 @@ const Checkout = () => {
                 <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-6">
                   <h2 className="font-display text-base font-semibold text-foreground mb-4">Referral Code</h2>
                   <div className="flex gap-2">
-                    <Input value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} placeholder="e.g. KB-AHMAD" className="h-11 rounded-xl" />
-                    <Button onClick={validateReferralCode} disabled={referralLoading || !referralCode.trim() || !user} variant="secondary">Apply</Button>
+                    <Input value={referralCode} onChange={e => setReferralCode(e.target.value.toUpperCase())} placeholder="e.g. KB-AHMAD" className="h-11 rounded-xl" disabled={hasRecoveryDiscount} />
+                    <Button onClick={validateReferralCode} disabled={hasRecoveryDiscount || referralLoading || !referralCode.trim() || !user} variant="secondary">Apply</Button>
                   </div>
+                  {hasRecoveryDiscount && (
+                    <p className="mt-2 text-xs text-muted-foreground">Recovery offers cannot be stacked with referral rewards.</p>
+                  )}
                 </div>
 
                 <Button onClick={() => setStep('payment')} disabled={!canContinue()} size="lg" className="w-full sm:w-auto h-12 px-10 shadow-md">Continue to Payment</Button>
@@ -412,7 +429,13 @@ const Checkout = () => {
               </div>
             </div>
             <div className="mt-4">
-              <DiscountCodeInput subtotal={subtotal} onApply={setDiscount} applied={discount} />
+              <DiscountCodeInput
+                subtotal={subtotal}
+                onApply={setDiscount}
+                applied={discount}
+                disabled={hasRecoveryDiscount || hasReferralReward}
+                disabledReason="Recovery and referral offers cannot be combined with another discount."
+              />
             </div>
           </div>
         </div>

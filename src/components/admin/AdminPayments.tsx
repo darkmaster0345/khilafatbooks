@@ -3,9 +3,10 @@ import { CreditCard, CheckCircle2, XCircle, Eye, Clock, DollarSign } from 'lucid
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import { formatPKR } from '@/lib/currency';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Order {
   id: string;
@@ -20,6 +21,7 @@ interface Order {
 
 const AdminPayments = () => {
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewingScreenshot, setViewingScreenshot] = useState<{ orderId: string; url: string } | null>(null);
@@ -34,6 +36,11 @@ const AdminPayments = () => {
   }, []);
 
   const viewScreenshot = async (order: Order) => {
+    if (!isAdmin) {
+      toast({ title: 'Unauthorized', description: 'Admin access required.', variant: 'destructive' });
+      return;
+    }
+
     if (!order.payment_screenshot_url) {
       toast({ title: 'No screenshot', description: 'This order has no payment proof uploaded.', variant: 'destructive' });
       return;
@@ -43,7 +50,7 @@ const AdminPayments = () => {
   };
 
   const updateStatus = async (orderId: string, status: string) => {
-    const { error } = await db.from('orders').update({ status } as any).eq('id', orderId);
+    const { error } = await db.from('orders').update({ status }).eq('id', orderId);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     } else {

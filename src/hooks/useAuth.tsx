@@ -1,18 +1,19 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
-import type { User, Session } from '@supabase/supabase-js';
+const db = supabase;
+import type { User, Session, AuthError } from '@supabase/supabase-js';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
-  signUp: (email: string, password: string, fullName: string, captchaToken?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signInWithGoogle: () => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string, captchaToken?: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: () => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,14 +31,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      // JWT-based admin check only
-      const isJwtAdmin = u.app_metadata?.role === 'admin';
-      setIsAdmin(isJwtAdmin);
-      return isJwtAdmin;
+      const { data, error } = await db.rpc('is_admin');
+      if (error) throw error;
+
+      const serverIsAdmin = !!data;
+      setIsAdmin(serverIsAdmin);
+      return serverIsAdmin;
     } catch (err) {
+      const fallbackIsAdmin = u.app_metadata?.role === 'admin';
       console.error('Unexpected error in checkAdminStatus:', err);
-      setIsAdmin(false);
-      return false;
+      setIsAdmin(fallbackIsAdmin);
+      return fallbackIsAdmin;
     }
   }, []);
 

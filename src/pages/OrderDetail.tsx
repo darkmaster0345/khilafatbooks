@@ -1,36 +1,34 @@
 import { SEOHead } from '@/components/SEOHead';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Package, MapPin, Phone, Mail, User,
-  CreditCard, Truck, Calendar, Clock, CheckCircle2,
+  ArrowLeft, MapPin, Phone, User,
+  CreditCard,
   Download, Loader2, ExternalLink
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import { useAuth } from '@/hooks/useAuth';
 import { formatPKR } from '@/lib/currency';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import OrderTrackingTimeline from '@/components/OrderTrackingTimeline';
+import { useDigitalDownload } from '@/hooks/useDigitalDownload';
+import type { Tables } from '@/integrations/supabase/types';
 
-interface Order {
+interface OrderItem {
   id: string;
-  created_at: string;
-  status: string;
-  total: number;
-  items: any[];
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  delivery_address: string;
-  delivery_city: string;
-  shipping_status: string | null;
-  tracking_number: string | null;
-  transaction_id: string | null;
-  payment_screenshot_url: string | null;
+  image?: string;
+  name: string;
+  price: number;
+  quantity: number;
+  type: 'physical' | 'digital';
+}
+
+interface Order extends Omit<Tables<'orders'>, 'items'> {
+  items: OrderItem[];
 }
 
 const statusColors: Record<string, string> = {
@@ -44,19 +42,13 @@ const statusColors: Record<string, string> = {
 const OrderDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
+  const { download } = useDigitalDownload();
   const navigate = useNavigate();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user && id) {
-      fetchOrder();
-    } else if (!authLoading && !user) {
-      navigate('/auth');
-    }
-  }, [user, id, authLoading]);
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       const { data, error } = await db
         .from('orders')
@@ -66,30 +58,52 @@ const OrderDetail = () => {
         .single();
 
       if (error) throw error;
-      setOrder(data);
-    } catch (err) {
+      if (!data) {
+        setOrder(null);
+        return;
+      }
+
+      setOrder({
+        ...data,
+        items: Array.isArray(data.items) ? (data.items as unknown as OrderItem[]) : [],
+      });
+    } catch (err: unknown) {
       console.error('Error fetching order:', err);
       toast.error('Could not find order details');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, user?.id]);
 
-  const handleDownload = async (productId: string, productName: string) => {
-    try {
-      const { data, error } = await db.functions.invoke('download-digital-product', {
-        body: { productId },
-      });
-
-      if (error) throw error;
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        toast.success(`Opening ${productName}`);
-      }
-    } catch (err) {
-      toast.error('Failed to get download link');
+  useEffect(() => {
+    if (user && id) {
+      void fetchOrder();
+    } else if (!authLoading && !user) {
+      navigate('/auth');
     }
-  };
+  }, [user, id, authLoading, fetchOrder, navigate]);
+
+  useEffect(() => {
+    const loadReceiptUrl = async () => {
+      if (!order?.payment_screenshot_url) {
+        setReceiptUrl(null);
+        return;
+      }
+
+      const { data, error } = await db.storage
+        .from('payment-proofs')
+        .createSignedUrl(order.payment_screenshot_url, 300);
+
+      if (error) {
+        setReceiptUrl(null);
+        return;
+      }
+
+      setReceiptUrl(data?.signedUrl ?? null);
+    };
+
+    void loadReceiptUrl();
+  }, [order?.payment_screenshot_url]);
 
   if (authLoading || loading) {
     return (
@@ -149,14 +163,14 @@ const OrderDetail = () => {
                 <h2 className="font-display text-lg font-bold text-foreground">Items</h2>
               </div>
               <div className="divide-y divide-border">
-                {order.items.map((item: any, idx: number) => (
+                {order.items.map((item, idx) => (
                   <div key={idx} className="p-6 flex gap-4">
                     <img src={item.image} alt={item.name} className="h-16 w-16 rounded-xl object-cover bg-muted shrink-0" />
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-foreground truncate">{item.name}</h3>
                       <p className="text-sm text-muted-foreground mt-1">{formatPKR(item.price)} × {item.quantity}</p>
                       {item.type === 'digital' && (order.status === 'approved' || order.status === 'delivered') && (
-                        <Button variant="outline" size="sm" className="mt-3 gap-2" onClick={() => handleDownload(item.id, item.name)}>
+                        <Button variant="outline" size="sm" className="mt-3 gap-2" onClick={() => download(item.id, item.name)}>
                           <Download className="h-4 w-4" /> Download
                         </Button>
                       )}
@@ -201,9 +215,9 @@ const OrderDetail = () => {
                   <CreditCard className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                   <span className="font-mono">{order.transaction_id}</span>
                 </div>
-                {order.payment_screenshot_url && (
+                {receiptUrl && (
                   <Button asChild variant="outline" className="w-full text-xs">
-                    <a href={order.payment_screenshot_url} target="_blank" rel="noopener noreferrer">
+                    <a href={receiptUrl} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-3.5 w-3.5 mr-2" /> View Receipt
                     </a>
                   </Button>

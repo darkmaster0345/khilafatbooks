@@ -18,6 +18,16 @@ class ErrorBoundary extends Component<Props, State> {
     this.state = { hasError: false };
   }
 
+  componentDidMount() {
+    window.addEventListener('error', this.handleWindowError);
+    window.addEventListener('unhandledrejection', this.handleUnhandledRejection);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('error', this.handleWindowError);
+    window.removeEventListener('unhandledrejection', this.handleUnhandledRejection);
+  }
+
   static getDerivedStateFromError(error: Error): State {
     return { hasError: true, error };
   }
@@ -28,6 +38,18 @@ class ErrorBoundary extends Component<Props, State> {
 
   handleReset = () => {
     this.setState({ hasError: false, error: undefined });
+  };
+
+  handleWindowError = (event: ErrorEvent) => {
+    this.setState({
+      hasError: true,
+      error: event.error instanceof Error ? event.error : new Error(event.message || 'Unhandled window error'),
+    });
+  };
+
+  handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+    const reason = event.reason instanceof Error ? event.reason : new Error(String(event.reason || 'Unhandled promise rejection'));
+    this.setState({ hasError: true, error: reason });
   };
 
   render() {

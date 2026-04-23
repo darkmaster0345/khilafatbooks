@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import { resolveProductImage } from '@/lib/productImages';
 import { slugify } from '@/lib/utils';
 
@@ -36,7 +36,7 @@ export interface Product {
 }
 
 // Public product columns intentionally exclude internal inventory/admin metadata.
-export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,is_used,condition_description,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
+export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,is_used,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
 
 // Minimal columns for high-performance list views
 export const PRODUCT_MINIMAL_COLUMNS = 'id,name,name_ar,price,original_price,image_url,category,type,is_new,is_halal,is_used,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
@@ -100,9 +100,7 @@ export function usePublicProducts(options?: { category?: string; featured?: bool
     queryKey: ['public_products', options?.category, options?.featured],
     queryFn: async () => {
       // Use public_products view which excludes internal fields
-      let query = db
-        .from('public_products')
-        .select(PRODUCT_PUBLIC_COLUMNS);
+      let query = db.from('public_products').select(PRODUCT_PUBLIC_COLUMNS);
 
       if (options?.category) {
         query = query.eq('category', options.category);
@@ -118,7 +116,7 @@ export function usePublicProducts(options?: { category?: string; featured?: bool
         console.error('Supabase error fetching products:', error);
         throw error;
       }
-      return data as any as Product[];
+      return (data ?? []) as unknown as Product[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,
@@ -145,19 +143,9 @@ export function useProducts(options: { includeHidden?: boolean; minimal?: boolea
   const { data: products = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['products', includeHidden, minimal],
     queryFn: async () => {
-      const selectedColumns = includeHidden
-        ? PRODUCT_ADMIN_COLUMNS
-        : minimal
-          ? PRODUCT_MINIMAL_COLUMNS
-          : PRODUCT_PUBLIC_COLUMNS;
-
-      let query = db
-        .from('products')
-        .select(selectedColumns);
-
-      if (!includeHidden) {
-        query = query.or('is_hidden.is.null,is_hidden.eq.false');
-      }
+      const selectedColumns = includeHidden ? PRODUCT_ADMIN_COLUMNS : minimal ? PRODUCT_MINIMAL_COLUMNS : PRODUCT_PUBLIC_COLUMNS;
+      const source = includeHidden ? 'products' : 'public_products';
+      const query = db.from(source).select(selectedColumns);
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
@@ -165,7 +153,7 @@ export function useProducts(options: { includeHidden?: boolean; minimal?: boolea
         console.error('Supabase error fetching products:', error);
         throw error;
       }
-      return data as any as Product[];
+      return (data ?? []) as unknown as Product[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     retry: 1,

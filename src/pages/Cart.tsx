@@ -12,6 +12,7 @@ import FreeShippingBar from '@/components/FreeShippingBar';
 import CartSuggestions from '@/components/CartSuggestions';
 import CartBundleSuggestion from '@/components/CartBundleSuggestion';
 import LoyaltyBadge from '@/components/LoyaltyBadge';
+import { toast } from 'sonner';
 
 const Cart = () => {
   const {
@@ -27,7 +28,11 @@ const Cart = () => {
   useEffect(() => {
     const code = searchParams.get('recover');
     if (code && !recoveryCode) {
-      applyRecoveryCode(code);
+      void applyRecoveryCode(code).then((applied) => {
+        if (!applied) {
+          toast.error('This recovery code is invalid or expired.');
+        }
+      });
     }
   }, [searchParams, recoveryCode, applyRecoveryCode]);
 

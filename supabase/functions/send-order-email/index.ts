@@ -81,16 +81,14 @@ Deno.serve(async (req) => {
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) throw new Error("Unauthorized");
 
-    let requireOwnership = false;
-    const isAdminUser = user.app_metadata?.role === "admin";
-    if (newStatus === 'pending') {
-      if (!isAdminUser) requireOwnership = true;
-    } else {
-      if (!isAdminUser) {
-        return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
-          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
+    const { data: isAdminUser, error: adminError } = await userClient.rpc("is_admin");
+    if (adminError) throw new Error(`Admin check failed: ${adminError.message}`);
+
+    const requireOwnership = !isAdminUser;
+    if (!isAdminUser && newStatus !== 'pending') {
+      return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");

@@ -475,6 +475,7 @@ export type Database = {
         Row: {
           bundle_discount: number | null
           category: string
+          condition_description: string | null
           created_at: string
           delivery_price: number | null
           description: string
@@ -486,6 +487,7 @@ export type Database = {
           is_halal: boolean
           is_hidden: boolean
           is_new: boolean
+          is_used: boolean
           low_stock_threshold: number
           name: string
           name_ar: string | null
@@ -502,6 +504,7 @@ export type Database = {
         Insert: {
           bundle_discount?: number | null
           category?: string
+          condition_description?: string | null
           created_at?: string
           delivery_price?: number | null
           description?: string
@@ -513,6 +516,7 @@ export type Database = {
           is_halal?: boolean
           is_hidden?: boolean
           is_new?: boolean
+          is_used?: boolean
           low_stock_threshold?: number
           name: string
           name_ar?: string | null
@@ -529,6 +533,7 @@ export type Database = {
         Update: {
           bundle_discount?: number | null
           category?: string
+          condition_description?: string | null
           created_at?: string
           delivery_price?: number | null
           description?: string
@@ -540,6 +545,7 @@ export type Database = {
           is_halal?: boolean
           is_hidden?: boolean
           is_new?: boolean
+          is_used?: boolean
           low_stock_threshold?: number
           name?: string
           name_ar?: string | null
@@ -1011,7 +1017,30 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      public_products: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          image_url: string | null
+          in_stock: boolean | null
+          is_halal: boolean | null
+          is_new: boolean | null
+          is_used: boolean | null
+          name: string | null
+          name_ar: string | null
+          original_price: number | null
+          price: number | null
+          rating: number | null
+          reviews: number | null
+          series: string | null
+          series_order: number | null
+          type: string | null
+          updated_at: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_generate_referral_code: {
@@ -1031,6 +1060,7 @@ export type Database = {
               p_items: Json
               p_payment_screenshot_url?: string
               p_recovery_discount?: number
+              p_recovery_code?: string
               p_referral_discount?: number
               p_transaction_id?: string
               p_zakat_enabled?: boolean
@@ -1052,6 +1082,7 @@ export type Database = {
               p_items: Json
               p_payment_screenshot_url?: string
               p_recovery_discount?: number
+              p_recovery_code?: string
               p_referral_discount?: number
               p_transaction_id?: string
               p_zakat_enabled?: boolean
@@ -1073,6 +1104,7 @@ export type Database = {
               p_items: Json
               p_payment_screenshot_url?: string
               p_recovery_discount?: number
+              p_recovery_code?: string
               p_referral_code_id?: string
               p_referral_discount?: number
               p_referred_reward_type?: string

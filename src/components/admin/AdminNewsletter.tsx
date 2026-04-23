@@ -10,9 +10,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import DOMPurify from 'dompurify';
+import type { Tables } from '@/integrations/supabase/types';
 
 interface Subscriber {
   id: string;
@@ -28,6 +30,9 @@ interface Campaign {
   sent_at: string;
   recipient_count: number;
 }
+
+type NewsletterSubscriberRow = Tables<'newsletter_subscribers'>;
+type NewsletterCampaignRow = Tables<'newsletter_campaigns'>;
 
 const AdminNewsletter = () => {
   const { toast } = useToast();
@@ -49,25 +54,25 @@ const AdminNewsletter = () => {
 
   const fetchSubscribers = async () => {
     setLoadingSubs(true);
-    const { data, error } = await (supabase as any)
+    const { data, error } = await db
       .from('newsletter_subscribers')
       .select('*')
       .order('subscribed_at', { ascending: false });
-    if (!error && data) setSubscribers(data);
+    if (!error && data) setSubscribers(data as NewsletterSubscriberRow[]);
     setLoadingSubs(false);
   };
 
   const fetchCampaigns = async () => {
-    const { data } = await (supabase as any)
+    const { data } = await db
       .from('newsletter_campaigns')
       .select('id, subject, sent_at, recipient_count')
       .order('sent_at', { ascending: false })
       .limit(10);
-    if (data) setCampaigns(data);
+    if (data) setCampaigns(data as NewsletterCampaignRow[]);
   };
 
   const toggleSubscriber = async (id: string, currentActive: boolean) => {
-    await (supabase as any)
+    await db
       .from('newsletter_subscribers')
       .update({ is_active: !currentActive })
       .eq('id', id);
@@ -94,8 +99,9 @@ const AdminNewsletter = () => {
       setLastResult({ sent: result.sent, failed: result.failed });
       toast({ title: 'Newsletter sent!', description: `Sent to ${result.sent} subscribers.` });
       fetchCampaigns();
-    } catch (err: any) {
-      toast({ title: 'Send failed', description: err.message, variant: 'destructive' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      toast({ title: 'Send failed', description: message, variant: 'destructive' });
     } finally {
       setSending(false);
     }
@@ -307,7 +313,7 @@ const AdminNewsletter = () => {
           <div className="border rounded-lg p-4 bg-white">
             <div className="text-sm text-muted-foreground mb-2">Subject: <strong className="text-foreground">{subject}</strong></div>
             <hr className="mb-4" />
-            <div dangerouslySetInnerHTML={{ __html: bodyHtml }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(bodyHtml) }} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPreviewOpen(false)}>Close</Button>

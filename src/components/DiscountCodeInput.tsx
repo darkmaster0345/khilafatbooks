@@ -3,9 +3,11 @@ import { Tag, Loader2, X, CheckCircle2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import { useToast } from '@/hooks/use-toast';
 import { formatPKR } from '@/lib/currency';
+import { DISCOUNT_ATTEMPT_LIMIT, DISCOUNT_ATTEMPT_WINDOW_MS } from '@/lib/constants';
+import type { Tables } from '@/integrations/supabase/types';
 
 export interface AppliedDiscount {
   code: string;
@@ -18,22 +20,43 @@ interface Props {
   subtotal: number;
   onApply: (discount: AppliedDiscount | null) => void;
   applied: AppliedDiscount | null;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
-const DiscountCodeInput = ({ subtotal, onApply, applied }: Props) => {
+const attemptCache = new Map<string, number[]>();
+type DiscountRow = Tables<'discounts'>;
+
+const DiscountCodeInput = ({ subtotal, onApply, applied, disabled = false, disabledReason }: Props) => {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const validate = async () => {
     if (!code.trim()) return;
+    if (disabled) {
+      toast({ title: 'Unavailable', description: disabledReason || 'This discount cannot be combined with your current offer.', variant: 'destructive' });
+      return;
+    }
+
+    const normalizedCode = code.trim().toUpperCase();
+    const now = Date.now();
+    const recentAttempts = (attemptCache.get(normalizedCode) || []).filter(timestamp => now - timestamp < DISCOUNT_ATTEMPT_WINDOW_MS);
+
+    if (recentAttempts.length >= DISCOUNT_ATTEMPT_LIMIT) {
+      toast({ title: 'Too many attempts', description: 'Please wait a minute before trying this code again.', variant: 'destructive' });
+      return;
+    }
+
+    recentAttempts.push(now);
+    attemptCache.set(normalizedCode, recentAttempts);
     setLoading(true);
 
     const { data, error } = await db
       .from('discounts')
       .select('*')
-      .eq('code', code.trim().toUpperCase() as any)
-      .eq('is_active', true as any)
+      .eq('code', normalizedCode)
+      .eq('is_active', true)
       .maybeSingle();
 
     if (error || !data) {
@@ -42,7 +65,7 @@ const DiscountCodeInput = ({ subtotal, onApply, applied }: Props) => {
       return;
     }
 
-    const d = data as any;
+    const d = data as DiscountRow;
 
     // Check expiry
     if (d.expires_at && new Date(d.expires_at) < new Date()) {
@@ -101,10 +124,11 @@ const DiscountCodeInput = ({ subtotal, onApply, applied }: Props) => {
           placeholder="Discount code"
           className="pl-9 h-10 rounded-xl text-sm"
           maxLength={30}
+          disabled={disabled}
           onKeyDown={e => e.key === 'Enter' && validate()}
         />
       </div>
-      <Button variant="outline" size="sm" onClick={validate} disabled={loading || !code.trim()} className="h-10 px-4 rounded-xl">
+      <Button variant="outline" size="sm" onClick={validate} disabled={disabled || loading || !code.trim()} className="h-10 px-4 rounded-xl">
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
       </Button>
     </div>

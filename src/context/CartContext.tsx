@@ -1,8 +1,11 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
+const db = supabase;
 import { LegacyProduct } from '@/hooks/useProducts';
 import { toast } from 'sonner';
+import type { Tables, TablesInsert } from '@/integrations/supabase/types';
+import { FREE_SHIPPING_THRESHOLD } from '@/lib/constants';
 
 export type LoyaltyTier = 'talib' | 'muallim' | 'alim';
 
@@ -48,7 +51,9 @@ const TIER_CONFIG = {
   alim: { minSpent: 10000, discount: 5, label: 'Alim' },
 };
 
-const FREE_SHIPPING_THRESHOLD = 5000;
+type AbandonedCartInsert = TablesInsert<'abandoned_carts'>;
+type PublicProductPrice = Pick<Tables<'public_products'>, 'id' | 'price' | 'in_stock'>;
+type ProfileSummary = Pick<Tables<'profiles'>, 'loyalty_tier' | 'total_spent'>;
 
 const calculateLoyaltyInfo = (tier: LoyaltyTier, totalSpent: number): LoyaltyInfo => {
   const currentConfig = TIER_CONFIG[tier];
@@ -82,7 +87,7 @@ const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
     const { data: { user } } = await db.auth.getUser();
     if (!user || items.length === 0) return;
 
-    const cartPayload = {
+    const cartPayload: AbandonedCartInsert = {
       user_id: user.id,
       user_email: user.email || '',
       cart_items: items.map(i => ({
@@ -110,9 +115,11 @@ const syncAbandonedCart = async (items: CartItem[], subtotal: number) => {
     if (existing) {
       await db.from('abandoned_carts').update(cartPayload).eq('id', existing.id);
     } else {
-      await db.from('abandoned_carts').insert(cartPayload as any);
+      await db.from('abandoned_carts').insert(cartPayload);
     }
-  } catch (e) {}
+  } catch {
+    return;
+  }
 };
 
 const loadCartFromStorage = (): CartItem[] => {
@@ -134,6 +141,48 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('cart-items', JSON.stringify(items));
   }, [items]);
 
+  const validateCartPrices = useCallback(async () => {
+    if (items.length === 0) return;
+
+    const productIds = Array.from(new Set(items.map(item => item.product.id)));
+    const { data, error } = await db
+      .from('public_products')
+      .select('id, price, in_stock')
+      .in('id', productIds);
+
+    if (error || !data) return;
+
+    const currentProducts = new Map<string, { price: number; in_stock: boolean }>(
+      (data as PublicProductPrice[]).map(product => [product.id ?? '', { price: product.price ?? 0, in_stock: product.in_stock ?? false }])
+    );
+
+    let hasChanges = false;
+    const nextItems = items
+      .map(item => {
+        const current = currentProducts.get(item.product.id);
+        if (!current || !current.in_stock) {
+          hasChanges = true;
+          return null;
+        }
+
+        if (current.price !== item.product.price) {
+          hasChanges = true;
+          return { ...item, product: { ...item.product, price: current.price, inStock: current.in_stock } };
+        }
+
+        return item;
+      })
+      .filter((item): item is CartItem => item !== null);
+
+    if (hasChanges) {
+      setItems(nextItems);
+    }
+  }, [items]);
+
+  useEffect(() => {
+    void validateCartPrices();
+  }, [validateCartPrices]);
+
   useEffect(() => {
     const fetchLoyaltyInfo = async () => {
       const { data: { user } } = await db.auth.getUser();
@@ -149,8 +198,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (profile) {
-        const tier = ((profile as any).loyalty_tier || 'talib') as LoyaltyTier;
-        const totalSpent = (profile as any).total_spent || 0;
+        const typedProfile = profile as ProfileSummary;
+        const tier = (typedProfile.loyalty_tier || 'talib') as LoyaltyTier;
+        const totalSpent = typedProfile.total_spent || 0;
         setLoyaltyInfo(calculateLoyaltyInfo(tier, totalSpent));
       }
     };
@@ -212,8 +262,28 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const applyRecoveryCode = useCallback(async (code: string): Promise<boolean> => {
+    const normalizedCode = code.trim().toUpperCase();
+    if (!normalizedCode) return false;
+
+    const { data: { user } } = await db.auth.getUser();
+    if (!user) return false;
+
+    const { data, error } = await db
+      .from('abandoned_carts')
+      .select('recovery_code, recovery_code_expires_at, status')
+      .eq('user_id', user.id)
+      .eq('recovery_code', normalizedCode)
+      .eq('status', 'reminded')
+      .maybeSingle();
+
+    if (error || !data || !data.recovery_code_expires_at || new Date(data.recovery_code_expires_at) <= new Date()) {
+      setRecoveryDiscount(0);
+      setRecoveryCode(null);
+      return false;
+    }
+
     setRecoveryDiscount(50);
-    setRecoveryCode(code);
+    setRecoveryCode(normalizedCode);
     return true;
   }, []);
 
