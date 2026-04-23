@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye, Gift, Truck, BellRing } from 'lucide-react';
+import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye, Gift, Truck, BellRing, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { LegacyProduct } from '@/hooks/useProducts';
+import { Product } from '@/lib/types';
 import { useWishlist } from '@/context/WishlistContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { formatPKR } from '@/lib/currency';
+import { formatPKR } from '@/lib/currency'
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from '@/lib/productImages';
+import { Product } from '@/lib/types';
 import OptimizedImage from './OptimizedImage';
 import LeadCaptureModal from './LeadCaptureModal';
 import UsedTag from './UsedTag';
@@ -26,11 +27,20 @@ const cardVariants = {
   }),
 };
 
-const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: number }) => {
+const ProductCard = ({ product, index = 0 }: { product: Product; index?: number }) => {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product.id);
   const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Handle validation errors gracefully
+  const safeFormatPKR = (value: number | string | undefined | null) => {
+    try {
+      return formatPKR(value);
+    } catch {
+      return '0';
+    }
+  };
 
   const handleNotifyMe = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -48,6 +58,9 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
     });
   };
 
+  // Safety check for digital file URL
+  const hasDigitalFile = Boolean(product.digital_file_url);
+
   return (
     <>
       <motion.div
@@ -61,9 +74,9 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
         {/* Image area */}
         <Link to={`/books/${product.slug}`} className="relative aspect-[2/3] overflow-hidden bg-muted">
           <OptimizedImage
-            src={resolveProductImage(product.image, 640)}
-            srcSet={getProductSrcSet(product.image)}
-            placeholder={getProductPlaceholder(product.image)}
+            src={resolveProductImage(product.image_url, 640)}
+            srcSet={getProductSrcSet(product.image_url)}
+            placeholder={getProductPlaceholder(product.image_url)}
             alt={`${product.name} — Islamic book available at Khilafat Books`}
             className="h-full w-full transition-all duration-700 ease-out group-hover:scale-110 group-hover:brightness-[0.92]"
             loading="lazy"
@@ -113,20 +126,25 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             {product.rating >= 4.5 && product.reviews < 15 && (
               <Badge className="bg-primary text-primary-foreground text-[10px] font-semibold shadow-md">⭐ Top Rated</Badge>
             )}
-            {product.isNew && (
+            {product.is_new && (
               <Badge className="bg-accent text-accent-foreground text-[10px] font-semibold shadow-md">New</Badge>
             )}
-            {product.isUsed && (
-              <UsedTag conditionDescription={product.conditionDescription} className="text-[10px]" />
+            {product.is_used && (
+              <UsedTag conditionDescription={product.condition_description} className="text-[10px]" />
             )}
-            {product.type === 'digital' && (
+            {product.type === 'digital' && hasDigitalFile && (
               <Badge variant="secondary" className="text-[10px] shadow-md backdrop-blur-md bg-secondary/90">
                 <Download className="mr-1 h-3 w-3" /> Digital
               </Badge>
             )}
-            {product.isHalal && (
+            {product.is_halal && (
               <Badge variant="outline" className="bg-background/90 text-[10px] backdrop-blur-md shadow-md">
                 <BadgeCheck className="mr-1 h-3 w-3 text-primary" /> Halal
+              </Badge>
+            )}
+            {!product.in_stock && (
+              <Badge variant="destructive" className="text-[10px] shadow-md">
+                <AlertCircle className="mr-1 h-3 w-3" /> Out of Stock
               </Badge>
             )}
           </div>
@@ -149,9 +167,9 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
           </button>
 
           {/* Availability badge */}
-          {!product.inStock && (
+          {!product.in_stock && (
             <div className="absolute right-3 bottom-3 group-hover:bottom-16 transition-all duration-400 z-10">
-              <Badge variant="destructive" className="backdrop-blur-md text-destructive-foreground text-[10px] border-0 font-semibold shadow-lg px-2.5 py-1">
+              <Badge variant="destructive" className="backdrop-blur-md text-destructive-foreground text-[10px] border-0 font-semibold px-2.5 py-1">
                 Sold Out
               </Badge>
             </div>
@@ -166,8 +184,8 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
               {product.name}
             </h3>
           </Link>
-          {product.nameAr && (
-            <p className="font-amiri text-xs text-muted-foreground mt-1" dir="rtl">{product.nameAr}</p>
+          {product.name_ar && (
+            <p className="font-amiri text-xs text-muted-foreground mt-1" dir="rtl">{product.name_ar}</p>
           )}
           <div className="mt-2 flex items-center gap-1.5">
             <div className="flex items-center gap-0.5">
@@ -181,10 +199,15 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             <div className="flex items-center justify-between">
               <div className="flex items-baseline gap-2">
                 <span className="font-display text-lg font-bold text-foreground">
-                  {product.price === 0 ? 'Free' : formatPKR(product.price)}
+                  {product.price === 0 ? 'Free' : safeFormatPKR(product.price)}
                 </span>
-                {product.originalPrice && product.price > 0 && (
-                  <span className="text-[11px] text-muted-foreground line-through">{formatPKR(product.originalPrice)}</span>
+                {product.original_price && product.price > 0 && (
+                  <span className="text-[11px] text-muted-foreground line-through">{safeFormatPKR(product.original_price)}</span>
+                )}
+                {product.bundle_discount && (
+                  <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded">
+                    Bundle: {safeFormatPKR(product.bundle_discount)}
+                  </span>
                 )}
               </div>
             {/* Mobile-only notify button (hover overlay hidden on touch) */}
@@ -197,7 +220,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
               Notify
             </Button>
             </div>
-            {product.type === 'digital' && (
+            {product.type === 'digital' && hasDigitalFile && (
               <div className="flex items-center gap-1 mt-2 text-[10px] text-primary font-medium">
                 <Truck className="h-3 w-3" />
                 <span>Free Instant Delivery</span>
