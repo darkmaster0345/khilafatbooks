@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await db.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     });
     return { error };

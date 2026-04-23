@@ -1,8 +1,6 @@
 import { SEOHead } from '@/components/SEOHead';
-import { useState, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-const db = supabase as any;
 import { Navigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,8 +14,10 @@ import HCaptcha from '@hcaptcha/react-hcaptcha';
 // Get your site key at https://dashboard.hcaptcha.com/
 const HCAPTCHA_SITE_KEY = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
 
+const EMBEDDED_BROWSER_PATTERN = /FBAN|FBAV|Instagram|Line|LinkedInApp|wv|WebView/i;
+
 const Auth = () => {
-  const { user, signIn, signUp, resetPassword, loading: authLoading } = useAuth();
+  const { user, signIn, signUp, resetPassword, signInWithGoogle, loading: authLoading } = useAuth();
   const [mode, setMode] = useState<'signin' | 'signup' | 'forgot'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,6 +27,13 @@ const Auth = () => {
   // SECURITY FIX (Finding 3.3): captcha state for signup/password reset abuse prevention
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<HCaptcha>(null);
+  const likelyEmbeddedBrowser = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+
+    const userAgent = window.navigator.userAgent || '';
+    const runningInIframe = window.self !== window.top;
+    return runningInIframe || EMBEDDED_BROWSER_PATTERN.test(userAgent);
+  }, []);
 
   if (user) return <Navigate to="/" replace />;
 
@@ -66,6 +73,18 @@ const Auth = () => {
   };
 
   const loading = authLoading;
+
+  const handleGoogleSignIn = async () => {
+    if (likelyEmbeddedBrowser) {
+      toast.error('Google sign-in must be opened in Chrome, Edge, Safari, or another full browser.');
+      return;
+    }
+
+    const { error } = await signInWithGoogle();
+    if (error) {
+      toast.error(error.message || 'Unable to start Google sign-in.');
+    }
+  };
 
   return (
     <>
@@ -192,12 +211,7 @@ const Auth = () => {
 
           <button
             type="button"
-            onClick={() =>
-              db.auth.signInWithOAuth({
-                provider: 'google',
-                options: { redirectTo: window.location.origin }
-              })
-            }
+            onClick={() => void handleGoogleSignIn()}
             className="w-full flex items-center justify-center gap-2 border border-input bg-background hover:bg-accent px-4 py-2 rounded-xl text-sm font-medium transition-colors"
           >
             <svg width="18" height="18" viewBox="0 0 18 18">
@@ -208,6 +222,12 @@ const Auth = () => {
             </svg>
             Continue with Google
           </button>
+
+          {likelyEmbeddedBrowser && (
+            <p className="mt-3 text-xs text-center text-muted-foreground">
+              Google blocks sign-in inside embedded browsers. Open this page in Chrome, Edge, Safari, or Firefox.
+            </p>
+          )}
 
           <div className="mt-8 text-center text-sm space-y-2">
             {mode === 'signin' && (
