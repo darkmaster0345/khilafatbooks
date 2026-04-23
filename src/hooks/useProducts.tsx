@@ -66,6 +66,8 @@ export interface LegacyProduct {
   rating: number;
   reviews: number;
   inStock: boolean;
+  digitalFileUrl?: string | null;
+  bundleDiscount?: number | null;
 }
 
 export function toLegacyProduct(p: Product): LegacyProduct {
@@ -90,6 +92,8 @@ export function toLegacyProduct(p: Product): LegacyProduct {
     rating: p.rating,
     reviews: p.reviews,
     inStock: p.in_stock,
+    digitalFileUrl: p.digital_file_url,
+    bundleDiscount: p.bundle_discount || undefined,
   };
 }
 
