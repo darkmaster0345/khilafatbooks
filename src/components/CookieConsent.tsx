@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
+import type { Json } from '@/integrations/supabase/types';
 
 // Cookie consent types
 export interface ConsentCategories {
@@ -188,7 +189,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
         await supabase
           .from('profiles')
           .update({
-            cookie_consent: consentData as any,
+            cookie_consent: consentData as unknown as Json,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', user.id);
