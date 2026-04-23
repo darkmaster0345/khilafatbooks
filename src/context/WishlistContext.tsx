@@ -3,6 +3,7 @@ import { LegacyProduct } from '@/hooks/useProducts';
 import { supabase } from '@/integrations/supabase/client';
 const db = supabase as any;
 import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface WishlistContextType {
   wishlist: LegacyProduct[];
@@ -106,6 +107,8 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     setLocalWishlist(wishlist);
   }, [wishlist]);
 
+  const { toast } = useToast();
+
   const addToWishlist = useCallback((product: LegacyProduct) => {
     setWishlist(prev => {
       if (prev.find(p => p.id === product.id)) return prev;
@@ -116,10 +119,17 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (user) {
       db.from('wishlists').insert({ user_id: user.id, product_id: product.id } as any)
         .then(({ error }) => {
-          if (error) console.error('Failed to add to wishlist:', error);
+          if (error) {
+            console.error('Failed to add to wishlist:', error);
+            toast({
+              title: 'Error',
+              description: 'Failed to add to wishlist. Please try again.',
+              variant: 'destructive',
+            });
+          }
         });
     }
-  }, [user]);
+  }, [user, toast]);
 
   const removeFromWishlist = useCallback((productId: string) => {
     setWishlist(prev => prev.filter(p => p.id !== productId));
@@ -128,10 +138,17 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     if (user) {
       db.from('wishlists').delete().eq('user_id', user.id).eq('product_id', productId)
         .then(({ error }) => {
-          if (error) console.error('Failed to remove from wishlist:', error);
+          if (error) {
+            console.error('Failed to remove from wishlist:', error);
+            toast({
+              title: 'Error',
+              description: 'Failed to remove from wishlist. Please try again.',
+              variant: 'destructive',
+            });
+          }
         });
     }
-  }, [user]);
+  }, [user, toast]);
 
   const isInWishlist = useCallback((productId: string) => {
     return wishlist.some(p => p.id === productId);

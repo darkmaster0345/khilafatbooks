@@ -191,7 +191,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
             cookie_consent: consentData as any,
             updated_at: new Date().toISOString(),
           })
-          .eq('id', user.id);
+          .eq('user_id', user.id);
       }
     } catch (error) {
       console.error('Error saving consent to profile:', error);

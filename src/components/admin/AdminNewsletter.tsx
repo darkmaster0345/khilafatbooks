@@ -45,6 +45,7 @@ const AdminNewsletter = () => {
   const [subscribers, setSubscribers] = useState<Subscriber[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loadingSubs, setLoadingSubs] = useState(true);
+  const [loadingCampaigns, setLoadingCampaigns] = useState(true);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -58,25 +59,51 @@ const AdminNewsletter = () => {
       .from('newsletter_subscribers')
       .select('*')
       .order('subscribed_at', { ascending: false });
-    if (!error && data) setSubscribers(data as NewsletterSubscriberRow[]);
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load subscribers. Please try again.',
+        variant: 'destructive',
+      });
+    } else if (data) {
+      setSubscribers(data as NewsletterSubscriberRow[]);
+    }
     setLoadingSubs(false);
   };
 
   const fetchCampaigns = async () => {
-    const { data } = await db
+    setLoadingCampaigns(true);
+    const { data, error } = await db
       .from('newsletter_campaigns')
       .select('id, subject, sent_at, recipient_count')
       .order('sent_at', { ascending: false })
       .limit(10);
-    if (data) setCampaigns(data as NewsletterCampaignRow[]);
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load campaigns. Please try again.',
+        variant: 'destructive',
+      });
+    } else if (data) {
+      setCampaigns(data as NewsletterCampaignRow[]);
+    }
+    setLoadingCampaigns(false);
   };
 
   const toggleSubscriber = async (id: string, currentActive: boolean) => {
-    await db
+    const { error } = await db
       .from('newsletter_subscribers')
       .update({ is_active: !currentActive })
       .eq('id', id);
-    setSubscribers(prev => prev.map(s => s.id === id ? { ...s, is_active: !currentActive } : s));
+    if (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update subscriber status. Please try again.',
+        variant: 'destructive',
+      });
+    } else {
+      setSubscribers(prev => prev.map(s => s.id === id ? { ...s, is_active: !currentActive } : s));
+    }
   };
 
   const handleSend = async () => {
