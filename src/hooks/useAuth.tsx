@@ -123,6 +123,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
       options: captchaToken ? { captchaToken } : undefined,
     });
+    if (error) {
+      console.error('SignIn error:', error.message, error.status);
+    }
     return { error };
   };
 
