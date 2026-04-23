@@ -189,7 +189,7 @@ export function ConsentProvider({ children }: { children: ReactNode }) {
         await supabase
           .from('profiles')
           .update({
-            cookie_consent: consentData as unknown as Json,
+            cookie_consent: consentData as Json,
             updated_at: new Date().toISOString(),
           })
           .eq('user_id', user.id);

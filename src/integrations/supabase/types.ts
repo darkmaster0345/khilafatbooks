@@ -589,6 +589,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cookie_consent?: Json | null
           created_at?: string
           email?: string | null
           full_name?: string | null
