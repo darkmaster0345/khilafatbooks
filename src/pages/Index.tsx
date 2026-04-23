@@ -16,7 +16,6 @@ import ProductCard from '@/components/ProductCard';
 import { ProductSkeletonGrid } from '@/components/ProductSkeleton';
 import { useProducts, toLegacyProduct } from '@/hooks/useProducts';
 import { useCart } from '@/context/CartContext';
-import WelcomeBanner from '@/components/WelcomeBanner';
 import NewsletterSignup from '@/components/NewsletterSignup';
 import NewsletterModal from '@/components/NewsletterModal';
 import heroBg from '@/assets/hero-bg-new.jpg';
@@ -357,7 +356,6 @@ const Index = () => {
           </motion.div>
         </div>
       </section>
-      <WelcomeBanner />
     </main>
     </>
   );
