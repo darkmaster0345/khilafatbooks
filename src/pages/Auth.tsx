@@ -24,7 +24,7 @@ const Auth = () => {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [resetSent, setResetSent] = useState(false);
-  // SECURITY FIX (Finding 3.3): captcha state for signup/password reset abuse prevention
+  // SECURITY FIX (Finding 3.3): captcha state for signin/signup/password reset abuse prevention
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<HCaptcha>(null);
   const likelyEmbeddedBrowser = useMemo(() => {
@@ -40,7 +40,14 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === 'signin') {
-      await signIn(email, password);
+      if (!HCAPTCHA_SITE_KEY) {
+        toast.error('Sign in is temporarily unavailable. Captcha is not configured.');
+        return;
+      }
+      if (!captchaToken) return;
+      await signIn(email, password, captchaToken);
+      captchaRef.current?.resetCaptcha();
+      setCaptchaToken(null);
     } else if (mode === 'signup') {
       if (!HCAPTCHA_SITE_KEY) {
         toast.error('Signup is temporarily unavailable. Captcha is not configured.');
@@ -163,15 +170,15 @@ const Auth = () => {
                   placeholder="Password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  required={mode !== 'forgot'}
+                  required
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                   className="pl-10 h-12 rounded-xl"
                 />
               </div>
             )}
 
-            {/* SECURITY (Finding 3.3): hCaptcha widget — shown during signup and password reset */}
-            {(mode === 'signup' || mode === 'forgot') && (
+            {/* SECURITY (Finding 3.3): hCaptcha widget — shown during signin, signup and password reset */}
+            {(mode === 'signin' || mode === 'signup' || mode === 'forgot') && (
               <div className="flex justify-center mt-1">
                 {HCAPTCHA_SITE_KEY ? (
                   <HCaptcha
@@ -179,7 +186,7 @@ const Auth = () => {
                     sitekey={HCAPTCHA_SITE_KEY}
                     onVerify={(token) => setCaptchaToken(token)}
                     onExpire={() => setCaptchaToken(null)}
-                    theme="auto"
+                    theme="light"
                   />
                 ) : (
                   <p className="text-xs text-destructive text-center">
@@ -190,7 +197,7 @@ const Auth = () => {
             )}
 
             <Button
-              disabled={loading || ((mode === 'signup' || mode === 'forgot') && !captchaToken)}
+              disabled={loading || !captchaToken}
               className="w-full h-12 rounded-xl gold-gradient border-0 text-foreground font-bold shadow-lg mt-2"
             >
               {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 
