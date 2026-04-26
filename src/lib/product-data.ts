@@ -1,6 +1,13 @@
-import { useQuery, useQueryClient, useQueryClientOptions } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Product, ProductFilters, normalizeProduct, isProductAvailable, isProductLowStock, isProductDigital, calculateDiscountPercentage, DEFAULT_PRODUCT_VALUES, PRODUCT_ADMIN_FIELDS, PRODUCT_PUBLIC_FIELDS, PRODUCT_MINIMAL_FIELDS } from './types';
+import { 
+  Product, 
+  ProductFilters, 
+  DEFAULT_PRODUCT_VALUES, 
+  PRODUCT_ADMIN_FIELDS, 
+  PRODUCT_PUBLIC_FIELDS, 
+  PRODUCT_MINIMAL_FIELDS 
+} from './types';
 
 const db = supabase;
 
@@ -25,18 +32,16 @@ export function useProducts(options: {
   const { data: products = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['products', includeHidden, minimal, category, featured, search],
     queryFn: async () => {
-      let query = db;
+      const selectedColumns = includeHidden ? PRODUCT_ADMIN_FIELDS : minimal ? PRODUCT_MINIMAL_FIELDS : PRODUCT_PUBLIC_FIELDS;
       
-      const source = includeHidden ? 'products' : 'public_products';
-      const fields = minimal ? PRODUCT_MINIMAL_FIELDS : (includeHidden ? PRODUCT_ADMIN_FIELDS : PRODUCT_PUBLIC_FIELDS);
-      
-      query = query.from(source).select(fields).order('created_at', { ascending: false });
+      let query = db.from('products').select(selectedColumns);
 
       if (category) query = query.eq('category', category);
       if (featured) query = query.eq('is_new', true);
       if (search) query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
 
-      const { data, error } = await query;
+      const { data, error } = await query.order('created_at', { ascending: false });
+      
       if (error) throw error;
 
       return (data || [])
