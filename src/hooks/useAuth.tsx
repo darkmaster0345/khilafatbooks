@@ -82,16 +82,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(session);
       setUser(newUser);
 
-      // Only show loading if we actually need to perform a check
+      // Run admin check in background — do NOT set loading:true here.
+      // Setting loading:true blocks the entire app UI while we wait for the RPC,
+      // which previously caused product components to unmount/remount and get stuck.
       if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-        setLoading(true);
-        await checkAdminStatus(session.user);
-        setLoading(false);
+        checkAdminStatus(session.user); // fire and forget — state updates happen inside
       } else if (event === 'SIGNED_OUT') {
         setIsAdmin(false);
         setLoading(false);
       } else {
-        // For events like TOKEN_REFRESHED, we don't necessarily need to toggle loading
         setLoading(false);
       }
     });

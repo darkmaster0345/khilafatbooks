@@ -1,7 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-const db = supabase;
 import { resolveProductImage } from '@/lib/productImages';
 import { slugify } from '@/lib/utils';
 import { 
@@ -9,6 +7,8 @@ import {
   PRODUCT_MINIMAL_COLUMNS, 
   PRODUCT_ADMIN_COLUMNS 
 } from '@/lib/types';
+
+const db = supabase;
 
 export interface Product {
   id: string;
@@ -97,12 +97,9 @@ export function toLegacyProduct(p: Product): LegacyProduct {
 }
 
 export function usePublicProducts(options?: { category?: string; featured?: boolean }) {
-  const queryClient = useQueryClient();
-
   const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ['public_products', options?.category, options?.featured],
     queryFn: async () => {
-      // Query from products table with public columns selection
       let query = db.from('products').select(PRODUCT_PUBLIC_COLUMNS);
 
       if (options?.category) {
@@ -113,7 +110,9 @@ export function usePublicProducts(options?: { category?: string; featured?: bool
         query = query.eq('is_new', true);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      const { data, error } = await query
+        .eq('is_hidden', false)
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Supabase error fetching products:', error);
@@ -122,7 +121,7 @@ export function usePublicProducts(options?: { category?: string; featured?: bool
       return (data ?? []) as unknown as Product[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1,
+    retry: 2,
   });
 
   return { products, loading: isLoading, error, refetch };
@@ -130,25 +129,30 @@ export function usePublicProducts(options?: { category?: string; featured?: bool
 
 export function useProducts(options: { includeHidden?: boolean; minimal?: boolean } = {}) {
   const { includeHidden = false, minimal = false } = options;
-  const queryClient = useQueryClient();
 
-  // When auth state changes (user logs in/out), invalidate the products cache
-  // so the query re-runs with the new session credentials.
-  useEffect(() => {
-    const { data: { subscription } } = db.auth.onAuthStateChange((event: string) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
-        queryClient.invalidateQueries({ queryKey: ['products'] });
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [queryClient]);
+  // NOTE: We intentionally do NOT register an onAuthStateChange listener here.
+  // Doing so caused a race condition: SIGNED_IN would invalidate the query cache
+  // just as useAuth set loading:true, causing components to unmount/remount and
+  // leaving the query stuck in isLoading:true forever.
+  // Instead, pages that need fresh data after login should call refetch() themselves,
+  // or rely on React Query's refetchOnMount behavior.
 
   const { data: products = [], isLoading, isError, error, refetch } = useQuery({
     queryKey: ['products', includeHidden, minimal],
     queryFn: async () => {
-      const selectedColumns = includeHidden ? PRODUCT_ADMIN_COLUMNS : minimal ? PRODUCT_MINIMAL_COLUMNS : PRODUCT_PUBLIC_COLUMNS;
-      // Query from products table directly (RLS will handle filtering is_hidden)
-      const query = db.from('products').select(selectedColumns);
+      const selectedColumns = includeHidden
+        ? PRODUCT_ADMIN_COLUMNS
+        : minimal
+        ? PRODUCT_MINIMAL_COLUMNS
+        : PRODUCT_PUBLIC_COLUMNS;
+
+      let query = db.from('products').select(selectedColumns);
+
+      // For public queries, explicitly filter out hidden products
+      // This ensures consistent results regardless of RLS row visibility
+      if (!includeHidden) {
+        query = query.eq('is_hidden', false);
+      }
 
       const { data, error } = await query.order('created_at', { ascending: false });
 
@@ -159,7 +163,12 @@ export function useProducts(options: { includeHidden?: boolean; minimal?: boolea
       return (data ?? []) as unknown as Product[];
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
-    retry: 1,
+    retry: 2,
+    // Refetch when window regains focus - handles the case where user
+    // logs in on another tab or the token refreshes
+    refetchOnWindowFocus: false,
+    // Always refetch when component mounts to get fresh data
+    refetchOnMount: true,
   });
 
   return { products, loading: isLoading, isError, error, refetch };
