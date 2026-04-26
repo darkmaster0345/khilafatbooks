@@ -79,11 +79,11 @@ const AdminFinancialOverview = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Fetch delivered orders
+      // Fetch delivered or approved orders
       const { data: orders, error: ordersError } = await db
         .from('orders')
-        .select('total, book_cost, shipping_cost')
-        .eq('status', 'delivered');
+        .select('total, shipping')
+        .or('status.eq.delivered,status.eq.approved');
 
       if (ordersError) throw ordersError;
 
@@ -105,12 +105,13 @@ const AdminFinancialOverview = () => {
 
       // Calculations
       const grossRevenue = (orders || []).reduce((acc, curr) => acc + (curr.total || 0), 0);
-      const cogs = (orders || []).reduce((acc, curr) => acc + (Number(curr.book_cost) || 0), 0);
-      const shippingCosts = (orders || []).reduce((acc, curr) => acc + (Number(curr.shipping_cost) || 0), 0);
+      const shippingRevenue = (orders || []).reduce((acc, curr) => acc + (Number(curr.shipping) || 0), 0);
       const otherExpenses = (expensesData || []).reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
       const privacyRevenue = (privacyPaidCount || 0) * PRIVACY_FEE;
 
-      const totalExpenses = cogs + shippingCosts + otherExpenses;
+      // Note: COGS (book cost) is not currently tracked in the database
+      const cogs = 0; 
+      const totalExpenses = cogs + shippingRevenue + otherExpenses;
       const netProfit = grossRevenue - totalExpenses;
 
       setStats({

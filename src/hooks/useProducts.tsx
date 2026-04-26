@@ -175,11 +175,13 @@ export function useProducts(options: { includeHidden?: boolean; minimal?: boolea
 }
 
 export const PRODUCT_CATEGORIES = [
-  'Prayer Essentials',
-  'Books & Quran',
-  'Fragrances',
-  'Digital Courses',
-  'Art & Decor',
-  'Fashion',
-  'Uncategorized',
+  'Islamic History',
+  'Quran & Tafsir',
+  'Hadith Studies',
+  'Contemporary Issues',
+  'Children\'s Books',
+  'Biographies',
+  'Spiritual Growth',
+  'Theology (Aqeedah)',
+  'Digital Resources'
 ];

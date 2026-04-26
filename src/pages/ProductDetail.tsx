@@ -53,28 +53,28 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       setLoading(true);
       try {
-        // Use public_products view to exclude internal fields (shipping_cost, low_stock_threshold, etc.)
-        const { data, error } = await db
-          .from('public_products')
-          .select(PRODUCT_PUBLIC_COLUMNS)
-          .order('created_at', { ascending: false });
+        // Use products table directly and fetch only the specific product
+        // We first try to find by ID (if slug is a UUID) or search by name slugified
+        const { data: found, error } = await db
+          .from('products')
+          .select(PRODUCT_PUBLIC_COLUMNS + ', category')
+          .eq('is_hidden', false)
+          .or(`id.eq.${slug},name.ilike.${slug.replace(/-/g, ' ')}`)
+          .maybeSingle();
 
         if (error) throw error;
-
-        const found = data?.find((p: any) =>
-          p.name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]/g, '') === slug
-        );
 
         if (found) {
           const legacy = toLegacyProduct(found);
           setProduct(legacy);
           setActiveImage(legacy.image);
 
-          // Use public_products view for related products
+          // Use products table for related products
           const { data: related } = await db
-            .from('public_products')
+            .from('products')
             .select(PRODUCT_PUBLIC_COLUMNS)
             .eq('category', found.category)
+            .eq('is_hidden', false)
             .neq('id', found.id)
             .limit(4);
 

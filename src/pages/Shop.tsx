@@ -42,10 +42,11 @@ const Shop = () => {
     else setLoadingMore(true);
 
     try {
-      // Use public_products view (excludes internal fields)
+      // Use products table directly (view had permission issues for auth users)
       let query = db
-        .from('public_products')
-        .select(PRODUCT_MINIMAL_COLUMNS);
+        .from('products')
+        .select(PRODUCT_MINIMAL_COLUMNS)
+        .eq('is_hidden', false);
 
       if (search) query = query.ilike('name', `%${search}%`);
       if (selectedCategory !== 'All') query = query.eq('category', selectedCategory);

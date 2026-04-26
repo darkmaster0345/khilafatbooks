@@ -86,7 +86,7 @@ const sectionComponents: Record<Section, React.FC<{ onNavigate?: (section: Secti
 };
 
 const Admin = () => {
-  const { user, isAdmin, signOut, loading: authLoading } = useAuth();
+  const { user, isAdmin, isAdminLoading, signOut, loading: authLoading } = useAuth();
   const [activeSection, setActiveSection] = useState<Section>('dashboard');
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -96,8 +96,8 @@ const Admin = () => {
   useOrderNotifications();
 
   useEffect(() => {
-    if (!authLoading) setLoading(false);
-  }, [authLoading]);
+    if (!authLoading && !isAdminLoading) setLoading(false);
+  }, [authLoading, isAdminLoading]);
 
   useEffect(() => {
     const fetchBadges = async () => {

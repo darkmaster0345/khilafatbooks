@@ -39,7 +39,7 @@ const Header = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      navigate(`/shop?q=${encodeURIComponent(searchQuery.trim())}`);
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
       setMobileMenuOpen(false);
     }
   };

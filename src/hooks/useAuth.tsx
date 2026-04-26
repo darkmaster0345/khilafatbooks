@@ -9,6 +9,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  isAdminLoading: boolean;
   signUp: (email: string, password: string, fullName: string, captchaToken?: string) => Promise<{ error: AuthError | null }>;
   signIn: (email: string, password: string, captchaToken?: string) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
@@ -23,6 +24,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminLoading, setIsAdminLoading] = useState(true);
 
   const checkAdminStatus = useCallback(async (u: User | null) => {
     if (!u) {
@@ -30,6 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return false;
     }
 
+    setIsAdminLoading(true);
     try {
       const { data, error } = await db.rpc('is_admin');
       if (error) throw error;
@@ -42,6 +45,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.error('Unexpected error in checkAdminStatus:', err);
       setIsAdmin(fallbackIsAdmin);
       return fallbackIsAdmin;
+    } finally {
+      setIsAdminLoading(false);
     }
   }, []);
 
@@ -57,9 +62,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          await checkAdminStatus(session.user);
+          checkAdminStatus(session.user);
         } else {
           setIsAdmin(false);
+          setIsAdminLoading(false);
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -83,16 +89,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(newUser);
 
       // Run admin check in background — do NOT set loading:true here.
-      // Setting loading:true blocks the entire app UI while we wait for the RPC,
-      // which previously caused product components to unmount/remount and get stuck.
       if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
-        checkAdminStatus(session.user); // fire and forget — state updates happen inside
+        checkAdminStatus(session.user);
       } else if (event === 'SIGNED_OUT') {
         setIsAdmin(false);
-        setLoading(false);
-      } else {
-        setLoading(false);
+        setIsAdminLoading(false);
       }
+      
+      // Always set loading to false once we have processed the session event
+      setLoading(false);
     });
 
     return () => {
@@ -175,7 +180,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, signUp, signIn, signInWithGoogle, signOut, resetPassword }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, isAdminLoading, signUp, signIn, signInWithGoogle, signOut, resetPassword }}>
       {children}
     </AuthContext.Provider>
   );

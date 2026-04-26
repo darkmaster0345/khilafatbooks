@@ -78,10 +78,11 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       // Fetch full product data for all wishlist items
       if (dbProductIds.size > 0) {
         const { PRODUCT_PUBLIC_COLUMNS } = await import('@/hooks/useProducts');
-        // Use public_products view to exclude internal fields
+        // Use products table directly
         const { data: products } = await db
-          .from('public_products')
+          .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
+          .eq('is_hidden', false)
           .in('id', Array.from(dbProductIds));
 
         if (products) {

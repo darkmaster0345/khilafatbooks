@@ -8,21 +8,9 @@ import { useToast } from '@/hooks/use-toast';
 import { formatPKR } from '@/lib/currency';
 import OptimizedImage from '../OptimizedImage';
 import { resolveProductImage, getProductSrcSet, getProductPlaceholder } from '@/lib/productImages';
-import { useProducts } from '@/hooks/useProducts';
+import { useProducts, PRODUCT_CATEGORIES } from '@/hooks/useProducts';
 
 const db = supabase as any;
-
-const PRODUCT_CATEGORIES = [
-  'Islamic History',
-  'Quran & Tafsir',
-  'Hadith Studies',
-  'Contemporary Issues',
-  'Children\'s Books',
-  'Biographies',
-  'Spiritual Growth',
-  'Theology (Aqeedah)',
-  'Digital Resources'
-];
 
 const generateFileName = (file: File) => {
   const ext = file.name.split('.').pop();

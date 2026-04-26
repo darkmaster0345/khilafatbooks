@@ -52,7 +52,7 @@ const TIER_CONFIG = {
 };
 
 type AbandonedCartInsert = TablesInsert<'abandoned_carts'>;
-type PublicProductPrice = Pick<Tables<'public_products'>, 'id' | 'price' | 'in_stock'>;
+type PublicProductPrice = Pick<Tables<'products'>, 'id' | 'price' | 'in_stock'>;
 type ProfileSummary = Pick<Tables<'profiles'>, 'loyalty_tier' | 'total_spent'>;
 
 const calculateLoyaltyInfo = (tier: LoyaltyTier, totalSpent: number): LoyaltyInfo => {
@@ -146,8 +146,9 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const productIds = Array.from(new Set(items.map(item => item.product.id)));
     const { data, error } = await db
-      .from('public_products')
+      .from('products')
       .select('id, price, in_stock')
+      .eq('is_hidden', false)
       .in('id', productIds);
 
     if (error || !data) return;

@@ -41,10 +41,11 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
 
       setLoadingSeries(true);
 
-      // Use public_products view
+      // Use products table with is_hidden filter
       const { data: cartProducts } = await db
-        .from('public_products')
+        .from('products')
         .select('id, series, series_order')
+        .eq('is_hidden', false)
         .in('id', cartProductIds as string[])
         .not('series', 'is', null);
 
@@ -61,10 +62,11 @@ const CartSuggestions = ({ cartItems }: { cartItems: CartItem[] }) => {
         return;
       }
 
-      // Use public_products view
+      // Use products table with is_hidden filter
       const { data: related } = await db
-        .from('public_products')
+        .from('products')
         .select('id, name, price, series, series_order, image_url, category, in_stock')
+        .eq('is_hidden', false)
         .in('series', seriesNames as string[])
         .order('series_order', { ascending: true });
 

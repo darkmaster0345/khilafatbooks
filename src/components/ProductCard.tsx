@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Download, Star, BadgeCheck, Heart, Eye, Gift, Truck, BellRing, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useWishlist } from '@/context/WishlistContext';
+import { useCart } from '@/context/CartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatPKR } from '@/lib/currency'
@@ -28,6 +29,7 @@ const cardVariants = {
 
 const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: number }) => {
   const { isInWishlist, toggleWishlist } = useWishlist();
+  const { addItem } = useCart();
   const isWishlisted = isInWishlist(product.id);
   const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
@@ -87,14 +89,33 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
 
           {/* Quick action buttons - appear on hover */}
           <div className="absolute inset-x-0 bottom-0 p-4 flex gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-400 ease-out z-10">
-            <Button
-              onClick={handleNotifyMe}
-              size="sm"
-              className="flex-1 h-10 gap-2 text-xs font-semibold rounded-xl backdrop-blur-md shadow-lg transition-all bg-background/90 text-foreground hover:bg-background border-0"
-            >
-              <BellRing className="h-3.5 w-3.5" />
-              Notify Me
-            </Button>
+            {product.inStock ? (
+              <Button
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  addItem(product);
+                  toast({
+                    title: 'Added to cart',
+                    description: `${product.name} has been added to your cart.`,
+                  });
+                }}
+                size="sm"
+                className="flex-1 h-10 gap-2 text-xs font-semibold rounded-xl shadow-lg transition-all bg-primary text-primary-foreground hover:bg-primary/90 border-0"
+              >
+                <ShoppingCart className="h-3.5 w-3.5" />
+                Add to Cart
+              </Button>
+            ) : (
+              <Button
+                onClick={handleNotifyMe}
+                size="sm"
+                className="flex-1 h-10 gap-2 text-xs font-semibold rounded-xl backdrop-blur-md shadow-lg transition-all bg-background/90 text-foreground hover:bg-background border-0"
+              >
+                <BellRing className="h-3.5 w-3.5" />
+                Notify Me
+              </Button>
+            )}
             <Button
               asChild
               size="sm"
@@ -105,15 +126,6 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
               <Link to={`/books/${product.slug}`}>
                 <Eye className="h-4 w-4" />
               </Link>
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              aria-label={`Add ${product.name} as a gift`}
-              className="h-10 w-10 p-0 rounded-xl backdrop-blur-md bg-background/90 hover:bg-background shadow-lg border-0"
-              onClick={handleGiftClick}
-            >
-              <Gift className="h-4 w-4" />
             </Button>
           </div>
 

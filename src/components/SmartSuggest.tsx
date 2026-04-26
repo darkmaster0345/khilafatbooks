@@ -38,11 +38,12 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
       setLoading(true);
       let products: any[] = [];
 
-      // Use public_products view
+      // Use products table directly
       if (series) {
         const { data } = await db
-          .from('public_products')
+          .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
+          .eq('is_hidden', false)
           .eq('series', series as any)
           .neq('id', (excludeId || '') as any)
           .order('series_order', { ascending: true })
@@ -52,8 +53,9 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
 
       if (products.length < limit && category) {
         const { data } = await db
-          .from('public_products')
+          .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
+          .eq('is_hidden', false)
           .eq('category', category as any)
           .neq('id', (excludeId || '') as any)
           .order('reviews', { ascending: false })
@@ -67,8 +69,9 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
 
       if (products.length < limit) {
         const { data } = await db
-          .from('public_products')
+          .from('products')
           .select(PRODUCT_PUBLIC_COLUMNS)
+          .eq('is_hidden', false)
           .neq('id', (excludeId || '') as any)
           .order('reviews', { ascending: false })
           .order('rating', { ascending: false })
@@ -153,8 +156,9 @@ const SmartSuggest = ({ category, series, excludeId, reason, limit = 3 }: SmartS
                   <OptimizedImage
                     src={resolveProductImage(product.image, 150)}
                     alt={product.name}
-                    className="h-18 w-18 rounded-lg"
-                    style={{ width: 72, height: 72 }}
+                    className="h-[72px] w-[72px] rounded-lg"
+                    width={72}
+                    height={72}
                     loading="lazy"
                   />
                   {isTop && (
