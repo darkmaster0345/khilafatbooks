@@ -73,7 +73,8 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
         className="group relative flex flex-col h-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-2"
       >
         {/* Image area */}
-        <Link to={`/books/${product.slug}`} className="relative aspect-[2/3] overflow-hidden bg-muted">
+        <div className="relative aspect-[2/3] overflow-hidden bg-muted">
+          <Link to={`/books/${product.slug}`} className="block h-full w-full">
           <OptimizedImage
             src={product.image}
             srcSet={getProductSrcSet(product.image)}
@@ -83,6 +84,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
             loading="lazy"
             decoding="async"
           />
+          </Link>
 
           {/* Hover overlay with quick actions */}
           <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 via-foreground/10 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-400" />
@@ -185,7 +187,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
               </Badge>
             </div>
           )}
-        </Link>
+        </div>
 
         {/* Content */}
         <div className="flex flex-1 flex-col p-4">
