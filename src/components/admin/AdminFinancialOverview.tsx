@@ -120,7 +120,7 @@ const AdminFinancialOverview = () => {
         netProfit,
         privacyRevenue,
         cogs,
-        shippingCosts,
+        shippingCosts: shippingRevenue,
         otherExpenses
       });
       setExpenses(expensesData as Expense[]);

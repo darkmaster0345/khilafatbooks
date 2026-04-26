@@ -37,7 +37,7 @@ const ProductCard = ({ product, index = 0 }: { product: LegacyProduct; index?: n
   // Handle validation errors gracefully
   const safeFormatPKR = (value: number | string | undefined | null) => {
     try {
-      return formatPKR(value);
+      return formatPKR(Number(value));
     } catch {
       return '0';
     }

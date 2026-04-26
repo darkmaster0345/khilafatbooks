@@ -146,7 +146,7 @@ export function useProducts(options: { includeHidden?: boolean; minimal?: boolea
         ? PRODUCT_MINIMAL_COLUMNS
         : PRODUCT_PUBLIC_COLUMNS;
 
-      let query = db.from('products').select(selectedColumns);
+      let query = db.from('products').select(selectedColumns as any);
 
       // For public queries, explicitly filter out hidden products
       // This ensures consistent results regardless of RLS row visibility
