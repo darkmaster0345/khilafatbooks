@@ -4,6 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 const db = supabase;
 import { resolveProductImage } from '@/lib/productImages';
 import { slugify } from '@/lib/utils';
+import { 
+  PRODUCT_PUBLIC_COLUMNS, 
+  PRODUCT_MINIMAL_COLUMNS, 
+  PRODUCT_ADMIN_COLUMNS 
+} from '@/lib/types';
 
 export interface Product {
   id: string;
@@ -35,14 +40,8 @@ export interface Product {
   updated_at: string;
 }
 
-// Public product columns intentionally exclude internal inventory/admin metadata.
-export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,is_used,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
-
-// Minimal columns for high-performance list views
-export const PRODUCT_MINIMAL_COLUMNS = 'id,name,name_ar,price,original_price,image_url,category,type,is_new,is_halal,is_used,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
-
-// Admin queries can include non-public product metadata.
-export const PRODUCT_ADMIN_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,is_used,condition_description,ethical_source,rating,reviews,in_stock,stock_quantity,low_stock_threshold,reviews_enabled,series,series_order,bundle_discount,is_hidden,digital_file_url,created_at,updated_at' as const;
+// Re-export constants for backward compatibility
+export { PRODUCT_PUBLIC_COLUMNS, PRODUCT_MINIMAL_COLUMNS, PRODUCT_ADMIN_COLUMNS };
 
 // Map DB product to the legacy Product shape used by ProductCard/Cart
 export interface LegacyProduct {
@@ -103,8 +102,8 @@ export function usePublicProducts(options?: { category?: string; featured?: bool
   const { data: products = [], isLoading, error, refetch } = useQuery({
     queryKey: ['public_products', options?.category, options?.featured],
     queryFn: async () => {
-      // Use public_products view which excludes internal fields
-      let query = db.from('public_products').select(PRODUCT_PUBLIC_COLUMNS);
+      // Query from products table with public columns selection
+      let query = db.from('products').select(PRODUCT_PUBLIC_COLUMNS);
 
       if (options?.category) {
         query = query.eq('category', options.category);
@@ -148,8 +147,8 @@ export function useProducts(options: { includeHidden?: boolean; minimal?: boolea
     queryKey: ['products', includeHidden, minimal],
     queryFn: async () => {
       const selectedColumns = includeHidden ? PRODUCT_ADMIN_COLUMNS : minimal ? PRODUCT_MINIMAL_COLUMNS : PRODUCT_PUBLIC_COLUMNS;
-      const source = includeHidden ? 'products' : 'public_products';
-      const query = db.from(source).select(selectedColumns);
+      // Query from products table directly (RLS will handle filtering is_hidden)
+      const query = db.from('products').select(selectedColumns);
 
       const { data, error } = await query.order('created_at', { ascending: false });
 

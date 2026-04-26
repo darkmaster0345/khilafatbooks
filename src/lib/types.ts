@@ -162,3 +162,19 @@ export const validateThreshold = (threshold: any): number => {
   const num = Number(threshold);
   return isNaN(num) || num < 0 ? 5 : num;
 };
+
+// Query constants for Supabase select()
+export const PRODUCT_PUBLIC_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,is_used,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
+
+export const PRODUCT_MINIMAL_COLUMNS = 'id,name,name_ar,price,original_price,image_url,category,type,is_new,is_halal,is_used,rating,reviews,in_stock,series,series_order,created_at,updated_at' as const;
+
+export const PRODUCT_ADMIN_COLUMNS = 'id,name,name_ar,description,price,original_price,image_url,category,type,is_new,is_halal,is_used,condition_description,ethical_source,rating,reviews,in_stock,stock_quantity,low_stock_threshold,reviews_enabled,series,series_order,bundle_discount,is_hidden,digital_file_url,created_at,updated_at' as const;
+
+// Legacy alias for compatibility with older code
+export const PRODUCT_PUBLIC_FIELDS = PRODUCT_PUBLIC_COLUMNS;
+export const PRODUCT_ADMIN_FIELDS = PRODUCT_ADMIN_COLUMNS;
+export const PRODUCT_MINIMAL_FIELDS = PRODUCT_MINIMAL_COLUMNS;
+
+export const DEFAULT_PRODUCT_VALUES = {
+  low_stock_threshold: 5,
+};

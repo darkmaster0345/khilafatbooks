@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient, useQueryClientOptions } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Product, ProductFilters, normalizeProduct, isProductAvailable, isProductLowStock, isProductDigital, calculateDiscountPercentage, DEFAULT_PRODUCT_VALUES } from './types';
+import { Product, ProductFilters, normalizeProduct, isProductAvailable, isProductLowStock, isProductDigital, calculateDiscountPercentage, DEFAULT_PRODUCT_VALUES, PRODUCT_ADMIN_FIELDS, PRODUCT_PUBLIC_FIELDS, PRODUCT_MINIMAL_FIELDS } from './types';
 
 const db = supabase;
 
