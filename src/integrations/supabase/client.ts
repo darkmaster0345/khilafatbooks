@@ -2,18 +2,16 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-// Support both the old ANON key name and the newer PUBLISHABLE key name
-const SUPABASE_ANON_KEY =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Public keys — safe to hardcode in frontend (security enforced by Supabase RLS policies).
+// These are fallbacks for when VITE_ env vars are not available (e.g. Vercel build with gitignored .env).
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL ||
+  'https://ebormxtkzertyxgszbip.supabase.co';
 
-if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('Supabase environment variables are not configured correctly.', {
-    hasUrl: !!SUPABASE_URL,
-    hasKey: !!SUPABASE_ANON_KEY,
-  });
-  throw new Error('Missing Supabase configuration. Please set VITE_SUPABASE_URL and anon key.');
-}
+const SUPABASE_ANON_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVib3JteHRremVydHl4Z3N6YmlwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTQwMzUsImV4cCI6MjA4OTE3MDAzNX0.IPm_mpEfutyLrQ6FmuooqWH3MbXA7s4uv8sqfTtaWdY';
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
