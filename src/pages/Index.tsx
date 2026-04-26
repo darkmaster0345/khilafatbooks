@@ -134,7 +134,7 @@ const Index = () => {
               <Button asChild size="lg" className="gold-gradient h-14 px-10 text-lg font-bold text-foreground border-0 shadow-xl hover:shadow-gold/20 transition-all hover:scale-105 rounded-3xl active:scale-95">
                 <Link to="/shop">Shop Collection</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="h-14 px-10 text-lg font-bold text-white border-2 border-white/30 hover:bg-white/15 hover:border-white/50 backdrop-blur-md rounded-3xl transition-all active:scale-95">
+              <Button asChild size="lg" className="h-14 px-10 text-lg font-bold text-white bg-transparent border-2 border-white/30 hover:bg-white/15 hover:border-white/50 backdrop-blur-md rounded-3xl transition-all active:scale-95">
                 <Link to="/shop?type=digital" className="flex items-center gap-2">
                   <Download className="h-5 w-5" /> Digital Products
                 </Link>

@@ -131,8 +131,9 @@ const Header = () => {
                 </div>
                 <span className="text-xs text-muted-foreground truncate max-w-[100px] font-medium">My Orders</span>
               </Link>
-              <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1 text-xs text-muted-foreground hover:text-destructive h-8" title="Sign Out">
-                <LogOut className="h-3 w-3" />
+              <Button variant="ghost" size="sm" onClick={signOut} className="gap-2 text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 h-8 px-3" title="Sign Out">
+                <LogOut className="h-3.5 w-3.5" />
+                <span>Log out</span>
               </Button>
             </div>
           ) : (
@@ -267,8 +268,8 @@ const Header = () => {
               )}
               <div className="border-t border-border/50 my-1" />
               {user ? (
-                <button onClick={() => { signOut(); setMobileMenuOpen(false); }} className="rounded-lg px-4 py-2.5 text-sm font-medium text-left text-muted-foreground hover:bg-muted">
-                  Sign out
+                <button onClick={() => { signOut(); setMobileMenuOpen(false); }} className="rounded-lg px-4 py-2.5 text-sm font-medium text-left text-muted-foreground hover:bg-destructive/10 hover:text-destructive">
+                  Log out
                 </button>
               ) : (
                 <Link to="/auth" onClick={() => setMobileMenuOpen(false)} className="rounded-lg px-4 py-2.5 text-sm font-medium text-primary hover:bg-muted">
