@@ -225,12 +225,12 @@ const Admin = () => {
               {(!collapsed || mobileOpen) && <span>View Store</span>}
             </a>
             <button
-              onClick={() => signOut()}
+              onClick={signOut}
               className="w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-              title={collapsed && !mobileOpen ? 'Sign Out' : undefined}
+              title={collapsed && !mobileOpen ? 'Log out' : undefined}
             >
               <LogOut className="h-[18px] w-[18px] shrink-0" />
-              {(!collapsed || mobileOpen) && <span>Sign Out</span>}
+              {(!collapsed || mobileOpen) && <span>Log out</span>}
             </button>
             <button
               onClick={() => setCollapsed(!collapsed)}

@@ -41,7 +41,12 @@ const Profile = () => {
   });
 
   useEffect(() => {
-    if (!user) return;
+    let isMounted = true;
+    
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     
     const fetchProfile = async () => {
       try {
@@ -51,7 +56,10 @@ const Profile = () => {
           .eq('user_id', user.id)
           .single();
         
-        if (error) throw error;
+        if (!isMounted) return;
+        
+        // Ignore PGRST116 (No rows found) so users without a profile can still see the page
+        if (error && error.code !== 'PGRST116') throw error;
         
         if (data) {
           setProfile(data);
@@ -63,6 +71,7 @@ const Profile = () => {
           });
         }
       } catch (err) {
+        if (!isMounted) return;
         console.error('Error fetching profile:', err);
         toast({
           title: 'Error',
@@ -70,11 +79,13 @@ const Profile = () => {
           variant: 'destructive',
         });
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     
     fetchProfile();
+    
+    return () => { isMounted = false; };
   }, [user, toast]);
 
   const handleSave = async () => {
@@ -84,14 +95,14 @@ const Profile = () => {
     try {
       const { error } = await db
         .from('profiles')
-        .update({
+        .upsert({
+          user_id: user.id,
           full_name: formData.full_name,
           phone: formData.phone,
           address: formData.address,
           city: formData.city,
           updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
+        });
       
       if (error) throw error;
       

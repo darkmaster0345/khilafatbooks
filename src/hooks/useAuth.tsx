@@ -140,21 +140,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
+    // Clear local state immediately for instant feedback
+    setUser(null);
+    setSession(null);
+    setIsAdmin(false);
+    
     try {
       const { error } = await db.auth.signOut();
       if (error) throw error;
-      // Clear local state immediately
-      setUser(null);
-      setSession(null);
-      setIsAdmin(false);
-      // Force redirect to home
-      window.location.href = '/';
     } catch (err) {
-      console.error('Sign out error:', err);
-      // Still clear state on error
-      setUser(null);
-      setSession(null);
-      setIsAdmin(false);
+      console.error('Sign out error, falling back to local signout:', err);
+      // Force clear local storage token so user isn't stuck
+      await db.auth.signOut({ scope: 'local' }).catch(() => {});
+    } finally {
+      // Manually wipe the supabase token from local storage just in case
+      try {
+        for (const key of Object.keys(localStorage)) {
+          if (key.startsWith('sb-') && key.endsWith('-auth-token')) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {
+        // ignore storage errors
+      }
+      // Force redirect to home immediately
+      window.location.href = '/';
     }
   };
 
